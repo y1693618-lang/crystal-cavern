@@ -22,16 +22,15 @@ workflows:
     max_build_duration: 60
 
     integrations:
-      # ▼▼▼ Codemagic に登録した API キーの名前に差し替える ▼▼▼
+      # Codemagic の Settings → Integrations → Developer Portal に
+      # 登録してあるキーの「名前」です。
       app_store_connect: Codemagic
 
     environment:
       xcode: latest
-      ios_signing:
-        distribution_type: app_store
-        # ▼▼▼ project.yml の PRODUCT_BUNDLE_IDENTIFIER と同じ値に ▼▼▼
-        bundle_identifier: com.okanoyoshihiko.CrystalCavernIdleMine
       vars:
+        # ▼▼▼ project.yml の PRODUCT_BUNDLE_IDENTIFIER と同じ値に ▼▼▼
+        BUNDLE_ID: com.okanoyoshihiko.CrystalCavernIdleMine
         XCODE_SCHEME: CrystalCavern
         XCODE_PROJECT: CrystalCavern.xcodeproj
 
@@ -50,9 +49,16 @@ workflows:
           xcodegen generate
           rm -f project.yml.bak
 
-      - name: 署名の設定を流し込む
+      - name: 署名ファイルを用意する
         script: |
           set -e
+          keychain initialize
+          # --create が要点。このアプリ用の証明書とプロファイルが
+          # まだ無ければ、Apple 側に作ってから持ってきます。
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
           xcode-project use-profiles
 
       - name: ビルドして .ipa を作る
