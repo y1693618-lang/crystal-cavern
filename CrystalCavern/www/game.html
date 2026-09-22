@@ -1,0 +1,2423 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#0B0C0F}img{max-width:100%}[hidden]{display:none!important}</style><title>結晶洞窟</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chivo+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    /* palette — replaced at runtime by the chosen skin */
+    --bg:#0B1016; --bg-deep:#070B0F; --bg-top:#1A2634;
+    --panel:#161F2A; --panel-2:#1F2A37;
+    --line:#3B4C5C; --line-soft:#2C3A47;
+    --ink:#F0F5FA; --ink-dim:#C2D0DC; --ink-faint:#9BAEBE;
+    --cyan:#7FE6E0; --gold:#F2C673; --amethyst:#C29CF2; --alert:#FF9BAE;
+
+    /* type scale — multiplied by the reader's text-size choice */
+    --fs:1;
+    --t-11:calc(11.5px * var(--fs));
+    --t-12:calc(12.5px * var(--fs));
+    --t-13:calc(13.5px * var(--fs));
+    --t-14:calc(14.5px * var(--fs));
+    --t-15:calc(15.5px * var(--fs));
+    --t-17:calc(17px * var(--fs));
+    --t-19:calc(19px * var(--fs));
+    --t-22:calc(22px * var(--fs));
+
+    --font-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Noto Sans SC","Noto Sans KR","Microsoft YaHei","Malgun Gothic",system-ui,sans-serif;
+    --font-display:"Zen Antique",Georgia,"Songti SC","Apple SD Gothic Neo",serif;
+    --font-num:"Chivo Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:radial-gradient(120% 80% at 50% 0%, var(--bg-top) 0%, var(--bg) 42%, var(--bg-deep) 100%);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:var(--t-14);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  button,textarea,select{font-family:inherit;color:inherit}
+
+  .app{height:100%;display:flex;flex-direction:column;padding:0 16px;max-width:1220px;margin:0 auto;gap:10px}
+
+  /* ---------- header ---------- */
+  .bar{
+    flex:0 0 auto;padding-block:14px 10px;display:flex;align-items:flex-end;
+    justify-content:space-between;gap:14px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
+  }
+  .count-wrap{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 12rem}
+  .eyebrow{font-size:var(--t-11);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
+  .count{
+    font-family:var(--font-num);font-weight:600;
+    font-size:calc(clamp(25px,6.2vw,40px) * var(--fs));
+    line-height:1.08;font-variant-numeric:tabular-nums;
+    overflow-wrap:anywhere;max-width:100%;
+  }
+  .count.long{font-size:calc(clamp(19px,4.6vw,30px) * var(--fs))}
+  .count.xlong{font-size:calc(clamp(15px,3.6vw,23px) * var(--fs))}
+  .count .unit{font-size:.48em;color:var(--ink-dim);margin-left:.34em;letter-spacing:.04em;font-family:var(--font-body);font-weight:500}
+  .rate{font-family:var(--font-num);font-size:var(--t-13);color:var(--cyan);
+    font-variant-numeric:tabular-nums;font-weight:600;overflow-wrap:anywhere;max-width:100%}
+  .rate .sep{color:var(--ink-faint);margin:0 .45em}
+  .rate .boost{color:var(--gold)}
+  .stage-badge{text-align:right;display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:0 0 auto}
+  .stage-name{font-family:var(--font-display);font-size:var(--t-19);letter-spacing:.05em;color:var(--stage-color,var(--amethyst));line-height:1.15}
+  .meter{width:clamp(96px,30vw,168px);height:6px;border-radius:99px;background:var(--line-soft);border:1px solid var(--line);overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--stage-color,var(--amethyst));transition:width .35s ease}
+  .meter-label{font-size:var(--t-11);color:var(--ink-dim);letter-spacing:.02em;font-weight:500}
+
+  /* ---------- layout ---------- */
+  .main{flex:1 1 auto;min-height:0;display:grid;grid-template-rows:minmax(210px,1.05fr) minmax(0,1fr);gap:10px}
+  @media (min-width:860px){ .main{grid-template-rows:none;grid-template-columns:1fr 400px;gap:22px} }
+
+  /* ---------- stage ---------- */
+  .stage{
+    position:relative;min-height:0;border-radius:18px;overflow:hidden;display:flex;
+    background:linear-gradient(180deg,var(--stage-top,#0E1620) 0%,var(--stage-bot,#0A0F16) 100%);
+    border:1px solid var(--line-soft);
+  }
+  #cv{display:block;width:100%;height:100%;touch-action:manipulation}
+  .stage{-webkit-user-select:none;user-select:none}
+  .tap-btn,.qty,.tab,.item,.mini,.opt{touch-action:manipulation}
+  .tap-btn{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;padding:0;cursor:default;-webkit-tap-highlight-color:transparent}
+  .tap-btn.over{cursor:pointer}
+  .tap-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:-5px;border-radius:18px}
+  .hint{position:absolute;left:12px;right:12px;bottom:42px;text-align:center;font-size:var(--t-12);color:var(--ink-dim);letter-spacing:.08em;pointer-events:none;transition:opacity .5s ease;font-weight:500}
+  .depth{position:absolute;bottom:14px;left:14px;font-family:var(--font-num);font-size:var(--t-11);color:var(--ink-dim);letter-spacing:.04em;pointer-events:none;font-weight:600}
+
+  .stage-tools{position:absolute;top:9px;right:9px;z-index:3;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--panel);border:1px solid var(--line);border-radius:99px;
+    padding:8px 13px;font-size:var(--t-12);color:var(--ink-dim);cursor:pointer;
+    font-weight:500;transition:color .15s ease,border-color .15s ease;min-height:36px;
+  }
+  .chip:hover{color:var(--ink);border-color:var(--ink-faint)}
+  .chip:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .chip svg{display:block;flex:0 0 auto}
+  .chip[aria-expanded="true"]{color:var(--ink);border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+
+  .langpop{
+    position:absolute;top:54px;right:9px;z-index:6;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:6px;display:flex;flex-direction:column;gap:3px;min-width:178px;
+    box-shadow:0 18px 44px rgba(0,0,0,.55);
+  }
+  .langpop button{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:transparent;border:0;border-radius:8px;padding:11px 12px;min-height:46px;
+    font-size:var(--t-13);color:var(--ink-dim);cursor:pointer;font-weight:500;
+  }
+  .langpop button:hover{background:var(--panel-2);color:var(--ink)}
+  .langpop button[aria-pressed="true"]{color:var(--ink);font-weight:700;background:var(--panel-2)}
+  .langpop button:focus-visible{outline:3px solid var(--cyan);outline-offset:-2px}
+  .langpop .lc{font-family:var(--font-num);font-size:var(--t-11);color:var(--ink-faint);width:26px;flex:0 0 auto;font-weight:600}
+  .langpop button[aria-pressed="true"] .lc{color:var(--cyan)}
+
+  .paused-veil{
+    position:absolute;inset:0;z-index:2;display:grid;place-content:center;gap:12px;justify-items:center;
+    background:color-mix(in srgb, var(--bg-deep) 80%, transparent);
+    text-align:center;padding:18px;
+  }
+  .paused-veil b{font-family:var(--font-display);font-size:var(--t-22);font-weight:400;letter-spacing:.12em}
+  .paused-veil span{font-size:var(--t-13);color:var(--ink-dim);line-height:1.8;max-width:34ch}
+  .veil-btn{
+    margin-top:2px;padding:12px 26px;border-radius:99px;cursor:pointer;min-height:46px;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink);font-size:var(--t-14);letter-spacing:.06em;font-weight:500;
+  }
+  .veil-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .veil-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+  /* ---------- panels ---------- */
+  .shop{min-height:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+  .tabs{flex:0 0 auto;display:flex;gap:6px}
+  .tab{
+    flex:1;background:transparent;border:1px solid var(--line-soft);border-radius:10px;
+    padding:11px 4px;font-size:var(--t-13);letter-spacing:.03em;color:var(--ink-dim);
+    cursor:pointer;transition:all .18s ease;font-weight:500;min-height:48px;
+  }
+  .tab[aria-selected="true"]{background:var(--panel-2);color:var(--ink);border-color:var(--line);font-weight:700;box-shadow:inset 0 -3px 0 var(--cyan)}
+  .tab:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .tab .dot{display:inline-block;width:6px;height:6px;border-radius:99px;background:var(--gold);margin-left:5px;vertical-align:middle;opacity:0;transition:opacity .2s}
+  .tab.ready .dot{opacity:1}
+
+  .list{
+    flex:1 1 auto;min-height:0;min-width:0;overflow-y:auto;overscroll-behavior:contain;
+    display:flex;flex-direction:column;gap:7px;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+  }
+  .list::-webkit-scrollbar{width:8px}
+  .list::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+
+  .item{
+    display:flex;flex-wrap:wrap;align-items:center;gap:11px;width:100%;text-align:left;
+    background:var(--panel);border:1px solid var(--line-soft);border-left:3px solid var(--accent,var(--line));
+    border-radius:12px;padding:11px 13px;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .08s ease;
+  }
+  .item:hover:not(:disabled){background:var(--panel-2)}
+  .item:active:not(:disabled){transform:translateY(1px)}
+  .item:disabled{cursor:default;opacity:.55}
+  .item:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .item.afford{border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+  .glyph{width:38px;height:38px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--ink) 8%, transparent);flex:0 0 auto}
+  .item-mid{flex:1 1 140px;min-width:0}
+  .item-name{font-size:var(--t-15);font-weight:700;line-height:1.35;display:block}
+  .item-name b{font-family:var(--font-num);font-weight:600;font-size:var(--t-12);color:var(--ink-dim);margin-left:7px}
+  .item-desc{font-size:var(--t-12);color:var(--ink-dim);line-height:1.55;margin-top:2px;display:block}
+  .item-right{flex:0 1 auto;min-width:0;max-width:100%;margin-left:auto;text-align:right}
+  .price{font-family:var(--font-num);font-size:var(--t-14);font-variant-numeric:tabular-nums;color:var(--ink-dim);font-weight:600;display:block;overflow-wrap:anywhere}
+  .item.afford .price{color:var(--cyan)}
+  .item.afford .price::before{content:"▸ ";font-family:var(--font-body)}
+  .yield{font-size:var(--t-11);color:var(--ink-faint);font-family:var(--font-num);margin-top:3px;display:block;font-weight:600;overflow-wrap:anywhere}
+
+  /* a quiet heading above a group of rows */
+  .sec{display:flex;flex-direction:column;gap:3px;padding:12px 3px 1px}
+  .sec b{font-size:var(--t-13);font-weight:700;color:var(--ink);letter-spacing:.04em}
+  .sec span{font-size:var(--t-11);color:var(--ink-faint);line-height:1.65}
+
+  /* bulk-buy selector above the building list */
+  .qty-row{
+    display:flex;gap:6px;flex:0 0 auto;
+    position:sticky;top:0;z-index:2;
+    padding-bottom:7px;
+    background:linear-gradient(180deg,var(--bg) 64%,transparent);
+  }
+  .qty{
+    flex:1;min-width:0;min-height:44px;padding:10px 4px;border-radius:9px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line-soft);color:var(--ink-faint);
+    font-family:var(--font-num);font-size:var(--t-13);font-weight:600;transition:all .15s ease;
+  }
+  .qty:hover{color:var(--ink-dim)}
+  .qty[aria-pressed="true"]{background:var(--panel-2);border-color:var(--cyan);color:var(--cyan)}
+  .qty:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+  /* milestone: every 10 copies doubles a building's output */
+  .mult{
+    font-style:normal;font-family:var(--font-num);font-size:var(--t-11);font-weight:600;
+    color:var(--gold);margin-left:7px;padding:1px 6px;border-radius:5px;
+    border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);
+  }
+  .ms{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .ms-bar{flex:1 1 auto;height:4px;border-radius:99px;background:var(--line-soft);overflow:hidden;max-width:110px}
+  .ms-bar i{display:block;height:100%;background:var(--accent,var(--cyan));transition:width .2s ease}
+  .ms-txt{font-size:var(--t-11);color:var(--ink-faint);font-weight:600;white-space:nowrap}
+
+  /* first-run guide */
+  .welcome{
+    position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;
+    background:color-mix(in srgb,var(--bg-deep) 88%, transparent);
+  }
+  .welcome-card{
+    width:min(460px,100%);max-height:100%;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:26px 24px calc(22px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 26px 70px rgba(0,0,0,.6);
+  }
+  .welcome-card h2{
+    margin:0 0 10px;font-family:var(--font-display);font-weight:400;
+    font-size:calc(clamp(24px,6.5vw,32px) * var(--fs));letter-spacing:.05em;color:var(--ink);
+  }
+  .welcome-card .lead{margin:0 0 18px;font-size:var(--t-14);color:var(--ink-dim);line-height:1.8}
+  .welcome-card ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:13px}
+  .welcome-card li{display:flex;gap:12px;align-items:flex-start;font-size:var(--t-14);color:var(--ink);line-height:1.7}
+  .welcome-card li span.n{
+    flex:0 0 auto;width:26px;height:26px;border-radius:99px;display:grid;place-items:center;
+    background:var(--cyan);color:var(--bg-deep);font-family:var(--font-num);
+    font-size:var(--t-12);font-weight:600;margin-top:2px;
+  }
+  .welcome-card .more{margin:18px 0 0;font-size:var(--t-12);color:var(--ink-faint);line-height:1.7}
+
+  .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:15px 16px;font-size:var(--t-13);color:var(--ink-dim);line-height:1.8}
+  .card h3{margin:0 0 10px;font-family:var(--font-display);font-size:var(--t-17);color:var(--ink);letter-spacing:.04em;font-weight:400}
+  .card p{margin:0 0 10px}
+  .card p:last-child{margin-bottom:0}
+  .card b{color:var(--ink);font-weight:700}
+  .card em{color:var(--gold);font-style:normal;font-weight:700}
+  .card .quiet{color:var(--ink-faint);font-size:var(--t-12)}
+
+  /* rules */
+  .rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+  .rules li{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line-soft)}
+  .rules li:first-child{border-top:0;padding-top:2px}
+  .rules .rn{
+    flex:0 0 auto;font-family:var(--font-num);font-size:var(--t-12);font-weight:600;color:var(--bg);
+    background:var(--ink-faint);border-radius:99px;width:24px;height:24px;
+    display:grid;place-items:center;margin-top:3px;
+  }
+  .rules .rt{display:block;color:var(--ink);font-weight:700;font-size:var(--t-14);line-height:1.5;margin-bottom:3px}
+  .rules .rb{display:block;font-size:var(--t-13);line-height:1.85;color:var(--ink-dim)}
+
+  .big-btn{
+    width:100%;margin-top:12px;padding:14px;border-radius:10px;cursor:pointer;min-height:50px;
+    background:color-mix(in srgb,var(--gold) 20%, var(--panel));
+    border:1px solid var(--gold);color:var(--gold);
+    font-size:var(--t-14);letter-spacing:.05em;font-weight:700;transition:filter .15s ease;
+  }
+  .big-btn:hover:not(:disabled){filter:brightness(1.2)}
+  .big-btn:disabled{opacity:.45;cursor:default;filter:none}
+  .big-btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+  .stat-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:var(--t-13)}
+  .stat-row:last-of-type{border-bottom:0}
+  .stat-row span:last-child{font-family:var(--font-num);color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+
+  .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:7px;margin-top:8px}
+  .opt{
+    display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:9px;cursor:pointer;min-height:44px;
+    background:var(--panel-2);border:1px solid var(--line-soft);font-size:var(--t-13);color:var(--ink-dim);
+    transition:all .15s ease;font-weight:500;text-align:left;
+  }
+  .opt:hover{color:var(--ink)}
+  .opt[aria-pressed="true"]{border-color:var(--cyan);color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 1px var(--cyan)}
+  .opt[aria-pressed="true"] .tickbox::after{content:"✓";font-size:var(--t-12);color:var(--cyan);font-weight:700}
+  .opt:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .sw{width:18px;height:18px;border-radius:5px;flex:0 0 auto;border:1px solid var(--ink-faint)}
+  .tickbox{width:18px;height:18px;border-radius:4px;flex:0 0 auto;border:1px solid var(--ink-faint);display:grid;place-items:center}
+
+  .lang-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+  select.lang{
+    flex:1 1 170px;min-height:46px;padding:11px 12px;border-radius:9px;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-size:var(--t-14);font-weight:500;cursor:pointer;
+  }
+  select.lang:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+  .code{
+    width:100%;height:58px;resize:vertical;margin-top:9px;
+    background:var(--bg-deep);border:1px solid var(--line);border-radius:9px;padding:10px 11px;
+    font-family:var(--font-num);font-size:var(--t-12);line-height:1.7;color:var(--ink-dim);word-break:break-all;
+  }
+  .code:focus{outline:3px solid var(--cyan);outline-offset:-1px;color:var(--ink)}
+  .code.msg{height:96px;font-family:var(--font-body);font-size:var(--t-13);word-break:normal}
+  .envbox{
+    margin-top:7px;padding:9px 11px;border-radius:9px;
+    background:var(--bg-deep);border:1px solid var(--line-soft);
+    font-family:var(--font-num);font-size:calc(10.5px * var(--fs));line-height:1.65;
+    color:var(--ink-faint);white-space:pre-wrap;word-break:break-all;
+    max-height:104px;overflow-y:auto;
+  }
+  .btn-row{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .mini{
+    flex:1 1 auto;min-width:112px;min-height:46px;padding:12px 11px;border-radius:9px;cursor:pointer;
+    text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);font-size:var(--t-13);
+    font-weight:500;transition:all .15s ease;
+  }
+  .mini:hover{color:var(--ink);border-color:var(--ink-faint)}
+  .mini:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .mini.warn{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 55%,transparent)}
+
+  /* ---------- popups ---------- */
+  /* sits inside the cave, near its top edge, so it never drifts over
+     the shop column on a wide screen */
+  .bigpop{
+    position:absolute;left:50%;top:clamp(14px,7%,64px);
+    transform:translate(-50%,-10px) scale(.94);
+    z-index:8;pointer-events:none;text-align:center;
+    padding:22px 26px;border-radius:18px;
+    width:max-content;min-width:min(300px,calc(100% - 28px));max-width:calc(100% - 28px);
+    background:var(--panel);border:2px solid var(--pop,var(--gold));
+    box-shadow:0 22px 60px rgba(0,0,0,.6);
+    opacity:0;transition:opacity .28s ease, transform .34s cubic-bezier(.2,1.5,.4,1);
+  }
+  .bigpop.show{opacity:1;transform:translate(-50%,0) scale(1)}
+  .bp-kicker{font-size:var(--t-12);letter-spacing:.26em;color:var(--pop,var(--gold));text-transform:uppercase;margin-bottom:10px;font-weight:700}
+  .bp-title{font-family:var(--font-display);font-size:calc(clamp(26px,7vw,38px) * var(--fs));line-height:1.2;letter-spacing:.05em;color:var(--ink)}
+  .bp-sub{margin-top:11px;font-size:var(--t-14);color:var(--ink-dim);line-height:1.75;overflow-wrap:anywhere}
+
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 20px;
+    font-size:var(--t-13);color:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.55);font-weight:500;
+    opacity:0;pointer-events:none;transition:opacity .4s ease, transform .4s ease;
+    z-index:21;max-width:calc(100% - 32px);text-align:center;line-height:1.6;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+  @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important} }
+</style>
+
+</head><body><div class="app">
+  <header class="bar">
+    <div class="count-wrap">
+      <div class="eyebrow" id="lblCrystals">結晶</div>
+      <div class="count" id="count">0</div>
+      <div class="rate" id="rate"></div>
+    </div>
+    <div class="stage-badge" id="badge">
+      <div class="stage-name" id="stageName">石英</div>
+      <div class="meter" id="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="meterFill" style="width:0%"></i></div>
+      <div class="meter-label" id="meterLabel"></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="stage">
+      <canvas id="cv"></canvas>
+      <button class="tap-btn" id="tap"></button>
+      <div class="depth" id="depth">0m</div>
+      <div class="hint" id="hint"></div>
+      <div class="stage-tools">
+        <button class="chip" id="fsBtn" hidden aria-pressed="false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="fsIcon"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/></svg>
+          <span id="fsLabel"></span>
+        </button>
+        <button class="chip" id="langBtn" aria-expanded="false" aria-haspopup="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>
+          <span id="langCode">JA</span>
+        </button>
+        <button class="chip" id="pauseBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" id="pauseIcon"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          <span id="pauseLabel"></span>
+        </button>
+      </div>
+      <div class="langpop" id="langPop" role="menu" hidden></div>
+      <div class="bigpop" id="bigpop" role="status" aria-live="polite">
+        <div class="bp-kicker" id="bpKicker"></div>
+        <div class="bp-title" id="bpTitle"></div>
+        <div class="bp-sub" id="bpSub"></div>
+      </div>
+      <div class="paused-veil" id="veil" hidden>
+        <b id="veilTitle"></b>
+        <span id="veilBody"></span>
+        <button class="veil-btn" id="resumeBtn"></button>
+      </div>
+    </section>
+
+    <section class="shop">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-mine" aria-selected="true"></button>
+        <button class="tab" role="tab" id="tab-core" aria-selected="false"><span id="tabCoreLabel"></span><span class="dot"></span></button>
+        <button class="tab" role="tab" id="tab-bonus" aria-selected="false" hidden></button>
+        <button class="tab" role="tab" id="tab-menu" aria-selected="false"></button>
+      </div>
+      <div class="list" id="listMine" role="tabpanel"></div>
+      <div class="list" id="listCore" role="tabpanel" hidden></div>
+      <div class="list" id="listBonus" role="tabpanel" hidden></div>
+      <div class="list" id="listMenu" role="tabpanel" hidden></div>
+    </section>
+  </div>
+</div>
+
+<div class="welcome" id="welcome" hidden>
+  <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="wcTitle">
+    <h2 id="wcTitle"></h2>
+    <p class="lead" id="wcLead"></p>
+    <ol id="wcList"></ol>
+    <button class="big-btn" id="wcStart"></button>
+    <p class="more" id="wcMore"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+
+  /* placeholder until the real inbox is decided — example.com is reserved
+     for exactly this, so nothing can be sent anywhere by accident */
+  const SUPPORT_MAIL = 'support@example.com';
+  /* the site's contact page — swap in your own domain when it is live */
+  const CONTACT_URL = 'https://example.com/contact.html';
+  const VERSION = '1.1';
+
+  /* ================================================================
+     Rewarded ads — one seam, four back ends
+     ----------------------------------------------------------------
+     'off'    nothing is shown anywhere. This is the default, so the
+              game ships complete with no advertising at all.
+     'test'   pretends an ad played, for trying the rewards out.
+              Turn on with ?ads=test in the address bar.
+     'h5'     Google AdSense H5 Games Ads, for the web build. Needs the
+              AdSense tag in the page, which only works on your own
+              domain (see the note at the end of this file).
+     'native' AdMob inside an iOS app. The app answers through
+              window.CCAds.grant(id) / window.CCAds.fail(id).
+     Nothing below knows which one is live, so switching back ends
+     never touches the game.
+     ================================================================ */
+
+  const Ads = {
+    mode:'off', busy:false, _pending:null,
+
+    init(){
+      let m = '';
+      try{ m = new URLSearchParams(location.search).get('ads') || ''; }catch(e){}
+      /* the query string never reaches a sandboxed preview frame,
+         so the switch in the menu is the reliable way in */
+      if(!m){ try{ m = localStorage.getItem('cc-ads') || ''; }catch(e){} }
+      if(!m && window.CC_AD_MODE) m = String(window.CC_AD_MODE);
+      if(!m){
+        if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.ccAds) m = 'native';
+        else if(typeof window.adBreak === 'function') m = 'h5';
+      }
+      this.mode = ['test','h5','native'].indexOf(m) >= 0 ? m : 'off';
+      if(this.mode === 'native'){
+        window.CCAds = {
+          grant: id => this._settle(id, true),
+          fail:  id => this._settle(id, false)
+        };
+      }
+      return this.mode;
+    },
+
+    _settle(id, ok){
+      const p = this._pending;
+      this._pending = null; this.busy = false;
+      if(p && p.id === id) (ok ? p.ok : p.no)();
+    },
+
+    show(id, ok, no){
+      if(this.mode === 'off' || this.busy){ no(); return; }
+      this.busy = true;
+
+      if(this.mode === 'test'){
+        setTimeout(() => { this.busy = false; ok(); }, 600);
+        return;
+      }
+      if(this.mode === 'native'){
+        this._pending = {id, ok, no};
+        try{ window.webkit.messageHandlers.ccAds.postMessage({reward:id}); }
+        catch(e){ this._settle(id, false); return; }
+        setTimeout(() => { if(this._pending && this._pending.id === id) this._settle(id, false); }, 45000);
+        return;
+      }
+      // h5 — Google's Ad Placement API
+      let viewed = false;
+      try{
+        window.adBreak({
+          type:'reward', name:id,
+          beforeReward: showAd => showAd(),
+          adViewed: () => { viewed = true; },
+          adDismissed: () => {},
+          adBreakDone: () => { this.busy = false; (viewed ? ok : no)(); }
+        });
+      }catch(e){ this.busy = false; no(); }
+    }
+  };
+
+  /* ================================================================
+     Native bridge — silent and harmless in a plain browser.
+     The iOS app registers message handlers of these names; on the web
+     they simply do not exist, so every call here is a no-op.
+     ================================================================ */
+  const Native = {
+    get on(){
+      try{ return !!(window.webkit && window.webkit.messageHandlers); }
+      catch(e){ return false; }
+    },
+    post(name, data){
+      try{
+        const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name];
+        if(h) h.postMessage(data || {});
+      }catch(e){}
+    },
+    /* Touch, standing where sound would be. This game has no audio at all,
+       so on a phone the taptic engine is the one extra sense available. */
+    haptic(kind){ this.post('ccHaptic', {kind: kind}); },
+    /* Hand the app enough to schedule "the cave is full" for later. */
+    idle(){
+      this.post('ccIdle', {
+        rate: Math.round(baseRate()),
+        paused: !!S.paused,
+        fullAfterSeconds: 8*3600
+      });
+    }
+  };
+
+  /* what each reward gives, and how long before it can be claimed again */
+  const REWARDS = [
+    {id:'skip',  cd:1200, glyph:'clock'},
+    {id:'boost', cd:1800, glyph:'bolt'},
+    {id:'orb',   cd:600,  glyph:'spark', ok:() => !orb},
+    {id:'core',  cd:1800, glyph:'core',  ok:() => coresOnReset() > 0}
+  ];
+
+  /* ================================================================
+     translations
+     ================================================================ */
+
+  const LANGS = [
+    {id:'ja', code:'JA', label:'日本語',    locale:'ja-JP', num:'ja'},
+    {id:'en', code:'EN', label:'English',   locale:'en-US', num:'en'},
+    {id:'zh', code:'ZH', label:'简体中文',  locale:'zh-CN', num:'zh'},
+    {id:'ko', code:'KO', label:'한국어',    locale:'ko-KR', num:'ko'},
+    {id:'es', code:'ES', label:'Español',   locale:'es-ES', num:'en'}
+  ];
+
+  const T = {
+  ja:{
+    crystals:'結晶', perSec:'毎秒', coreMult:'核', resonance:'共鳴', remain:n=>'残り'+n+'秒',
+    stages:['石英','紫水晶','蛍石','黄玉','紅玉','黒曜石','虹晶','深淵晶','星核晶','虚空晶','黎明晶','終晶'],
+    nextIs:(n,c)=>'次は '+n+'（'+c+'）', deepest:'最深部', depth:d=>'深度 '+d+'m',
+    tapHint:'結晶をタップして掘る', tapAria:'結晶を掘る',
+    pause:'一時停止', resume:'再開', pauseAria:'一時停止と再開',
+    veilTitle:'一時停止中', veilBody:'採掘も自動収入も止まっています。この間は結晶がまったく増えません。',
+    tabMine:'掘る', tabCore:'再結晶', tabMenu:'メニュー',
+    taps:{pick:['ツルハシを研ぐ','1回の採掘で得られる結晶 +1'], glove:['共鳴の手袋','採掘量に毎秒収入の +3% を加算']},
+    gens:{moss:['光るコケ','壁のコケが結晶の粉をこぼす'], drill:['ちいさな掘削機','ぜんまい仕掛けで壁を削り続ける'],
+      bat:['コウモリ運搬係','暗がりから結晶を運んでくる'], vein:['地脈ポンプ','地下水ごと結晶を汲み上げる'],
+      golem:['結晶ゴーレム','岩の体で鉱脈を掘り進む'], forge:['星屑の炉','落ちてきた星の欠片を結晶に変える'],
+      react:['地核リアクター','惑星の中心から直接汲み出す']},
+    mine:'採掘', perSecShort:'/秒', pctOf:n=>'毎秒の3%×'+n,
+    evKicker:'ミニイベント',
+    events:{lode:['豊穣の鉱脈','壁の裂け目から結晶がこぼれ落ちた'],
+      echo:['結晶の共鳴','30秒のあいだ、すべての収入が5倍'],
+      visitor:['迷い込んだ者','手土産を置いていった']},
+    gainLine:v=>'結晶 +'+v,
+    rebirthTitle:'再結晶',
+    rebirthBody:'すべての結晶と設備を溶かし、<em>核</em>に変えます。核ひとつにつき、以降の採掘量と毎秒収入が <em>+2%</em>。深く掘るほど多くの核が残ります。',
+    haveCores:'いま持っている核', curMult:'現在の倍率', gainCores:'再結晶で得られる核',
+    doRebirth:n=>'再結晶して核を '+n+' つ得る', rebirthLocked:'累計100万結晶で解放',
+    rebirthKicker:'再結晶', rebirthDone:(n,m)=>'核を '+n+' つ得た<br>以降の収入が ×'+m,
+    recordsTitle:'記録', recRun:'今回の採掘量', recAll:'全期間の採掘量', recClicks:'手で掘った回数',
+    recEvents:'拾った光の球', recResets:'再結晶の回数', recStage:'到達した鉱脈', recLoops:'開いた鉱脈',
+    sealed:'再結晶すると次の鉱脈が開く', unlockSub:n=>'新しい鉱脈「'+n+'」が開いた',
+    howtoTitle:'あそびかた',
+    howto:[
+      ['中央の結晶をタップする','これが基本の操作です。1回ごとに結晶が手に入ります。キーボードなら Tab キーで選び、スペースキーで掘れます。'],
+      ['設備を買って自動化する','「掘る」タブで設備を買うと、放っておいても毎秒たまるようになります。買うほど値上がりしますが、<b>10個ごとに生産量が2倍</b>。上の「×10」「×MAX」でまとめ買いもできます。'],
+      ['鉱脈を深く進める','累計の採掘量が増えると鉱脈が変わり、結晶の色と形が変化します。石英から虹晶まで全7種類あります。'],
+      ['光る球を拾う','ときどき光る球が画面を横切ります。消える前にタップするとボーナス。3種類あり、いちばん良いのは30秒間すべて5倍になる「結晶の共鳴」です。'],
+      ['再結晶で強くなる','累計100万結晶で解放されます。すべてリセットする代わりに、永久に効く倍率「核」が残ります。2周目からが本番です。'],
+      ['自動で保存される','進行状況はこの端末に自動保存されます。閉じても続きから始まります。留守のあいだも半分の速度でたまります（最大8時間分）。'],
+      ['止めたいときは一時停止','画面の右上にあります。押している間は数字が一切動きません。']
+    ],
+    pauseSecTitle:'採掘を止める',
+    pauseSecBody:'画面右上の「一時停止」を押すと、自動収入もタップも完全に止まります。もう一度押せば再開します。止めている間の時間は加算されません。',
+    pauseSecBtn:'一時停止する', pauseSecBtnOn:'再開する',
+    langTitle:'言語', langBody:'表示する言語を選んでください。この端末に記憶されます。',
+    sizeTitle:'文字の大きさ', sizeBody:'画面全体の文字が大きくなります。',
+    sizes:['小','標準','大','特大'],
+    skinTitle:'背景と配色', skinBody:'読みやすい配色を選んでください。下の2つはコントラストを最大にしたユニバーサル配色です。',
+    skins:{cave:'洞窟',sea:'深海',dusk:'夕闇',moss:'苔',washi:'和紙',ink:'墨',hcd:'高コントラスト（黒）',hcl:'高コントラスト（白）'},
+    saveTitle:'セーブデータ',
+    saveBody1:'ふだんは自動保存なので、何もしなくて大丈夫です。<b>別の端末に移したいとき</b>や控えを取りたいときだけ、下のコードをコピーして保存してください。',
+    saveBody2:'読み込むときは、コードを貼りつけて「読み込む」を押します。いまの進行状況は上書きされます。',
+    makeCode:'コードを作る', copyCode:'コピー', loadCode:'読み込む', wipe:'最初からやり直す', wipeArm:'本当に消す？（もう一度押す）',
+    codeMade:'コードを作りました', copied:n=>n+'をコピーしました', copyManual:'選択しました。長押しか Ctrl+C でコピーしてください',
+    emptyCode:'コードが空です', badCode:'このコードは読み取れませんでした',
+    loadKicker:'読み込み', loadTitle:'読み込み完了', loadSub:v=>'累計 '+v+' 結晶の続きから',
+    wipeDone:'最初からになりました',
+    shareTitle:'成果を共有する', shareBody:'いまの記録を文章にします。ボタンを押すと投稿画面が開きます。',
+    copyText:'文章をコピー', shareX:'Xで投稿', shareBsky:'Blueskyで投稿', shareLine:'LINEで送る',
+    sharePrivacy:'このゲームのページは非公開です。リンクは文章に含めていません。他の人にも開いてほしいときは、画面右上の共有メニューから公開設定を変えてください。',
+    shareLines:(d,s,g,c,m)=>['放置ゲーム「結晶洞窟」','深度 '+d+'m・'+s+'の鉱脈','累計 '+g+' 結晶を掘りました']
+      .concat(c>0?['核 '+c+' 個（収入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
+    newVeinKicker:'新しい鉱脈', newVeinSub:d=>'新しい鉱脈に到達しました<br>深度 '+d+'m',
+    backKicker:'おかえり', backTitle:'おかえり', backSub:(t,v)=>'留守の '+t+' で<br>結晶 +'+v,
+    hm:(h,m)=>h>0?h+'時間'+m+'分':m+'分',
+    codeLabel:'セーブコード', textLabel:'文章', pasteHere:'ここにセーブコードを貼りつけ',
+    bugTitle:'不具合の報告・お問い合わせ',
+    bugBody:'うまく動かないところや、こうしてほしいという要望があれば教えてください。下の欄に書いて、メールで送るか、内容をコピーして送ってください。',
+    bugPlaceholder:'例：特大の文字にすると設備の値段が読めません／こういう設備が欲しいです',
+    bugWith:'送信内容には、下の動作環境が自動で付きます（個人情報は含まれません）。',
+    bugMail:'メールで送る', bugCopy:'内容をコピー', bugSubject:'結晶洞窟：不具合の報告',
+    bugEnv:'動作環境', bugEmpty:'内容が空です', bugMailLabel:'あて先',
+    bugDummy:'※ いまのあて先は仮のものです。完成時に本物のアドレスに差し替えます。',
+    bugOpen:'報告ページを開く', bugCopyEnv:'動作環境をコピー',
+    bugEnvNote:'報告するときは、下の動作環境もいっしょに貼り付けてください。個人情報は含まれません。',
+    msNext:n=>'倍化まであと '+n,
+    welcomeTitle:'結晶洞窟へ',
+    welcomeLead:'音をいっさい使わない、静かな放置ゲームです。3つだけ覚えれば遊べます。',
+    welcomeLines:['中央の結晶をタップすると、結晶が手に入ります',
+      '結晶で設備を買うと、放っておいても増えていきます',
+      '光る球が流れてきたら、消える前にタップするとボーナス'],
+    welcomeStart:'はじめる',
+    welcomeMore:'くわしいあそびかた、文字の大きさ、背景の色は、いつでもメニューから変えられます。',
+    reopenGuide:'はじめの案内をもう一度見る',
+    rwTitle:'ボーナス',
+    rwNote:'短い動画を見ると受け取れます。見なくても最後まで遊べます。',
+    rwWatch:'動画を見る', rwWait:s=>'あと '+s, rwKicker:'ボーナス',
+    rwFail:'広告を読み込めませんでした。少し待ってからもう一度お試しください。',
+    rewards:{skip:['時間スキップ','放置8時間分の結晶をいますぐ受け取る'],
+      boost:['共鳴の延長','30分間、すべての収入が2倍'],
+      orb:['光る球を呼ぶ','ミニイベントの球をすぐに出す'],
+      core:['核の増量','次の再結晶で得られる核が25%増える']},
+    rwGot:{skip:v=>'結晶 +'+v, boost:'30分間、すべての収入が2倍',
+      orb:'球が流れてきた', core:'次の再結晶で核が25%増える'},
+    adsTitle:'ボーナスのテスト表示',
+    adsBody:'動画リワードの受け口を試すためのスイッチです。「試す」にすると「掘る」タブにボーナスが現れ、押すと本物の広告の代わりに0.6秒の待ち時間が入って報酬が届きます。広告は一切読み込みません。',
+    adsOn:'試す', adsOff:'使わない',
+    fsOn:'フル画面', fsOff:'もどす',
+    tabBonus:'ボーナス',
+    rwLeft:'本日の残り', rwOf:(n,m)=>n+' / '+m+' 回',
+    rwResetNote:'日付が変わると回数がリセットされます。',
+    rwEmpty:'本日の回数を使い切りました', rwResetIn:t=>'リセットまで '+t
+  },
+  en:{
+    crystals:'Crystals', perSec:'per sec', coreMult:'Cores', resonance:'Resonance', remain:n=>n+'s left',
+    stages:['Quartz','Amethyst','Fluorite','Topaz','Ruby','Obsidian','Prism','Abyssite','Starcore','Voidglass','Dawnstone','Omega'],
+    nextIs:(n,c)=>'Next: '+n+' ('+c+')', deepest:'Deepest seam', depth:d=>'Depth '+d+'m',
+    tapHint:'Tap the crystal to mine', tapAria:'Mine the crystal',
+    pause:'Pause', resume:'Resume', pauseAria:'Pause or resume',
+    veilTitle:'Paused', veilBody:'Mining and income are both stopped. Nothing accumulates while paused.',
+    tabMine:'Mine', tabCore:'Rebirth', tabMenu:'Menu',
+    taps:{pick:['Sharpen the Pick','+1 crystal per tap'], glove:['Resonance Gloves','Each tap also adds 3% of your income per second']},
+    gens:{moss:['Glowing Moss','Moss on the walls sheds crystal dust'], drill:['Little Drill','A clockwork bit grinds away at the wall'],
+      bat:['Bat Porter','Carries crystals out of the dark'], vein:['Ley Pump','Draws up crystals with the groundwater'],
+      golem:['Crystal Golem','Digs the seam open with a body of stone'], forge:['Stardust Forge','Turns fallen star fragments into crystal'],
+      react:['Core Reactor','Draws straight from the heart of the planet']},
+    mine:'Per tap', perSecShort:'/s', pctOf:n=>'3% of income ×'+n,
+    evKicker:'MINI EVENT',
+    events:{lode:['Rich Seam','Crystals spill out of a crack in the wall'],
+      echo:['Crystal Resonance','All income ×5 for 30 seconds'],
+      visitor:['Lost Visitor','Left a gift behind']},
+    gainLine:v=>'+'+v+' crystals',
+    rebirthTitle:'Rebirth',
+    rebirthBody:'Melt every crystal and building down into <em>cores</em>. Each core adds <em>+2%</em> to your tap value and income from then on. The deeper you dig, the more cores are left behind.',
+    haveCores:'Cores held', curMult:'Current multiplier', gainCores:'Cores from rebirth',
+    doRebirth:n=>'Rebirth for '+n+' cores', rebirthLocked:'Unlocks at 1M total crystals',
+    rebirthKicker:'Rebirth', rebirthDone:(n,m)=>'Gained '+n+' cores<br>Income is now ×'+m,
+    recordsTitle:'Records', recRun:'This run', recAll:'All time', recClicks:'Taps',
+    recEvents:'Orbs caught', recResets:'Rebirths', recStage:'Deepest seam', recLoops:'Seams opened',
+    sealed:'Rebirth to open the next seam', unlockSub:n=>'A new seam opened: '+n,
+    howtoTitle:'How to play',
+    howto:[
+      ['Tap the crystal','That is the whole basic move. Every tap gives you crystals. On a keyboard, press Tab to select it and Space to mine.'],
+      ['Buy buildings to automate','Buildings in the Mine tab earn crystals every second, even while you do nothing. Each copy costs more than the last, but <b>every 10 copies doubles that building\u2019s output</b>. The \u00d710 and \u00d7MAX buttons buy in bulk.'],
+      ['Push the seam deeper','As your all-time total grows, the seam changes and the crystal shifts colour and shape. There are seven, from Quartz to Prism.'],
+      ['Catch the glowing orbs','Now and then a glowing orb drifts across the screen. Tap it before it fades for a bonus. There are three; the best is Crystal Resonance, which makes everything ×5 for 30 seconds.'],
+      ['Rebirth to grow stronger','Unlocks at one million total crystals. You reset everything, but keep permanent multiplier cores. The second run is where the game opens up.'],
+      ['It saves itself','Progress is stored on this device automatically. Close the page and pick up where you left off. While you are away it keeps earning at half speed, up to 8 hours.'],
+      ['Pause whenever you like','The button is at the top right. Nothing moves at all while it is on.']
+    ],
+    pauseSecTitle:'Stopping the mine',
+    pauseSecBody:'Press Pause at the top right and both income and tapping stop completely. Press it again to resume. Time spent paused is never counted.',
+    pauseSecBtn:'Pause', pauseSecBtnOn:'Resume',
+    langTitle:'Language', langBody:'Choose the language you want. It is remembered on this device.',
+    sizeTitle:'Text size', sizeBody:'Scales every piece of text on the page.',
+    sizes:['Small','Normal','Large','Largest'],
+    skinTitle:'Background and colours', skinBody:'Pick whichever is easiest to read. The last two are maximum-contrast schemes.',
+    skins:{cave:'Cave',sea:'Deep sea',dusk:'Dusk',moss:'Moss',washi:'Paper',ink:'Ink',hcd:'High contrast (dark)',hcl:'High contrast (light)'},
+    saveTitle:'Save data',
+    saveBody1:'The game saves itself, so normally there is nothing to do. Copy the code below only if you want to <b>move to another device</b> or keep a backup.',
+    saveBody2:'To restore, paste a code and press Load. Your current progress is overwritten.',
+    makeCode:'Make a code', copyCode:'Copy', loadCode:'Load', wipe:'Start over', wipeArm:'Really erase? (press again)',
+    codeMade:'Code created', copied:n=>n+' copied', copyManual:'Selected. Copy with Ctrl+C or a long press.',
+    emptyCode:'The code is empty', badCode:'That code could not be read',
+    loadKicker:'Load', loadTitle:'Loaded', loadSub:v=>'Resuming at '+v+' crystals all time',
+    wipeDone:'Reset to the beginning',
+    shareTitle:'Share your progress', shareBody:'Turns your current record into text. The buttons open a post window.',
+    copyText:'Copy the text', shareX:'Post on X', shareBsky:'Post on Bluesky', shareLine:'Send on LINE',
+    sharePrivacy:'This game page is private, so no link is included in the text. To let other people open it, change the sharing setting from the share menu at the top right.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, an idle game','Depth '+d+'m, the '+s+' seam',g+' crystals mined all time']
+      .concat(c>0?[c+' cores (income ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NEW SEAM', newVeinSub:d=>'You reached a new seam<br>Depth '+d+'m',
+    backKicker:'WELCOME BACK', backTitle:'Welcome back', backSub:(t,v)=>'While you were away for '+t+'<br>+'+v+' crystals',
+    hm:(h,m)=>h>0?h+'h '+m+'m':m+' min',
+    codeLabel:'Save code', textLabel:'Text', pasteHere:'Paste a save code here',
+    bugTitle:'Report a problem or get in touch',
+    bugBody:'Tell me about anything that does not work, or anything you would like changed. Write it below and either send it by email or copy the text and send it however you prefer.',
+    bugPlaceholder:'e.g. at the largest text size the prices are cut off / I would like a building that does X',
+    bugWith:'Your message is sent with the details below (no personal information is included).',
+    bugMail:'Send by email', bugCopy:'Copy the message', bugSubject:'Crystal Cavern: problem report',
+    bugEnv:'Details', bugEmpty:'The message is empty', bugMailLabel:'To',
+    bugDummy:'Note: this address is a placeholder and will be replaced with a real one when the game is finished.',
+    bugOpen:'Open the report page', bugCopyEnv:'Copy the details',
+    bugEnvNote:'When you report something, paste the details below along with it. They contain no personal information.',
+    msNext:n=>n+' to double',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'A quiet idle game with no sound at all. Three things are all you need.',
+    welcomeLines:['Tap the crystal in the middle to earn crystals',
+      'Spend them on buildings, which keep earning while you are away',
+      'When a glowing orb drifts past, tap it before it fades for a bonus'],
+    welcomeStart:'Start',
+    welcomeMore:'The full rules, the text size and the colours are all in the Menu tab whenever you want them.',
+    reopenGuide:'Show the opening guide again',
+    rwTitle:'Bonuses',
+    rwNote:'Watch a short video to claim one. The game is fully playable without them.',
+    rwWatch:'Watch a video', rwWait:s=>s+' left', rwKicker:'BONUS',
+    rwFail:'The ad could not be loaded. Please try again in a moment.',
+    rewards:{skip:['Time skip','Claim 8 hours of idle earnings right now'],
+      boost:['Extended resonance','All income \u00d72 for 30 minutes'],
+      orb:['Summon an orb','Bring out a mini-event orb straight away'],
+      core:['Extra cores','25% more cores at your next rebirth']},
+    rwGot:{skip:v=>'+'+v+' crystals', boost:'All income \u00d72 for 30 minutes',
+      orb:'An orb drifts in', core:'25% more cores at your next rebirth'},
+    adsTitle:'Try out the bonuses',
+    adsBody:'A switch for testing the rewarded-video hooks. Turn it on and the bonuses appear in the Mine tab; pressing one waits 0.6 seconds in place of a real advert and then hands you the reward. No advert is ever loaded.',
+    adsOn:'Try them', adsOff:'Off',
+    fsOn:'Full screen', fsOff:'Exit',
+    tabBonus:'Bonuses',
+    rwLeft:'Left today', rwOf:(n,m)=>n+' of '+m,
+    rwResetNote:'The count resets when the date changes.',
+    rwEmpty:'None left today', rwResetIn:t=>'Resets in '+t
+  },
+  zh:{
+    crystals:'结晶', perSec:'每秒', coreMult:'核', resonance:'共鸣', remain:n=>'剩余'+n+'秒',
+    stages:['石英','紫水晶','萤石','黄玉','红宝石','黑曜石','虹晶','深渊晶','星核晶','虚空晶','黎明晶','终晶'],
+    nextIs:(n,c)=>'下一层：'+n+'（'+c+'）', deepest:'最深处', depth:d=>'深度 '+d+'m',
+    tapHint:'点击结晶开始挖掘', tapAria:'挖掘结晶',
+    pause:'暂停', resume:'继续', pauseAria:'暂停或继续',
+    veilTitle:'已暂停', veilBody:'挖掘与自动收入都已停止。暂停期间不会增加任何结晶。',
+    tabMine:'挖掘', tabCore:'重结晶', tabMenu:'菜单',
+    taps:{pick:['磨快镐子','每次挖掘获得的结晶 +1'], glove:['共鸣手套','每次挖掘额外获得每秒收入的 3%']},
+    gens:{moss:['发光的苔藓','墙上的苔藓洒落结晶粉末'], drill:['小型钻机','发条装置不停地磨削岩壁'],
+      bat:['蝙蝠搬运工','从黑暗深处把结晶运出来'], vein:['地脉泵','连着地下水一起把结晶抽上来'],
+      golem:['结晶巨人','用岩石之躯凿开矿脉'], forge:['星尘熔炉','把坠落的星屑炼成结晶'],
+      react:['地核反应炉','直接从行星中心汲取']},
+    mine:'每次挖掘', perSecShort:'/秒', pctOf:n=>'每秒收入的3%×'+n,
+    evKicker:'小事件',
+    events:{lode:['丰饶矿脉','结晶从岩壁的裂缝中洒落'],
+      echo:['结晶共鸣','30秒内所有收入 ×5'],
+      visitor:['迷路的来客','留下了一份伴手礼']},
+    gainLine:v=>'结晶 +'+v,
+    rebirthTitle:'重结晶',
+    rebirthBody:'将所有结晶与设备熔解成<em>核</em>。每个核为之后的挖掘量与每秒收入带来 <em>+2%</em>。挖得越深，留下的核越多。',
+    haveCores:'现有的核', curMult:'当前倍率', gainCores:'重结晶可得的核',
+    doRebirth:n=>'重结晶并获得 '+n+' 个核', rebirthLocked:'累计100万结晶后解锁',
+    rebirthKicker:'重结晶', rebirthDone:(n,m)=>'获得了 '+n+' 个核<br>之后的收入为 ×'+m,
+    recordsTitle:'记录', recRun:'本轮挖掘量', recAll:'累计挖掘量', recClicks:'手动挖掘次数',
+    recEvents:'拾到的光球', recResets:'重结晶次数', recStage:'到达的矿脉', recLoops:'已开启的矿脉',
+    sealed:'重结晶后会开启下一层矿脉', unlockSub:n=>'开启了新矿脉「'+n+'」',
+    howtoTitle:'玩法说明',
+    howto:[
+      ['点击中央的结晶','这就是最基本的操作，每点一次就能获得结晶。用键盘时按 Tab 选中，再按空格键挖掘。'],
+      ['购买设备实现自动化','在「挖掘」标签购买设备后，即使放着不管也会每秒累积结晶。买得越多价格越高，但<b>每满10个产量翻倍</b>。用上方的「×10」「×MAX」可以批量购买。'],
+      ['向更深的矿脉推进','累计挖掘量增加后矿脉会改变，结晶的颜色与形状也随之变化。从石英到虹晶共有7种。'],
+      ['拾取光球','光球会不时横穿画面，在它消失前点击即可获得奖励。共有3种，最好的是让一切收入在30秒内变成5倍的「结晶共鸣」。'],
+      ['用重结晶变强','累计100万结晶后解锁。代价是全部重置，但会留下永久生效的倍率「核」。第二轮才是真正的开始。'],
+      ['自动保存','进度会自动保存在这台设备上，关掉页面也能接着玩。离开期间也会以一半的速度累积（最多8小时）。'],
+      ['想停下来就暂停','按钮在画面右上角。开启期间数字完全不动。']
+    ],
+    pauseSecTitle:'停止挖掘',
+    pauseSecBody:'按下画面右上角的「暂停」，自动收入与点击都会完全停止。再按一次即可继续。暂停期间的时间不会被计入。',
+    pauseSecBtn:'暂停', pauseSecBtnOn:'继续',
+    langTitle:'语言', langBody:'请选择显示语言。选择会记忆在这台设备上。',
+    sizeTitle:'文字大小', sizeBody:'整个画面的文字都会放大。',
+    sizes:['小','标准','大','特大'],
+    skinTitle:'背景与配色', skinBody:'请选择看得最清楚的配色。最后两种是对比度最高的无障碍配色。',
+    skins:{cave:'洞窟',sea:'深海',dusk:'暮色',moss:'苔',washi:'和纸',ink:'墨',hcd:'高对比（黑）',hcl:'高对比（白）'},
+    saveTitle:'存档数据',
+    saveBody1:'平时会自动保存，什么都不用做。只有想<b>换到其他设备</b>或留个备份时，才需要复制下面的代码保存起来。',
+    saveBody2:'读取时，粘贴代码并按「读取」。当前进度会被覆盖。',
+    makeCode:'生成代码', copyCode:'复制', loadCode:'读取', wipe:'从头开始', wipeArm:'真的要删除？（再按一次）',
+    codeMade:'已生成代码', copied:n=>'已复制'+n, copyManual:'已选中。请长按或用 Ctrl+C 复制。',
+    emptyCode:'代码是空的', badCode:'无法读取这个代码',
+    loadKicker:'读取', loadTitle:'读取完成', loadSub:v=>'从累计 '+v+' 结晶继续',
+    wipeDone:'已回到最初',
+    shareTitle:'分享成果', shareBody:'把现在的记录变成一段文字。按下按钮会打开发布画面。',
+    copyText:'复制文字', shareX:'发到 X', shareBsky:'发到 Bluesky', shareLine:'用 LINE 发送',
+    sharePrivacy:'这个游戏页面尚未公开，因此文字中没有包含链接。想让别人也能打开时，请从画面右上角的分享菜单更改公开设置。',
+    shareLines:(d,s,g,c,m)=>['放置游戏《结晶洞窟》','深度 '+d+'m・'+s+'矿脉','累计挖掘了 '+g+' 结晶']
+      .concat(c>0?['核 '+c+' 个（收入 ×'+m+'）']:[]).concat(['#结晶洞窟']).join('\n'),
+    newVeinKicker:'新矿脉', newVeinSub:d=>'到达了新的矿脉<br>深度 '+d+'m',
+    backKicker:'欢迎回来', backTitle:'欢迎回来', backSub:(t,v)=>'离开的 '+t+'里<br>结晶 +'+v,
+    hm:(h,m)=>h>0?h+'小时'+m+'分':m+'分',
+    codeLabel:'存档代码', textLabel:'文字', pasteHere:'在此粘贴存档代码',
+    bugTitle:'问题反馈・联系',
+    bugBody:'如果有运作不正常的地方，或者希望改进的地方，请告诉我。写在下面的框里，用邮件发送，或者复制内容发给我。',
+    bugPlaceholder:'例：文字调到特大后设备价格看不全／希望增加这样的设备',
+    bugWith:'发送内容会自动附上下面的运行环境（不含个人信息）。',
+    bugMail:'用邮件发送', bugCopy:'复制内容', bugSubject:'结晶洞窟：问题反馈',
+    bugEnv:'运行环境', bugEmpty:'内容是空的', bugMailLabel:'收件人',
+    bugDummy:'※ 当前收件地址是临时的，游戏完成时会换成正式地址。',
+    bugOpen:'打开反馈页面', bugCopyEnv:'复制运行环境',
+    bugEnvNote:'反馈时，请把下面的运行环境一起粘贴过去。其中不含个人信息。',
+    msNext:n=>'再 '+n+' 个翻倍',
+    welcomeTitle:'欢迎来到结晶洞窟',
+    welcomeLead:'完全不使用声音的安静放置游戏。只要记住三件事就能玩。',
+    welcomeLines:['点击中央的结晶，即可获得结晶',
+      '用结晶购买设备，之后放着不管也会持续增加',
+      '光球飘过时，在它消失前点击即可获得奖励'],
+    welcomeStart:'开始',
+    welcomeMore:'详细玩法、文字大小、背景配色，随时都能在菜单里更改。',
+    reopenGuide:'再看一次开场说明',
+    rwTitle:'奖励',
+    rwNote:'观看短视频即可领取。不看也能玩到最后。',
+    rwWatch:'观看视频', rwWait:s=>'还有 '+s, rwKicker:'奖励',
+    rwFail:'广告加载失败，请稍后再试。',
+    rewards:{skip:['时间跳过','立即领取8小时的放置收益'],
+      boost:['共鸣延长','30分钟内所有收入×2'],
+      orb:['召唤光球','立刻让小事件的光球出现'],
+      core:['核增量','下次重结晶获得的核增加25%']},
+    rwGot:{skip:v=>'结晶 +'+v, boost:'30分钟内所有收入×2',
+      orb:'光球飘来了', core:'下次重结晶的核增加25%'},
+    adsTitle:'奖励的测试显示',
+    adsBody:'用于测试视频奖励接口的开关。打开后「挖掘」标签会出现奖励，按下时以0.6秒的等待代替真实广告，然后发放奖励。不会加载任何广告。',
+    adsOn:'试用', adsOff:'关闭',
+    fsOn:'全屏', fsOff:'退出',
+    tabBonus:'奖励',
+    rwLeft:'今天剩余', rwOf:(n,m)=>n+' / '+m+' 次',
+    rwResetNote:'日期变更后次数会重置。',
+    rwEmpty:'今天的次数已用完', rwResetIn:t=>'距离重置 '+t
+  },
+  ko:{
+    crystals:'결정', perSec:'초당', coreMult:'핵', resonance:'공명', remain:n=>n+'초 남음',
+    stages:['석영','자수정','형석','황옥','홍옥','흑요석','무지개 결정','심연 결정','성핵 결정','허공 결정','여명 결정','종극 결정'],
+    nextIs:(n,c)=>'다음은 '+n+'（'+c+'）', deepest:'최심부', depth:d=>'깊이 '+d+'m',
+    tapHint:'결정을 눌러 채굴하기', tapAria:'결정 채굴',
+    pause:'일시정지', resume:'재개', pauseAria:'일시정지 또는 재개',
+    veilTitle:'일시정지 중', veilBody:'채굴과 자동 수입이 모두 멈췄습니다. 이 동안에는 결정이 전혀 늘지 않습니다.',
+    tabMine:'채굴', tabCore:'재결정', tabMenu:'메뉴',
+    taps:{pick:['곡괭이 갈기','한 번 채굴할 때 얻는 결정 +1'], glove:['공명 장갑','채굴량에 초당 수입의 3%를 더함']},
+    gens:{moss:['빛나는 이끼','벽의 이끼가 결정 가루를 떨어뜨린다'], drill:['작은 굴착기','태엽 장치가 벽을 계속 깎아낸다'],
+      bat:['박쥐 운반꾼','어둠 속에서 결정을 실어 나른다'], vein:['지맥 펌프','지하수와 함께 결정을 끌어올린다'],
+      golem:['결정 골렘','돌의 몸으로 광맥을 파헤친다'], forge:['별먼지 화로','떨어진 별 조각을 결정으로 바꾼다'],
+      react:['지핵 원자로','행성의 중심에서 직접 끌어올린다']},
+    mine:'채굴량', perSecShort:'/초', pctOf:n=>'초당 수입의 3%×'+n,
+    evKicker:'미니 이벤트',
+    events:{lode:['풍요의 광맥','벽의 틈에서 결정이 쏟아졌다'],
+      echo:['결정의 공명','30초 동안 모든 수입이 5배'],
+      visitor:['길 잃은 손님','선물을 놓고 갔다']},
+    gainLine:v=>'결정 +'+v,
+    rebirthTitle:'재결정',
+    rebirthBody:'모든 결정과 설비를 녹여 <em>핵</em>으로 바꿉니다. 핵 하나마다 이후의 채굴량과 초당 수입이 <em>+2%</em>. 깊이 파면 파을수록 많은 핵이 남습니다.',
+    haveCores:'보유한 핵', curMult:'현재 배율', gainCores:'재결정으로 얻는 핵',
+    doRebirth:n=>'재결정하여 핵 '+n+'개 얻기', rebirthLocked:'누적 100만 결정에서 해금',
+    rebirthKicker:'재결정', rebirthDone:(n,m)=>'핵 '+n+'개를 얻었다<br>이후 수입이 ×'+m,
+    recordsTitle:'기록', recRun:'이번 채굴량', recAll:'전체 채굴량', recClicks:'직접 캔 횟수',
+    recEvents:'주운 빛의 구슬', recResets:'재결정 횟수', recStage:'도달한 광맥', recLoops:'열린 광맥',
+    sealed:'재결정하면 다음 광맥이 열립니다', unlockSub:n=>'새 광맥 「'+n+'」이 열렸다',
+    howtoTitle:'플레이 방법',
+    howto:[
+      ['가운데 결정을 누르기','가장 기본이 되는 조작입니다. 한 번 누를 때마다 결정을 얻습니다. 키보드에서는 Tab으로 선택하고 스페이스로 캘 수 있습니다.'],
+      ['설비를 사서 자동화하기','「채굴」탭에서 설비를 사면 가만히 두어도 매초 결정이 쌓입니다. 살수록 값이 오르지만 <b>10개마다 생산량이 2배</b>가 됩니다. 위의 「×10」「×MAX」로 한꺼번에 살 수 있습니다.'],
+      ['광맥을 더 깊이 파기','누적 채굴량이 늘면 광맥이 바뀌고 결정의 색과 모양도 변합니다. 석영부터 무지개 결정까지 모두 7종류.'],
+      ['빛의 구슬 줍기','이따금 빛나는 구슬이 화면을 지나갑니다. 사라지기 전에 누르면 보너스. 3종류가 있고, 가장 좋은 것은 30초간 모든 수입이 5배가 되는 「결정의 공명」입니다.'],
+      ['재결정으로 강해지기','누적 100만 결정에서 해금됩니다. 전부 초기화하는 대신 영구히 적용되는 배율 「핵」이 남습니다. 두 번째 회차부터가 진짜입니다.'],
+      ['자동으로 저장됨','진행 상황은 이 기기에 자동 저장됩니다. 닫아도 이어서 시작합니다. 자리를 비운 동안에도 절반 속도로 쌓입니다(최대 8시간분).'],
+      ['멈추고 싶을 때는 일시정지','화면 오른쪽 위에 있습니다. 켜져 있는 동안 숫자가 전혀 움직이지 않습니다.']
+    ],
+    pauseSecTitle:'채굴 멈추기',
+    pauseSecBody:'화면 오른쪽 위의 「일시정지」를 누르면 자동 수입과 터치가 완전히 멈춥니다. 한 번 더 누르면 재개됩니다. 멈춘 동안의 시간은 더해지지 않습니다.',
+    pauseSecBtn:'일시정지', pauseSecBtnOn:'재개하기',
+    langTitle:'언어', langBody:'표시할 언어를 선택하세요. 이 기기에 기억됩니다.',
+    sizeTitle:'글자 크기', sizeBody:'화면 전체의 글자가 커집니다.',
+    sizes:['작게','기본','크게','아주 크게'],
+    skinTitle:'배경과 배색', skinBody:'읽기 쉬운 배색을 선택하세요. 아래 두 가지는 명암비를 최대로 한 배색입니다.',
+    skins:{cave:'동굴',sea:'심해',dusk:'황혼',moss:'이끼',washi:'한지',ink:'먹',hcd:'고명암(검정)',hcl:'고명암(흰색)'},
+    saveTitle:'세이브 데이터',
+    saveBody1:'평소에는 자동 저장되므로 아무것도 하지 않아도 됩니다. <b>다른 기기로 옮기고 싶을 때</b>나 사본을 남기고 싶을 때만 아래 코드를 복사해 두세요.',
+    saveBody2:'불러올 때는 코드를 붙여넣고 「불러오기」를 누릅니다. 현재 진행 상황은 덮어써집니다.',
+    makeCode:'코드 만들기', copyCode:'복사', loadCode:'불러오기', wipe:'처음부터 하기', wipeArm:'정말 지울까요?(한 번 더)',
+    codeMade:'코드를 만들었습니다', copied:n=>n+'를 복사했습니다', copyManual:'선택했습니다. 길게 누르거나 Ctrl+C로 복사하세요.',
+    emptyCode:'코드가 비어 있습니다', badCode:'이 코드는 읽을 수 없습니다',
+    loadKicker:'불러오기', loadTitle:'불러오기 완료', loadSub:v=>'누적 '+v+' 결정부터 계속',
+    wipeDone:'처음으로 돌아갔습니다',
+    shareTitle:'성과 공유하기', shareBody:'지금의 기록을 문장으로 만듭니다. 버튼을 누르면 게시 화면이 열립니다.',
+    copyText:'문장 복사', shareX:'X에 올리기', shareBsky:'Bluesky에 올리기', shareLine:'LINE으로 보내기',
+    sharePrivacy:'이 게임 페이지는 비공개이므로 문장에 링크를 넣지 않았습니다. 다른 사람도 열 수 있게 하려면 화면 오른쪽 위 공유 메뉴에서 공개 설정을 바꿔 주세요.',
+    shareLines:(d,s,g,c,m)=>['방치형 게임 「결정 동굴」','깊이 '+d+'m・'+s+' 광맥','누적 '+g+' 결정을 캤습니다']
+      .concat(c>0?['핵 '+c+'개(수입 ×'+m+')']:[]).concat(['#결정동굴']).join('\n'),
+    newVeinKicker:'새 광맥', newVeinSub:d=>'새로운 광맥에 도달했습니다<br>깊이 '+d+'m',
+    backKicker:'환영합니다', backTitle:'다시 오셨네요', backSub:(t,v)=>'자리를 비운 '+t+' 동안<br>결정 +'+v,
+    hm:(h,m)=>h>0?h+'시간 '+m+'분':m+'분',
+    codeLabel:'세이브 코드', textLabel:'문장', pasteHere:'여기에 세이브 코드를 붙여넣기',
+    bugTitle:'문제 신고・문의',
+    bugBody:'제대로 움직이지 않는 곳이나 이렇게 해 주었으면 하는 점이 있으면 알려 주세요. 아래 칸에 적어서 메일로 보내거나, 내용을 복사해 전달해 주세요.',
+    bugPlaceholder:'예: 글자를 아주 크게 하면 설비 가격이 보이지 않습니다 / 이런 설비를 원합니다',
+    bugWith:'보내는 내용에는 아래 동작 환경이 자동으로 붙습니다(개인정보는 포함되지 않습니다).',
+    bugMail:'메일로 보내기', bugCopy:'내용 복사', bugSubject:'결정 동굴: 문제 신고',
+    bugEnv:'동작 환경', bugEmpty:'내용이 비어 있습니다', bugMailLabel:'받는 곳',
+    bugDummy:'※ 현재 주소는 임시입니다. 완성 시 실제 주소로 교체합니다.',
+    bugOpen:'신고 페이지 열기', bugCopyEnv:'동작 환경 복사',
+    bugEnvNote:'신고하실 때 아래 동작 환경도 함께 붙여넣어 주세요. 개인정보는 포함되지 않습니다.',
+    msNext:n=>'2배까지 '+n+'개',
+    welcomeTitle:'결정 동굴에 오신 것을 환영합니다',
+    welcomeLead:'소리를 전혀 쓰지 않는 조용한 방치형 게임입니다. 세 가지만 기억하면 됩니다.',
+    welcomeLines:['가운데 결정을 누르면 결정을 얻습니다',
+      '결정으로 설비를 사면 자리를 비워도 계속 쌓입니다',
+      '빛나는 구슬이 지나갈 때, 사라지기 전에 누르면 보너스'],
+    welcomeStart:'시작하기',
+    welcomeMore:'자세한 방법, 글자 크기, 배경 색은 언제든 메뉴에서 바꿀 수 있습니다.',
+    reopenGuide:'처음 안내를 다시 보기',
+    rwTitle:'보너스',
+    rwNote:'짧은 영상을 보면 받을 수 있습니다. 보지 않아도 끝까지 즐길 수 있습니다.',
+    rwWatch:'영상 보기', rwWait:s=>s+' 남음', rwKicker:'보너스',
+    rwFail:'광고를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.',
+    rewards:{skip:['시간 건너뛰기','방치 8시간분의 결정을 지금 받기'],
+      boost:['공명 연장','30분간 모든 수입이 2배'],
+      orb:['빛의 구슬 부르기','미니 이벤트 구슬을 바로 등장시키기'],
+      core:['핵 증량','다음 재결정에서 얻는 핵이 25% 증가']},
+    rwGot:{skip:v=>'결정 +'+v, boost:'30분간 모든 수입이 2배',
+      orb:'구슬이 흘러왔다', core:'다음 재결정에서 핵이 25% 증가'},
+    adsTitle:'보너스 테스트 표시',
+    adsBody:'영상 보상 연결부를 시험하기 위한 스위치입니다. 켜면 「채굴」탭에 보너스가 나타나고, 누르면 실제 광고 대신 0.6초를 기다린 뒤 보상이 들어옵니다. 광고는 전혀 불러오지 않습니다.',
+    adsOn:'시험하기', adsOff:'사용 안 함',
+    fsOn:'전체 화면', fsOff:'나가기',
+    tabBonus:'보너스',
+    rwLeft:'오늘 남은 횟수', rwOf:(n,m)=>n+' / '+m+'회',
+    rwResetNote:'날짜가 바뀌면 횟수가 초기화됩니다.',
+    rwEmpty:'오늘 횟수를 모두 사용했습니다', rwResetIn:t=>'초기화까지 '+t
+  },
+  es:{
+    crystals:'Cristales', perSec:'por seg', coreMult:'Núcleos', resonance:'Resonancia', remain:n=>'quedan '+n+' s',
+    stages:['Cuarzo','Amatista','Fluorita','Topacio','Rubí','Obsidiana','Prisma','Abisita','Núcleo estelar','Vidrio del vacío','Piedra del alba','Omega'],
+    nextIs:(n,c)=>'Siguiente: '+n+' ('+c+')', deepest:'Veta más profunda', depth:d=>'Profundidad '+d+' m',
+    tapHint:'Toca el cristal para excavar', tapAria:'Excavar el cristal',
+    pause:'Pausa', resume:'Seguir', pauseAria:'Pausar o continuar',
+    veilTitle:'En pausa', veilBody:'La excavación y los ingresos están detenidos. Nada se acumula mientras está en pausa.',
+    tabMine:'Excavar', tabCore:'Renacer', tabMenu:'Menú',
+    taps:{pick:['Afilar el pico','+1 cristal por cada toque'], glove:['Guantes de resonancia','Cada toque suma un 3% de tus ingresos por segundo']},
+    gens:{moss:['Musgo luminoso','El musgo de las paredes suelta polvo de cristal'], drill:['Taladro pequeño','Un mecanismo de cuerda desgasta la pared'],
+      bat:['Murciélago porteador','Trae cristales desde la oscuridad'], vein:['Bomba de veta','Sube cristales junto con el agua subterránea'],
+      golem:['Gólem de cristal','Abre la veta con su cuerpo de piedra'], forge:['Forja de polvo estelar','Convierte fragmentos de estrella en cristal'],
+      react:['Reactor del núcleo','Extrae directo del centro del planeta']},
+    mine:'Por toque', perSecShort:'/s', pctOf:n=>'3% de ingresos ×'+n,
+    evKicker:'EVENTO',
+    events:{lode:['Veta abundante','Los cristales caen de una grieta en la pared'],
+      echo:['Resonancia cristalina','Todos los ingresos ×5 durante 30 segundos'],
+      visitor:['Visitante perdido','Dejó un obsequio']},
+    gainLine:v=>'+'+v+' cristales',
+    rebirthTitle:'Renacer',
+    rebirthBody:'Funde todos los cristales y las instalaciones en <em>núcleos</em>. Cada núcleo añade <em>+2%</em> a lo que excavas y a tus ingresos. Cuanto más profundo llegues, más núcleos quedan.',
+    haveCores:'Núcleos en tu poder', curMult:'Multiplicador actual', gainCores:'Núcleos al renacer',
+    doRebirth:n=>'Renacer y obtener '+n+' núcleos', rebirthLocked:'Se abre al llegar a 1 M en total',
+    rebirthKicker:'Renacer', rebirthDone:(n,m)=>'Obtuviste '+n+' núcleos<br>Ahora los ingresos son ×'+m,
+    recordsTitle:'Registros', recRun:'Esta partida', recAll:'Total histórico', recClicks:'Toques',
+    recEvents:'Orbes atrapados', recResets:'Renaceres', recStage:'Veta alcanzada', recLoops:'Vetas abiertas',
+    sealed:'Renace para abrir la siguiente veta', unlockSub:n=>'Se abrió una veta nueva: '+n,
+    howtoTitle:'Cómo se juega',
+    howto:[
+      ['Toca el cristal del centro','Es todo el gesto básico. Cada toque te da cristales. Con teclado, selecciona con Tab y excava con la barra espaciadora.'],
+      ['Compra instalaciones','Las instalaciones de la pestaña Excavar producen cristales cada segundo, incluso si no haces nada. Cada copia cuesta más que la anterior, pero <b>cada 10 copias duplican su producción</b>. Los botones ×10 y ×MAX compran en bloque.'],
+      ['Baja a vetas más profundas','Cuando crece tu total histórico, la veta cambia y el cristal cambia de color y forma. Hay siete, del Cuarzo al Prisma.'],
+      ['Atrapa los orbes','De vez en cuando un orbe luminoso cruza la pantalla. Tócalo antes de que se apague para conseguir un premio. Hay tres; el mejor es Resonancia cristalina, que multiplica todo por 5 durante 30 segundos.'],
+      ['Renace para hacerte fuerte','Se abre al llegar a un millón en total. Reinicias todo, pero conservas núcleos que multiplican para siempre. La segunda partida es donde empieza lo bueno.'],
+      ['Se guarda solo','El progreso se guarda en este dispositivo. Puedes cerrar la página y continuar después. Mientras no estás sigue produciendo a mitad de velocidad, hasta 8 horas.'],
+      ['Pausa cuando quieras','El botón está arriba a la derecha. Con la pausa activada nada se mueve.']
+    ],
+    pauseSecTitle:'Detener la mina',
+    pauseSecBody:'Pulsa Pausa arriba a la derecha y se detienen por completo los ingresos y los toques. Púlsalo otra vez para continuar. El tiempo en pausa nunca se cuenta.',
+    pauseSecBtn:'Pausar', pauseSecBtnOn:'Continuar',
+    langTitle:'Idioma', langBody:'Elige el idioma que prefieras. Se recuerda en este dispositivo.',
+    sizeTitle:'Tamaño del texto', sizeBody:'Amplía todo el texto de la página.',
+    sizes:['Pequeño','Normal','Grande','Muy grande'],
+    skinTitle:'Fondo y colores', skinBody:'Elige la combinación que te resulte más legible. Las dos últimas tienen el contraste máximo.',
+    skins:{cave:'Cueva',sea:'Mar profundo',dusk:'Crepúsculo',moss:'Musgo',washi:'Papel',ink:'Tinta',hcd:'Alto contraste (oscuro)',hcl:'Alto contraste (claro)'},
+    saveTitle:'Partida guardada',
+    saveBody1:'El juego se guarda solo, así que normalmente no hay nada que hacer. Copia el código de abajo únicamente si quieres <b>pasar a otro dispositivo</b> o guardar una copia.',
+    saveBody2:'Para restaurar, pega un código y pulsa Cargar. Tu progreso actual se sobrescribe.',
+    makeCode:'Crear código', copyCode:'Copiar', loadCode:'Cargar', wipe:'Empezar de cero', wipeArm:'¿Borrar de verdad? (pulsa otra vez)',
+    codeMade:'Código creado', copied:n=>n+' copiado', copyManual:'Seleccionado. Copia con Ctrl+C o una pulsación larga.',
+    emptyCode:'El código está vacío', badCode:'No se pudo leer ese código',
+    loadKicker:'Cargar', loadTitle:'Cargado', loadSub:v=>'Continúas con '+v+' cristales en total',
+    wipeDone:'Vuelta al principio',
+    shareTitle:'Comparte tu avance', shareBody:'Convierte tu registro actual en un texto. Los botones abren la ventana de publicación.',
+    copyText:'Copiar el texto', shareX:'Publicar en X', shareBsky:'Publicar en Bluesky', shareLine:'Enviar por LINE',
+    sharePrivacy:'Esta página es privada, así que el texto no incluye ningún enlace. Para que otras personas puedan abrirla, cambia la configuración en el menú de compartir de arriba a la derecha.',
+    shareLines:(d,s,g,c,m)=>['«Caverna de Cristal», un juego idle','Profundidad '+d+' m, veta de '+s,g+' cristales excavados en total']
+      .concat(c>0?[c+' núcleos (ingresos ×'+m+')']:[]).concat(['#CavernaDeCristal']).join('\n'),
+    newVeinKicker:'NUEVA VETA', newVeinSub:d=>'Has llegado a una veta nueva<br>Profundidad '+d+' m',
+    backKicker:'BIENVENIDO', backTitle:'Bienvenido de vuelta', backSub:(t,v)=>'Mientras estabas fuera '+t+'<br>+'+v+' cristales',
+    hm:(h,m)=>h>0?h+' h '+m+' min':m+' min',
+    codeLabel:'Código de guardado', textLabel:'Texto', pasteHere:'Pega aquí un código de guardado',
+    bugTitle:'Informar de un fallo o contactar',
+    bugBody:'Cuéntame cualquier cosa que no funcione bien o que te gustaría cambiar. Escríbelo abajo y envíalo por correo, o copia el texto y mándalo como prefieras.',
+    bugPlaceholder:'p. ej.: con el texto muy grande no se ven los precios / me gustaría una instalación que haga X',
+    bugWith:'Tu mensaje se envía junto con los datos de abajo (no incluye información personal).',
+    bugMail:'Enviar por correo', bugCopy:'Copiar el mensaje', bugSubject:'Caverna de Cristal: informe de fallo',
+    bugEnv:'Datos', bugEmpty:'El mensaje está vacío', bugMailLabel:'Para',
+    bugDummy:'Nota: esta dirección es provisional y se cambiará por una real cuando el juego esté terminado.',
+    bugOpen:'Abrir la página de contacto', bugCopyEnv:'Copiar los datos',
+    bugEnvNote:'Cuando informes de algo, pega también los datos de abajo. No contienen información personal.',
+    msNext:n=>n+' para duplicar',
+    welcomeTitle:'Caverna de Cristal',
+    welcomeLead:'Un juego idle tranquilo, sin ningún sonido. Con tres cosas ya puedes jugar.',
+    welcomeLines:['Toca el cristal del centro para conseguir cristales',
+      'Gástalos en instalaciones, que siguen produciendo mientras no estás',
+      'Cuando pase un orbe luminoso, tócalo antes de que se apague para un premio'],
+    welcomeStart:'Empezar',
+    welcomeMore:'Las reglas completas, el tamaño del texto y los colores están en la pestaña Menú.',
+    reopenGuide:'Ver otra vez la guía inicial',
+    rwTitle:'Bonus',
+    rwNote:'Mira un vídeo corto para conseguirlo. El juego se puede terminar sin ellos.',
+    rwWatch:'Ver un vídeo', rwWait:s=>'quedan '+s, rwKicker:'BONUS',
+    rwFail:'No se pudo cargar el anuncio. Inténtalo de nuevo en un momento.',
+    rewards:{skip:['Salto de tiempo','Recibe ya 8 horas de producción en reposo'],
+      boost:['Resonancia extendida','Todos los ingresos ×2 durante 30 minutos'],
+      orb:['Invocar un orbe','Hace aparecer un orbe al instante'],
+      core:['Núcleos extra','25% más núcleos en tu próximo renacer']},
+    rwGot:{skip:v=>'+'+v+' cristales', boost:'Todos los ingresos ×2 durante 30 minutos',
+      orb:'Llega un orbe', core:'25% más núcleos en tu próximo renacer'},
+    adsTitle:'Probar los bonus',
+    adsBody:'Un interruptor para probar los enganches de vídeo recompensado. Al activarlo aparecen los bonus en la pestaña Excavar; al pulsar uno se espera 0,6 segundos en lugar de un anuncio real y llega la recompensa. No se carga ningún anuncio.',
+    adsOn:'Probarlos', adsOff:'Desactivado',
+    fsOn:'Pantalla completa', fsOff:'Salir',
+    tabBonus:'Bonus',
+    rwLeft:'Quedan hoy', rwOf:(n,m)=>n+' de '+m,
+    rwResetNote:'La cuenta se reinicia al cambiar la fecha.',
+    rwEmpty:'No quedan para hoy', rwResetIn:t=>'Se reinicia en '+t
+  }};
+
+  let langId = 'ja';
+  let L = T.ja;
+  const langDef = () => LANGS.find(l => l.id === langId) || LANGS[0];
+
+
+  /* ================================================================
+     skins  (all text/background pairs kept at high contrast)
+     ================================================================ */
+
+  const SKINS = [
+    {id:'cave', dark:true,
+      v:{'--bg':'#16120D','--bg-deep':'#0D0A06','--bg-top':'#332619','--panel':'#211A12','--panel-2':'#2D2419',
+         '--line':'#584734','--line-soft':'#3C3022','--ink':'#FAF3E8','--ink-dim':'#DBCBB3','--ink-faint':'#B3A187',
+         '--cyan':'#7FE6D6','--gold':'#FFCF7A','--amethyst':'#CFA6F5','--alert':'#FF9BA4',
+         '--stage-top':'#1D1710','--stage-bot':'#100C07'}, rock:'#0C0905'},
+    {id:'sea', dark:true,
+      v:{'--bg':'#03202B','--bg-deep':'#011119','--bg-top':'#064454','--panel':'#052D3A','--panel-2':'#083E4E',
+         '--line':'#146C80','--line-soft':'#0C4B5C','--ink':'#E2FBFF','--ink-dim':'#A6DEEB','--ink-faint':'#79BACB',
+         '--cyan':'#57F2E4','--gold':'#FFD27E','--amethyst':'#C3A8FA','--alert':'#FF9DB2',
+         '--stage-top':'#04303E','--stage-bot':'#021620'}, rock:'#021019'},
+    {id:'dusk', dark:true,
+      v:{'--bg':'#1A0F1D','--bg-deep':'#110815','--bg-top':'#3A2240','--panel':'#28182C','--panel-2':'#35203A',
+         '--line':'#5E4064','--line-soft':'#432C48','--ink':'#FAEDF8','--ink-dim':'#DABFD8','--ink-faint':'#B493B1',
+         '--cyan':'#8FE9E4','--gold':'#F8CB7E','--amethyst':'#DFAEFF','--alert':'#FFA2B6',
+         '--stage-top':'#241429','--stage-bot':'#140A17'}, rock:'#110814'},
+    {id:'hcd', dark:true,
+      v:{'--bg':'#000000','--bg-deep':'#000000','--bg-top':'#161616','--panel':'#0C0C0C','--panel-2':'#1A1A1A',
+         '--line':'#7A7A7A','--line-soft':'#4D4D4D','--ink':'#FFFFFF','--ink-dim':'#EDEDED','--ink-faint':'#C9C9C9',
+         '--cyan':'#4FF5E9','--gold':'#FFD94A','--amethyst':'#DDB0FF','--alert':'#FF8FA3',
+         '--stage-top':'#080808','--stage-bot':'#000000'}, rock:'#1A1A1A'},
+    {id:'hcl', dark:false,
+      v:{'--bg':'#FFFFFF','--bg-deep':'#F2F2F2','--bg-top':'#FFFFFF','--panel':'#FFFFFF','--panel-2':'#F0F0F0',
+         '--line':'#5E5E5E','--line-soft':'#9A9A9A','--ink':'#000000','--ink-dim':'#1F1F1F','--ink-faint':'#454545',
+         '--cyan':'#00615C','--gold':'#7A4E00','--amethyst':'#54219B','--alert':'#9B0025',
+         '--stage-top':'#FFFFFF','--stage-bot':'#EDEDED'}, rock:'#B4B4B4'}
+  ];
+  let skin = SKINS[0];
+
+  function applySkin(id){
+    const s = SKINS.find(x => x.id === id) || SKINS[0];
+    skin = s;
+    const root = document.documentElement;
+    for(const k in s.v) root.style.setProperty(k, s.v[k]);
+    root.style.colorScheme = s.dark ? 'dark' : 'light';
+    document.querySelectorAll('[data-skin]').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.skin === s.id)));
+    try{ localStorage.setItem('cc-skin', s.id); }catch(e){}
+  }
+
+  const FS = [0.92, 1, 1.14, 1.32];
+  let fsIndex = 1;
+  function applyFs(i){
+    fsIndex = Math.max(0, Math.min(FS.length-1, i));
+    document.documentElement.style.setProperty('--fs', String(FS[fsIndex]));
+    document.querySelectorAll('[data-fs]').forEach(b =>
+      b.setAttribute('aria-pressed', String(+b.dataset.fs === fsIndex)));
+    try{ localStorage.setItem('cc-fs', String(fsIndex)); }catch(e){}
+    resize();
+  }
+
+  /* ================================================================
+     game data
+     ================================================================ */
+
+  const STAGES = [
+    {at:0,     hue:196, sat:22, light:82, depth:0},
+    {at:600,   hue:272, sat:62, light:70, depth:120},
+    {at:9e3,   hue:164, sat:58, light:64, depth:480},
+    {at:1.4e5, hue:40,  sat:74, light:66, depth:1500},
+    {at:2.2e6, hue:348, sat:68, light:64, depth:4200},
+    {at:3.5e7, hue:258, sat:30, light:46, depth:9800},
+    {at:6e8,   hue:-1,  sat:70, light:68, depth:22000},
+    /* opened one at a time by rebirthing at the deepest seam you have */
+    {at:1.2e10, hue:220, sat:82, light:58, depth:34000},
+    {at:3e11,   hue:52,  sat:90, light:74, depth:48000},
+    {at:8e12,   hue:291, sat:42, light:40, depth:64000},
+    {at:2e14,   hue:14,  sat:86, light:70, depth:82000},
+    {at:6e15,   hue:-1,  sat:22, light:92, depth:104000}
+  ];
+  const BASE_SEAMS = 7;   // how many are open on the first run
+  const TAPS = [
+    {id:'pick',  base:30,   grow:1.32, accent:'var(--cyan)', glyph:'pick'},
+    {id:'glove', base:9000, grow:1.5,  accent:'var(--cyan)', glyph:'glove', need:6000}
+  ];
+  const GENS = [
+    {id:'moss',  base:20,    rate:0.3,   accent:'#7FD98A', glyph:'moss'},
+    {id:'drill', base:180,   rate:1.8,   accent:'#8FB4D9', glyph:'drill'},
+    {id:'bat',   base:2200,  rate:11,    accent:'#C29CF2', glyph:'bat'},
+    {id:'vein',  base:26000, rate:62,    accent:'#7FE6E0', glyph:'pump'},
+    {id:'golem', base:33e4,  rate:340,   accent:'#F2C673', glyph:'golem'},
+    {id:'forge', base:51e5,  rate:1900,  accent:'#F28FA6', glyph:'forge'},
+    {id:'react', base:82e6,  rate:11000, accent:'#F2F6FA', glyph:'react'}
+  ];
+  const EVENT_IDS = ['lode','echo','visitor'];
+  const EVENT_COLOR = {lode:'#F2C673', echo:'#C29CF2', visitor:'#7FE6E0'};
+
+  const S = {c:0,total:0,grand:0,cores:0,loops:0,taps:{pick:0,glove:0},gens:{},clicks:0,resets:0,events:0,paused:false,coreBonus:0,adcd:{},adDay:'',adUsed:0,t:Date.now()};
+  GENS.forEach(g => S.gens[g.id] = 0);
+  const SAVE_KEY = 'crystal-cave-v1';
+  let boost = {mult:1, until:0};
+
+  function save(){ try{ S.t = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+  function applyData(d){
+    if(!d || typeof d !== 'object') return false;
+    S.c=+d.c||0; S.total=+d.total||0; S.grand=+d.grand||+d.total||0;
+    S.cores=+d.cores||0; S.loops=+d.loops||0; S.clicks=+d.clicks||0; S.resets=+d.resets||0; S.events=+d.events||0;
+    S.coreBonus=+d.coreBonus||0; S.adcd = (d.adcd && typeof d.adcd === 'object') ? d.adcd : {};
+    S.adDay = d.adDay || ''; S.adUsed = +d.adUsed||0;
+    S.paused = !!d.paused;
+    TAPS.forEach(t => S.taps[t.id] = (d.taps ? +d.taps[t.id] : 0) || 0);
+    GENS.forEach(g => S.gens[g.id] = (d.gens ? +d.gens[g.id] : 0) || 0);
+    return true;
+  }
+  function load(){
+    let raw = null;
+    try{ raw = localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+    if(!raw) return null;
+    try{ const d = JSON.parse(raw); return applyData(d) ? (+d.t || null) : null; }catch(e){ return null; }
+  }
+
+  const coreMult = () => 1 + S.cores*0.02;
+  const boostMult = () => (Date.now() < boost.until ? boost.mult : 1);
+  const costOf = (d,o) => Math.ceil(d.base * Math.pow(d.grow||1.15, o));
+  /* buying k copies at once: a geometric series, so no loop is needed */
+  function costN(d, o, k){
+    const r = d.grow||1.15;
+    return Math.ceil(d.base * Math.pow(r,o) * (Math.pow(r,k)-1)/(r-1));
+  }
+  function maxAffordable(d, o, money){
+    const r = d.grow||1.15, c0 = d.base*Math.pow(r,o);
+    if(money < c0) return 0;
+    return Math.max(0, Math.min(2000, Math.floor(Math.log(1 + money*(r-1)/c0)/Math.log(r))));
+  }
+  /* every 10 copies of a building doubles what it produces */
+  const MS_STEP = 10;
+  const msMult = owned => Math.pow(2, Math.floor(owned/MS_STEP));
+  const genOutput = g => g.rate * S.gens[g.id] * msMult(S.gens[g.id]);
+
+  let buyQty = 1;   // 1, 10 or 'max'
+
+  function baseRate(){ let r=0; for(const g of GENS) r += genOutput(g); return r*coreMult(); }
+  const rate = () => baseRate()*boostMult();
+  function tapPower(){
+    let p = (1 + S.taps.pick)*coreMult();
+    if(S.taps.glove > 0) p += baseRate()*0.03*S.taps.glove;
+    return p*boostMult();
+  }
+  const seamsOpen = () => Math.min(STAGES.length, BASE_SEAMS + (S.loops||0));
+  function stageIndex(){
+    let i = 0, u = seamsOpen();
+    for(let k=0;k<u;k++) if(S.grand>=STAGES[k].at) i=k;
+    return i;
+  }
+  /* true when you are standing at the deepest seam you have opened,
+     and there is still a sealed one below it */
+  const atSeal = () => stageIndex() === seamsOpen()-1 && seamsOpen() < STAGES.length;
+  function stageProgress(){
+    const i = stageIndex();
+    if(i >= STAGES.length-1) return 1;
+    return Math.max(0, Math.min(1, (S.grand-STAGES[i].at)/(STAGES[i+1].at-STAGES[i].at)));
+  }
+  function coresOnReset(){
+    if(S.grand < 1e6) return 0;
+    const base = Math.max(0, Math.floor(Math.sqrt(S.grand/1e6)*8) - S.cores);
+    return Math.floor(base * (1 + (S.coreBonus||0)));
+  }
+  /* Depth tracks the seams while there are seams left. Past the last one it
+     keeps creeping down forever — 4,000m for every tenfold increase in the
+     all-time total — so there is no ceiling to run into. */
+  function depthNow(){
+    const i = stageIndex(), st = STAGES[i], nx = STAGES[i+1];
+    if(nx) return Math.round(st.depth + stageProgress()*(nx.depth-st.depth));
+    const over = Math.max(1, S.grand / st.at);
+    return Math.round(st.depth + Math.log10(over)*4000);
+  }
+  const loc = () => langDef().locale;
+  const num = n => Math.floor(n).toLocaleString(loc());
+  /* Plain digits, grouped by the reader's own locale. Units like 万 or K
+     are shorter, but each one asks the reader to know a convention that
+     differs by language — and a mis-read number in a game about numbers
+     is a real cost. Digits are the same idea in every language. */
+  function fmt(n){
+    if(!(n > 0)) return '0';
+    return num(n);
+  }
+  const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : num(n);
+
+  /* ================================================================
+     canvas
+     ================================================================ */
+
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  let W=0,H=0,DPR=1;
+  function resize(){
+    const r = cv.getBoundingClientRect();
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+    cv.width = W*DPR; cv.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  new ResizeObserver(resize).observe(cv);
+
+  function rng(seed){ let s=seed; return () => (s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff; }
+  const SHARDS = (() => {
+    const r = rng(20260922), out = [];
+    const order = [0,-0.36,0.34,-0.72,0.70,0.16,-0.18,1.02,-1.0,0.52,-0.54,1.3,-1.28,0.86];
+    for(let i=0;i<14;i++) out.push({
+      ang:order[i]*0.62+(r()-0.5)*0.1, len:0.98-Math.abs(order[i])*0.30+(r()-0.5)*0.14,
+      wid:0.30-Math.abs(order[i])*0.05+(r()-0.5)*0.05, x:order[i]*0.30+(r()-0.5)*0.05, s:0});
+    return out;
+  })();
+
+  /* slow motes of crystal dust hanging in the cave air */
+  const DUST = (() => {
+    const r = rng(4711), a = [];
+    for(let i=0;i<34;i++) a.push({
+      x:r(), y:r(), r:0.5+r()*1.8,
+      vy:-(0.012+r()*0.045), vx:(r()-0.5)*0.018, ph:r()*6.283
+    });
+    return a;
+  })();
+
+  function drawDust(dt, col){
+    const L0 = shardL(Math.min(94, col.l+10));
+    for(const d of DUST){
+      if(!S.paused){
+        d.y += d.vy*dt; d.x += d.vx*dt;
+        if(d.y < -0.06){ d.y = 1.06; d.x = Math.random(); }
+        if(d.x < -0.06) d.x = 1.06; else if(d.x > 1.06) d.x = -0.06;
+      }
+      const a = 0.09 + 0.11*Math.sin(tick*0.8 + d.ph);
+      if(a <= 0.01) continue;
+      ctx.globalAlpha = skin.dark ? a : a*0.55;
+      ctx.fillStyle = 'hsl('+col.h+','+col.s+'%,'+L0+'%)';
+      ctx.beginPath();
+      ctx.arc(d.x*W, d.y*H, d.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let vig = null, vigKey = '';
+  function drawVignette(){
+    const key = W+'x'+H+(skin.dark?'d':'l');
+    if(key !== vigKey){
+      const g = ctx.createRadialGradient(W/2, H*0.62, Math.min(W,H)*0.22,
+                                         W/2, H*0.55, Math.max(W,H)*0.78);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, skin.dark ? 'rgba(0,0,0,.34)' : 'rgba(40,34,24,.13)');
+      vig = g; vigKey = key;
+    }
+    ctx.fillStyle = vig;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  const particles = [], pops = [];
+  /* mini-event pacing — every number that shapes the orbs lives here */
+  const ORB_GAP = 600,     // one orb every 10 minutes
+        ORB_FIRST = 180,   // except the first, so new players meet it early
+        ORB_LIFE = 15,     // seconds on screen before it fades
+        ORB_CROSS = 20,    // seconds it would take to cross — this sets the speed,
+                           // kept separate from ORB_LIFE so drift stays gentle
+        ECHO_MS = 30000;   // how long the ×5 resonance lasts
+  const nextOrbGap = () => ORB_GAP;
+
+  let pulse=0, tick=0, orb=null, orbTimer = ORB_FIRST;
+
+  const stageColor = (i,t) => {
+    const st = STAGES[i];
+    return {h: st.hue<0 ? (t*40)%360 : st.hue, s: st.sat, l: st.light};
+  };
+  const shardL = l => skin.dark ? l : Math.max(24, l-34);
+
+  function draw(dt){
+    tick += dt;
+    ctx.clearRect(0,0,W,H);
+    const si = stageIndex(), col = stageColor(si,tick), prog = stageProgress();
+    const visible = Math.max(3, Math.min(14, 3+Math.floor(prog*11.4)));
+    const cx = W/2, baseY = H*0.78, unit = Math.min(W*0.42, H*0.40);
+
+    const glowA = (skin.dark?0.17:0.11) + prog*(skin.dark?0.12:0.07);
+    const fg = ctx.createRadialGradient(cx,baseY,0,cx,baseY,unit*1.9);
+    fg.addColorStop(0,'hsla('+col.h+','+col.s+'%,'+shardL(col.l)+'%,'+glowA+')');
+    fg.addColorStop(1,'hsla('+col.h+','+col.s+'%,'+shardL(col.l)+'%,0)');
+    ctx.fillStyle = fg; ctx.fillRect(0,0,W,H);
+
+    if(!reduce) drawDust(dt, col);
+
+    ctx.beginPath();
+    ctx.ellipse(cx, baseY+6, unit*0.62, unit*0.14, 0, 0, Math.PI*2);
+    ctx.fillStyle = skin.rock; ctx.fill();
+    ctx.strokeStyle = 'hsla('+col.h+','+col.s+'%,'+shardL(col.l)+'%,'+(skin.dark?0.20:0.14)+')';
+    ctx.lineWidth = 1.4; ctx.stroke();
+
+    const frozen = S.paused;
+    const breathe = (reduce||frozen)?0:Math.sin(tick*1.4)*0.012;
+    const pop = frozen ? 0 : pulse*(reduce ? 0.10 : 0.18);
+    const scale = 1+breathe+pop;
+
+    ctx.globalAlpha = frozen ? 0.4 : 1;
+    for(let i=0;i<SHARDS.length;i++){
+      const sh = SHARDS[i], target = i<visible ? 1 : 0;
+      sh.s += (target-sh.s)*Math.min(1,dt*4);
+      if(sh.s < 0.01) continue;
+      drawShard(cx+sh.x*unit*0.52, baseY, sh.ang, unit*sh.len*sh.s*scale,
+                unit*sh.wid*sh.s*(1+pop*0.55), col, i);
+    }
+    ctx.globalAlpha = 1;
+    drawVignette();
+    if(orb) drawOrb(dt);
+
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.life -= dt;
+      if(p.life <= 0){ particles.splice(i,1); continue; }
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      if(p.fall) p.vy += 420*dt;
+      const a = Math.max(0,p.life/p.max);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.c || ('hsl('+p.h+','+col.s+'%,'+shardL(Math.min(92,col.l+14))+'%)');
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a+0.6,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.textAlign = 'center';
+    const popSize = Math.round(16*FS[fsIndex]);
+    for(let i=pops.length-1;i>=0;i--){
+      const q = pops[i];
+      q.life -= dt;
+      if(q.life <= 0){ pops.splice(i,1); continue; }
+      q.y -= 46*dt;
+      ctx.globalAlpha = Math.min(1,q.life/0.5);
+      ctx.font = '600 '+popSize+'px "Chivo Mono", monospace';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = skin.dark ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.7)';
+      ctx.strokeText(q.txt, q.x, q.y);
+      ctx.fillStyle = q.c || ('hsl('+col.h+','+Math.min(90,col.s+20)+'%,'+shardL(Math.min(90,col.l+12))+'%)');
+      ctx.fillText(q.txt, q.x, q.y);
+      ctx.globalAlpha = 1;
+    }
+    if(pulse > 0) pulse = Math.max(0, pulse - dt*3.2);
+  }
+
+  function drawShard(x,y,ang,len,wid,col,i){
+    const Lv = shardL(col.l);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+    const w = wid;
+    const g = ctx.createLinearGradient(0,0,0,-len);
+    g.addColorStop(0,   'hsla('+col.h+','+col.s+'%,'+Math.max(8,Lv-52)+'%,1)');
+    g.addColorStop(0.55,'hsla('+col.h+','+col.s+'%,'+Math.max(16,Lv-26)+'%,1)');
+    g.addColorStop(1,   'hsla('+col.h+','+Math.min(100,col.s+12)+'%,'+Math.min(96,Lv+8)+'%,1)');
+    ctx.beginPath();
+    ctx.moveTo(-w,0); ctx.lineTo(-w,-len*0.70); ctx.lineTo(0,-len); ctx.lineTo(w,-len*0.70); ctx.lineTo(w,0);
+    ctx.closePath();
+    ctx.shadowColor = 'hsla('+col.h+','+col.s+'%,'+Lv+'%,'+(skin.dark?0.5:0.3)+')';
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = g; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(-w*0.18,0); ctx.lineTo(-w*0.18,-len*0.72); ctx.lineTo(0,-len);
+    ctx.lineTo(w*0.30,-len*0.70); ctx.lineTo(w*0.30,0); ctx.closePath();
+    ctx.fillStyle = 'hsla('+col.h+','+col.s+'%,'+Math.min(98,Lv+16)+'%,'+(0.16+(i%3)*0.05)+')';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-w,0); ctx.lineTo(-w,-len*0.70); ctx.lineTo(0,-len);
+    ctx.strokeStyle = 'hsla('+col.h+',90%,'+(skin.dark?92:46)+'%,.4)';
+    ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawOrb(dt){
+    const o = orb;
+    o.life -= dt;
+    if(o.life <= 0){ orb = null; orbTimer = nextOrbGap(); return; }
+    o.x += o.vx*dt;
+    o.y = o.baseY + Math.sin(tick*1.6+o.phase)*18;
+    if(o.x < -60 || o.x > W+60){ orb = null; orbTimer = nextOrbGap(); return; }
+    const fade = Math.min(1,o.life/1.2);
+    const r = o.r*(reduce?1:(1+Math.sin(tick*5)*0.07));
+    ctx.save();
+    ctx.globalAlpha = fade;
+    const g = ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,r*3.4);
+    g.addColorStop(0,o.color+'CC'); g.addColorStop(0.28,o.color+'55'); g.addColorStop(1,o.color+'00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x,o.y,r*3.4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(o.x,o.y,r,0,Math.PI*2);
+    ctx.fillStyle = o.color; ctx.fill();
+    ctx.lineWidth = 2.6;
+    ctx.strokeStyle = skin.dark ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.75)';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(o.x,o.y,r*2.0,tick*2.2,tick*2.2+Math.PI*1.35);
+    ctx.strokeStyle = o.color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+
+  /* The whole point of this game is that the feedback is visual, so the
+     burst has to be unmistakable — and it has to survive a reader who has
+     asked for less motion. With reduced motion the shards appear already
+     scattered and simply fade, instead of flying. */
+  function burst(x,y,amount,color){
+    const col = stageColor(stageIndex(),tick);
+    const n = reduce ? 9 : Math.min(32, 16+Math.floor(Math.log10(amount+1)*3));
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = reduce ? 0 : 120+Math.random()*250;
+      const off = reduce ? 12+Math.random()*30 : 0;
+      particles.push({
+        x: x+Math.cos(a)*off, y: y+Math.sin(a)*off,
+        vx: Math.cos(a)*sp, vy: Math.sin(a)*sp-120,
+        r: 2.6+Math.random()*4.4, life:.6+Math.random()*.5, max:1.1,
+        fall: !reduce,
+        h: col.h+(Math.random()*30-15), c: color||null});
+    }
+  }
+
+  /* ================================================================
+     events / popups
+     ================================================================ */
+
+  function spawnOrb(){
+    const id = EVENT_IDS[Math.floor(Math.random()*EVENT_IDS.length)];
+    const fromLeft = Math.random() < 0.5;
+    orb = {id, color:EVENT_COLOR[id], r:13,
+      x: fromLeft ? -40 : W+40, baseY: H*(0.20+Math.random()*0.34), y:0,
+      vx:(fromLeft?1:-1)*(W+120)/ORB_CROSS, phase:Math.random()*6.28, life:ORB_LIFE};
+    orb.y = orb.baseY;
+  }
+
+  function claimOrb(){
+    if(!orb) return;
+    const id = orb.id, x = orb.x, y = orb.y, color = orb.color;
+    const t = L.events[id];
+    let sub = t[1];
+    S.events++;
+    if(id === 'echo'){
+      boost = {mult:5, until:Date.now()+ECHO_MS};
+    }else{
+      const gain = Math.max(tapPower()*(id==='lode'?60:120), baseRate()*(id==='lode'?90:190), 100);
+      S.c += gain; S.total += gain; S.grand += gain;
+      sub += '<br>' + L.gainLine(fmt(gain));
+    }
+    Native.haptic('orb');
+    burst(x,y,9e9,color);
+    pops.push({x, y:y-10, life:1.3, txt:'!', c:color});
+    showBig(L.evKicker, t[0], sub, color);
+    orb = null; orbTimer = nextOrbGap();
+    refresh(); save();
+  }
+
+  const bigpop = $('bigpop');
+  let bigTimer = 0;
+  function showBig(kicker,title,sub,color){
+    $('bpKicker').textContent = kicker;
+    $('bpTitle').textContent = title;
+    $('bpSub').innerHTML = sub || '';
+    bigpop.style.setProperty('--pop', color || 'var(--gold)');
+    bigpop.classList.add('show');
+    clearTimeout(bigTimer);
+    bigTimer = setTimeout(() => bigpop.classList.remove('show'), 3400);
+  }
+  let toastTimer = 0;
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3600);
+  }
+
+  /* ================================================================
+     glyphs
+     ================================================================ */
+
+  const G = {
+    moss:'<circle cx="9" cy="13" r="4"/><circle cx="15" cy="15" r="3"/><circle cx="13" cy="8" r="2.6"/>',
+    drill:'<path d="M12 3v7"/><path d="M6 10h12l-6 11z"/>',
+    bat:'<path d="M12 8v7"/><path d="M12 9c-2-4-6-4-9-2 2 1 2 4 1 6 3 1 6 0 8-2z"/><path d="M12 9c2-4 6-4 9-2-2 1-2 4-1 6-3 1-6 0-8-2z"/>',
+    pump:'<path d="M5 20h14"/><path d="M8 20V9l4-5 4 5v11"/><path d="M8 13h8"/>',
+    golem:'<rect x="6" y="8" width="12" height="11" rx="2"/><path d="M9 4l3 4 3-4"/><path d="M10 13h4"/>',
+    forge:'<path d="M12 3l2.2 5.4L20 9.6l-4 4.2.9 5.9L12 17l-4.9 2.7.9-5.9-4-4.2 5.8-1.2z"/>',
+    react:'<circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(60 12 12)"/>',
+    pick:'<path d="M4 20L14 10"/><path d="M4 8c5-4 12-4 16 0-4-1-7 0-9 2"/><path d="M11 13l3 3"/>',
+    glove:'<path d="M8 21V11a2 2 0 014 0V7a2 2 0 014 0v9a5 5 0 01-5 5z"/><path d="M8 14H6a2 2 0 000 4h2"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    bolt:'<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>',
+    spark:'<circle cx="12" cy="12" r="3.4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>',
+    core:'<circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8.5"/>'
+  };
+  const icon = (k,c) => '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="'+c+
+    '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(G[k]||'')+'</svg>';
+
+  /* ================================================================
+     panel building  (rebuilt whenever the language changes)
+     ================================================================ */
+
+  const listMine = $('listMine'), listCore = $('listCore'),
+        listBonus = $('listBonus'), listMenu = $('listMenu');
+  let rows = {}, rwRows = {};
+  let currentTab = 'mine';
+
+  function makeRow(def, kind, name, desc){
+    const b = document.createElement('button');
+    b.className = 'item';
+    b.style.setProperty('--accent', def.accent);
+    b.innerHTML =
+      '<span class="glyph">'+icon(def.glyph, def.accent)+'</span>'+
+      '<span class="item-mid"><span class="item-name">'+name+'<b data-own></b>'+
+      '<i class="mult" data-mult hidden></i></span>'+
+      '<span class="item-desc">'+desc+'</span>'+
+      (kind === 'gen' ? '<span class="ms"><span class="ms-bar"><i data-bar></i></span>'+
+        '<span class="ms-txt" data-ms></span></span>' : '')+'</span>'+
+      '<span class="item-right"><span class="price" data-price>0</span><span class="yield" data-yield></span></span>';
+    b.addEventListener('click', () => buy(def, kind));
+    rows[def.id] = {el:b, def, kind, own:b.querySelector('[data-own]'),
+      price:b.querySelector('[data-price]'), yld:b.querySelector('[data-yield]'),
+      bar:b.querySelector('[data-bar]'), badge:b.querySelector('[data-mult]'),
+      ms:b.querySelector('[data-ms]')};
+    return b;
+  }
+
+  function buildAll(){
+    rows = {};
+    listMine.innerHTML = '';
+    const qty = document.createElement('div');
+    qty.className = 'qty-row';
+    qty.setAttribute('role','group');
+    qty.innerHTML = [1,10,'max'].map(q =>
+      '<button class="qty" data-qty="'+q+'" aria-pressed="'+(q===buyQty)+'">'+
+      (q === 'max' ? '×MAX' : '×'+q)+'</button>').join('');
+    qty.querySelectorAll('[data-qty]').forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.qty;
+      buyQty = v === 'max' ? 'max' : +v;
+      qty.querySelectorAll('[data-qty]').forEach(o =>
+        o.setAttribute('aria-pressed', String(o.dataset.qty === v)));
+      refresh();
+    }));
+    listMine.appendChild(qty);
+
+    /* the bonuses live in their own tab, which only exists when ads are on */
+    rwRows = {};
+    listBonus.innerHTML = '';
+    tabs.bonus.hidden = Ads.mode === 'off';
+    if(Ads.mode !== 'off'){
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<h3>'+L.rwTitle+'</h3><p>'+L.rwNote+'</p>'+
+        '<div class="stat-row"><span>'+L.rwLeft+'</span><span id="rw-left"></span></div>'+
+        '<p class="quiet" style="margin-top:10px">'+L.rwResetNote+'</p>';
+      listBonus.appendChild(card);
+      /* same row as a building, so the whole app reads as one list */
+      REWARDS.forEach(def => {
+        const b = document.createElement('button');
+        b.className = 'item';
+        b.style.setProperty('--accent','var(--cyan)');
+        b.innerHTML =
+          '<span class="glyph">'+icon(def.glyph,'var(--cyan)')+'</span>'+
+          '<span class="item-mid"><span class="item-name">'+L.rewards[def.id][0]+'</span>'+
+          '<span class="item-desc">'+L.rewards[def.id][1]+'</span></span>'+
+          '<span class="item-right"><span class="price" data-state></span></span>';
+        b.addEventListener('click', () => claimReward(def, b));
+        rwRows[def.id] = {el:b, def, state:b.querySelector('[data-state]')};
+        listBonus.appendChild(b);
+      });
+    }
+
+    TAPS.forEach(d => listMine.appendChild(makeRow(d,'tap', L.taps[d.id][0], L.taps[d.id][1])));
+    GENS.forEach(d => listMine.appendChild(makeRow(d,'gen', L.gens[d.id][0], L.gens[d.id][1])));
+
+    listCore.innerHTML =
+      '<div class="card">'+
+        '<h3>'+L.rebirthTitle+'</h3><p>'+L.rebirthBody+'</p>'+
+        '<div class="stat-row"><span>'+L.haveCores+'</span><span id="st-cores">0</span></div>'+
+        '<div class="stat-row"><span>'+L.curMult+'</span><span id="st-mult">×1.00</span></div>'+
+        '<div class="stat-row"><span>'+L.gainCores+'</span><span id="st-gain">0</span></div>'+
+        '<button class="big-btn" id="btnReset" disabled></button>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.recordsTitle+'</h3>'+
+        '<div class="stat-row"><span>'+L.recRun+'</span><span id="st-total">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recAll+'</span><span id="st-grand">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recClicks+'</span><span id="st-clicks">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recEvents+'</span><span id="st-events">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recResets+'</span><span id="st-resets">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recLoops+'</span><span id="st-loops">0</span></div>'+
+        '<div class="stat-row"><span>'+L.recStage+'</span><span id="st-stage">—</span></div>'+
+      '</div>';
+    $('btnReset').addEventListener('click', doReset);
+
+    const rules = L.howto.map((r,i) =>
+      '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+r[1]+'</span></span></li>'
+    ).join('');
+
+    const sizeOpts = L.sizes.map((s,i) =>
+      '<button class="opt" data-fs="'+i+'" aria-pressed="'+(i===fsIndex)+'">'+
+      '<span class="tickbox"></span>'+s+'</button>').join('');
+
+    const skinOpts = SKINS.map(s =>
+      '<button class="opt" data-skin="'+s.id+'" aria-pressed="'+(s.id===skin.id)+'">'+
+      '<span class="sw" style="background:'+s.v['--bg']+'"></span>'+L.skins[s.id]+'</button>').join('');
+
+    listMenu.innerHTML =
+      '<div class="card">'+
+        '<h3>'+L.sizeTitle+'</h3><p>'+L.sizeBody+'</p>'+
+        '<div class="opt-grid">'+sizeOpts+'</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.skinTitle+'</h3><p>'+L.skinBody+'</p>'+
+        '<div class="opt-grid">'+skinOpts+'</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.howtoTitle+'</h3><ol class="rules">'+rules+'</ol>'+
+        '<div class="btn-row"><button class="mini" id="btnGuide">'+L.reopenGuide+'</button></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.pauseSecTitle+'</h3><p>'+L.pauseSecBody+'</p>'+
+        '<button class="big-btn" id="btnPause2"></button>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.saveTitle+'</h3><p>'+L.saveBody1+'</p>'+
+        '<textarea class="code" id="exportCode" readonly aria-label="'+L.codeLabel+'"></textarea>'+
+        '<div class="btn-row"><button class="mini" id="btnMakeCode">'+L.makeCode+'</button>'+
+        '<button class="mini" id="btnCopyCode">'+L.copyCode+'</button></div>'+
+        '<p style="margin-top:14px">'+L.saveBody2+'</p>'+
+        '<textarea class="code" id="importCode" placeholder="'+L.pasteHere+'" aria-label="'+L.codeLabel+'"></textarea>'+
+        '<div class="btn-row"><button class="mini" id="btnImport">'+L.loadCode+'</button>'+
+        '<button class="mini warn" id="btnWipe">'+L.wipe+'</button></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.shareTitle+'</h3><p>'+L.shareBody+'</p>'+
+        '<textarea class="code" id="shareText" readonly aria-label="'+L.textLabel+'"></textarea>'+
+        '<div class="btn-row">'+
+          '<button class="mini" id="btnCopyShare">'+L.copyText+'</button>'+
+          '<a class="mini" id="btnX" href="#" target="_blank" rel="noopener">'+L.shareX+'</a>'+
+          '<a class="mini" id="btnBsky" href="#" target="_blank" rel="noopener">'+L.shareBsky+'</a>'+
+          '<a class="mini" id="btnLine" href="#" target="_blank" rel="noopener">'+L.shareLine+'</a>'+
+        '</div>'+
+        '<p class="quiet" style="margin-top:12px">'+L.sharePrivacy+'</p>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.bugTitle+'</h3><p>'+L.bugBody+'</p>'+
+        '<div class="btn-row">'+
+          '<a class="mini" id="btnBugPage" href="'+CONTACT_URL+'" target="_blank" rel="noopener">'+L.bugOpen+'</a>'+
+          '<button class="mini" id="btnBugCopy">'+L.bugCopyEnv+'</button>'+
+        '</div>'+
+        '<p class="quiet" style="margin-top:10px">'+L.bugEnvNote+'</p>'+
+        '<div class="envbox" id="bugEnv"></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3>'+L.adsTitle+'</h3><p>'+L.adsBody+'</p>'+
+        '<div class="opt-grid">'+
+          '<button class="opt" data-ads="test" aria-pressed="'+(Ads.mode==='test')+'">'+
+            '<span class="tickbox"></span>'+L.adsOn+'</button>'+
+          '<button class="opt" data-ads="off" aria-pressed="'+(Ads.mode!=='test')+'">'+
+            '<span class="tickbox"></span>'+L.adsOff+'</button>'+
+        '</div>'+
+      '</div>';
+
+    listMenu.querySelectorAll('[data-fs]').forEach(b =>
+      b.addEventListener('click', () => applyFs(+b.dataset.fs)));
+    listMenu.querySelectorAll('[data-skin]').forEach(b =>
+      b.addEventListener('click', () => applySkin(b.dataset.skin)));
+    $('btnPause2').addEventListener('click', () => setPaused(!S.paused));
+    $('btnGuide').addEventListener('click', showWelcome);
+    listMenu.querySelectorAll('[data-ads]').forEach(b =>
+      b.addEventListener('click', () => setAdMode(b.dataset.ads)));
+    wireBugButtons();
+    wireSaveButtons();
+    wireShareButtons();
+  }
+
+  function applyStaticText(){
+    document.documentElement.lang = langId;
+    $('lblCrystals').textContent = L.crystals;
+    $('tab-mine').textContent = L.tabMine;
+    $('tabCoreLabel').textContent = L.tabCore;
+    $('tab-bonus').textContent = L.tabBonus;
+    $('tab-menu').textContent = L.tabMenu;
+    $('hint').textContent = L.tapHint;
+    $('tap').setAttribute('aria-label', L.tapAria);
+    $('pauseBtn').setAttribute('aria-label', L.pauseAria);
+    $('langBtn').setAttribute('aria-label', L.langTitle);
+    $('langCode').textContent = langDef().code;
+    if(!$('fsBtn').hidden) paintFs();
+    $('veilTitle').textContent = L.veilTitle;
+    $('veilBody').textContent = L.veilBody;
+    $('resumeBtn').textContent = L.resume;
+    $('meter').setAttribute('aria-label', L.rebirthTitle === '' ? '' : L.deepest);
+  }
+
+  function setLang(id){
+    if(!T[id]) return;
+    langId = id; L = T[id];
+    try{ localStorage.setItem('cc-lang', id); }catch(e){}
+    applyStaticText();
+    buildAll();
+    setPaused(S.paused);
+    lastStage = stageIndex();
+    refresh(); refreshShare();
+    selectTab(currentTab);
+  }
+
+  /* ---------- first-run guide ---------- */
+  function showWelcome(){
+    $('wcTitle').textContent = L.welcomeTitle;
+    $('wcLead').textContent = L.welcomeLead;
+    $('wcList').innerHTML = L.welcomeLines.map((t,i) =>
+      '<li><span class="n">'+(i+1)+'</span><span>'+t+'</span></li>').join('');
+    $('wcStart').textContent = L.welcomeStart;
+    $('wcMore').textContent = L.welcomeMore;
+    $('welcome').hidden = false;
+    $('wcStart').focus();
+  }
+  function hideWelcome(){
+    $('welcome').hidden = true;
+    try{ localStorage.setItem('cc-seen','1'); }catch(e){}
+    $('tap').focus();
+  }
+  $('wcStart').addEventListener('click', hideWelcome);
+  $('welcome').addEventListener('click', e => { if(e.target === $('welcome')) hideWelcome(); });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !$('welcome').hidden) hideWelcome();
+  });
+
+  /* ---------- tabs ---------- */
+  const tabs = {mine:$('tab-mine'), core:$('tab-core'), bonus:$('tab-bonus'), menu:$('tab-menu')};
+  const panels = {mine:listMine, core:listCore, bonus:listBonus, menu:listMenu};
+  function selectTab(which){
+    if(which === 'bonus' && Ads.mode === 'off') which = 'mine';
+    currentTab = which;
+    for(const k in tabs){
+      tabs[k].setAttribute('aria-selected', String(k===which));
+      panels[k].hidden = k !== which;
+    }
+    if(which === 'menu') refreshShare();
+  }
+  for(const k in tabs) tabs[k].addEventListener('click', () => selectTab(k));
+  /* ---------- language picker on the stage chip ---------- */
+  const langBtn = $('langBtn'), langPop = $('langPop');
+  langBtn.setAttribute('aria-haspopup','menu');
+  langBtn.setAttribute('aria-expanded','false');
+
+  function buildLangPop(){
+    langPop.innerHTML = '';
+    LANGS.forEach(l => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role','menuitemradio');
+      b.setAttribute('aria-pressed', String(l.id === langId));
+      b.setAttribute('aria-checked', String(l.id === langId));
+      b.innerHTML = '<span class="lc">'+l.code+'</span><span>'+l.label+'</span>';
+      b.addEventListener('click', () => { closeLangPop(); setLang(l.id); });
+      langPop.appendChild(b);
+    });
+  }
+  function openLangPop(){
+    buildLangPop();
+    langPop.hidden = false;
+    langBtn.setAttribute('aria-expanded','true');
+    const cur = langPop.querySelector('[aria-pressed="true"]') || langPop.firstElementChild;
+    if(cur) cur.focus();
+  }
+  function closeLangPop(){
+    langPop.hidden = true;
+    langBtn.setAttribute('aria-expanded','false');
+  }
+  langBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if(langPop.hidden) openLangPop(); else closeLangPop();
+  });
+  langPop.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => { if(!langPop.hidden) closeLangPop(); });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !langPop.hidden){ closeLangPop(); langBtn.focus(); }
+  });
+
+  /* ================================================================
+     actions
+     ================================================================ */
+
+  const ownedOf = (def, kind) => kind==='tap' ? S.taps[def.id] : S.gens[def.id];
+  /* how many this row would buy right now, given the ×1 / ×10 / ×MAX setting */
+  function qtyFor(def, kind){
+    const owned = ownedOf(def, kind);
+    if(buyQty === 'max') return maxAffordable(def, owned, S.c);
+    return buyQty;
+  }
+
+  function buy(def, kind){
+    if(S.paused) return;
+    const owned = ownedOf(def, kind);
+    const k = qtyFor(def, kind);
+    if(k < 1) return;
+    const cost = costN(def, owned, k);
+    if(S.c < cost) return;
+    S.c -= cost;
+    if(kind==='tap') S.taps[def.id] += k; else S.gens[def.id] += k;
+    Native.haptic('buy');
+    refresh(); save();
+  }
+
+  /* the crystal itself is the only place that mines — an ellipse
+     drawn around the shard cluster, with a floor size for small screens */
+  function onCrystal(x, y){
+    const unit = Math.min(W*0.42, H*0.40);
+    const cx = W/2, ecy = H*0.78 - unit*0.38;
+    const rx = Math.max(54, unit*0.64), ry = Math.max(54, unit*0.62);
+    const dx = (x-cx)/rx, dy = (y-ecy)/ry;
+    return dx*dx + dy*dy <= 1;
+  }
+  const onOrb = (x,y) => !!orb && Math.hypot(orb.x-x, orb.y-y) < Math.max(46, orb.r*3.4);
+
+  function mine(clientX, clientY, keyboard){
+    if(S.paused) return;
+    const r = cv.getBoundingClientRect();
+    const x = clientX != null ? clientX-r.left : W/2;
+    const y = clientY != null ? clientY-r.top  : H*0.5;
+    if(orb && (keyboard || onOrb(x,y))){ claimOrb(); return; }
+    if(!keyboard && !onCrystal(x,y)) return;   // tapping the empty cave does nothing
+    const gain = tapPower();
+    S.c += gain; S.total += gain; S.grand += gain; S.clicks++;
+    pulse = 1;
+    Native.haptic('tap');
+    burst(x,y,gain);
+    pops.push({x, y:y-8, life:1.0, txt:'+'+fmt(gain)});
+    if(S.clicks === 6) $('hint').style.opacity = '0';
+  }
+
+  function doReset(){
+    const gain = coresOnReset();
+    if(gain <= 0) return;
+    const opened = atSeal();          // standing at the deepest open seam?
+    S.cores += gain; S.resets++; S.coreBonus = 0;
+    if(opened) S.loops = (S.loops||0) + 1;
+    S.c = 0; S.total = 0;
+    TAPS.forEach(t => S.taps[t.id] = 0);
+    GENS.forEach(g => S.gens[g.id] = 0);
+    boost = {mult:1, until:0};
+    save();
+    let sub = L.rebirthDone(gain, coreMult().toFixed(2));
+    if(opened) sub += '<br>' + L.unlockSub(L.stages[seamsOpen()-1]);
+    Native.haptic('rebirth');
+    lastStage = stageIndex();         // don't also fire the new-seam popup
+    refresh();
+    showBig(L.rebirthKicker, L.rebirthTitle, sub, '#F2C673');
+  }
+
+  function setPaused(v){
+    S.paused = v;
+    $('veil').hidden = !v;
+    $('pauseLabel').textContent = v ? L.resume : L.pause;
+    $('pauseIcon').innerHTML = v ? '<path d="M8 5l11 7-11 7z"/>'
+      : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+    const b2 = $('btnPause2');
+    if(b2) b2.textContent = v ? L.pauseSecBtnOn : L.pauseSecBtn;
+    $('tap').setAttribute('aria-disabled', String(v));
+    save();
+  }
+
+  $('tap').addEventListener('click', e => mine(e.clientX||null, e.clientY||null, e.detail === 0));
+  $('tap').addEventListener('pointermove', e => {
+    if(e.pointerType !== 'mouse') return;
+    const r = cv.getBoundingClientRect();
+    const x = e.clientX-r.left, y = e.clientY-r.top;
+    e.currentTarget.classList.toggle('over', !S.paused && (onCrystal(x,y) || onOrb(x,y)));
+  });
+  $('tap').addEventListener('pointerleave', e => e.currentTarget.classList.remove('over'));
+  /* Full screen. Supported on desktop browsers and on Android; iOS Safari
+     does not allow it for anything but video, so the chip simply stays
+     hidden there rather than offering something that cannot work. */
+  const fsRoot = () => document.documentElement;
+  const fsSupported = !!(fsRoot().requestFullscreen || fsRoot().webkitRequestFullscreen);
+  const inFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function paintFs(){
+    const on = inFs();
+    $('fsLabel').textContent = on ? L.fsOff : L.fsOn;
+    $('fsIcon').innerHTML = on
+      ? '<path d="M8 3v3a2 2 0 01-2 2H3M16 3v3a2 2 0 002 2h3M8 21v-3a2 2 0 00-2-2H3M16 21v-3a2 2 0 012-2h3"/>'
+      : '<path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/>';
+    $('fsBtn').setAttribute('aria-pressed', String(on));
+  }
+  function toggleFs(){
+    try{
+      if(inFs()){
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      }else{
+        const e = fsRoot();
+        (e.requestFullscreen || e.webkitRequestFullscreen).call(e);
+      }
+    }catch(e){}
+  }
+  if(fsSupported){
+    $('fsBtn').hidden = false;
+    $('fsBtn').addEventListener('click', toggleFs);
+    const onFsChange = () => { paintFs(); setTimeout(resize, 60); };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+  }
+
+  $('pauseBtn').addEventListener('click', () => setPaused(!S.paused));
+  $('resumeBtn').addEventListener('click', () => setPaused(false));
+
+  /* ---------- save code ---------- */
+  /* Short save code: every value as a base-36 integer, joined with "-",
+     plus a 2-character checksum.  Roughly a tenth the length of the
+     base64 JSON it replaces, and still readable enough to retype. */
+  const B36 = n => Math.max(0, Math.floor(+n || 0)).toString(36);
+  function sumOf(body){
+    let h = 7;
+    for(let i=0;i<body.length;i++) h = (h*31 + body.charCodeAt(i)) % 1296;
+    return h.toString(36).padStart(2,'0');
+  }
+  function encode(){
+    const v = [Math.round(S.c), Math.round(S.total), Math.round(S.grand), S.cores,
+      S.taps.pick, S.taps.glove].concat(GENS.map(g => S.gens[g.id]))
+      .concat([S.clicks, S.resets, S.events, S.paused?1:0, S.loops||0, Math.round(S.t/1000)]);
+    const body = v.map(B36).join('-');
+    return 'CC2-' + body + '-' + sumOf(body);
+  }
+  function decode(str){
+    const s = String(str||'').trim().replace(/\s+/g,'');
+    const ver = /^CC([12])-/i.exec(s);
+    if(ver){
+      const v2 = ver[1] === '2';
+      const p = s.split('-');
+      const values = 6 + GENS.length + (v2 ? 6 : 5);
+      if(p.length !== values + 2) return null;        // prefix + values + checksum
+      const body = p.slice(1, -1).join('-');
+      if(sumOf(body) !== p[p.length-1].toLowerCase()) return null;
+      for(let i=1;i<p.length-1;i++) if(!Number.isFinite(parseInt(p[i],36))) return null;
+      const n = i => parseInt(p[i+1], 36);
+      const g0 = 6, tail = 6 + GENS.length;
+      const d = {c:n(0), total:n(1), grand:n(2), cores:n(3),
+        taps:{pick:n(4), glove:n(5)}, gens:{},
+        clicks:n(tail), resets:n(tail+1), events:n(tail+2),
+        paused: n(tail+3) === 1,
+        loops: v2 ? n(tail+4) : 0,
+        t: n(tail + (v2 ? 5 : 4)) * 1000};
+      GENS.forEach((g,i) => d.gens[g.id] = n(g0+i));
+      return d;
+    }
+    // older, longer base64 codes still load
+    try{ return JSON.parse(decodeURIComponent(escape(atob(s)))); }catch(e){ return null; }
+  }
+
+  function copyFrom(ta, label){
+    ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0,99999);
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){}
+    ta.setAttribute('readonly','');
+    if(!ok && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value)
+        .then(() => toast(L.copied(label)))
+        .catch(() => toast(L.copyManual));
+      return;
+    }
+    toast(ok ? L.copied(label) : L.copyManual);
+  }
+
+  let wipeArmed = false, wipeTimer = 0;
+  function wireSaveButtons(){
+    $('btnMakeCode').addEventListener('click', () => {
+      S.t = Date.now(); $('exportCode').value = encode(); toast(L.codeMade);
+    });
+    $('btnCopyCode').addEventListener('click', () => {
+      if(!$('exportCode').value){ S.t = Date.now(); $('exportCode').value = encode(); }
+      copyFrom($('exportCode'), L.codeLabel);
+    });
+    $('btnImport').addEventListener('click', () => {
+      const v = $('importCode').value.trim();
+      if(!v){ toast(L.emptyCode); return; }
+      const d = decode(v);
+      if(!d || (typeof d.grand === 'undefined' && typeof d.total === 'undefined')){ toast(L.badCode); return; }
+      applyData(d);
+      boost = {mult:1, until:0};
+      $('importCode').value = '';
+      save(); setPaused(S.paused); refresh();
+      showBig(L.loadKicker, L.loadTitle, L.loadSub(fmt(S.grand)), '#7FE6E0');
+    });
+    wipeArmed = false;
+    $('btnWipe').addEventListener('click', () => {
+      const b = $('btnWipe');
+      if(!wipeArmed){
+        wipeArmed = true; b.textContent = L.wipeArm;
+        clearTimeout(wipeTimer);
+        wipeTimer = setTimeout(() => { wipeArmed = false; b.textContent = L.wipe; }, 5000);
+        return;
+      }
+      wipeArmed = false; b.textContent = L.wipe;
+      applyData({}); S.cores = 0;
+      boost = {mult:1, until:0};
+      try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+      setPaused(false); refresh(); toast(L.wipeDone);
+    });
+  }
+
+  /* ---------- rewards ---------- */
+
+  const DAILY_MAX = 10;
+  const todayKey = () => { const d = new Date();
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+  /* rolls the counter over the moment the local date changes */
+  function dailyLeft(){
+    const k = todayKey();
+    if(S.adDay !== k){ S.adDay = k; S.adUsed = 0; }
+    return Math.max(0, DAILY_MAX - (S.adUsed||0));
+  }
+  function untilMidnight(){
+    const n = new Date(), m = new Date(n);
+    m.setHours(24,0,0,0);
+    return m - n;
+  }
+  const cdLeft = id => Math.max(0, ((S.adcd && S.adcd[id]) || 0) - Date.now());
+  function mmss(ms){
+    const t = Math.ceil(ms/1000);
+    return Math.floor(t/60) + ':' + String(t%60).padStart(2,'0');
+  }
+  /* hours only appear once there are hours to show */
+  function hms(ms){
+    const t = Math.ceil(ms/1000), h = Math.floor(t/3600);
+    if(h <= 0) return mmss(ms);
+    return h + ':' + String(Math.floor((t%3600)/60)).padStart(2,'0') +
+           ':' + String(t%60).padStart(2,'0');
+  }
+  function rewardReady(def){
+    if(S.paused || Ads.busy) return false;
+    if(dailyLeft() <= 0) return false;
+    if(cdLeft(def.id) > 0) return false;
+    return def.ok ? def.ok() : true;
+  }
+
+  function grantReward(id){
+    const t = L.rewards[id];
+    let sub = '';
+    if(id === 'skip'){
+      const gain = baseRate() * 8*3600 * 0.5;    // the same rate as being away
+      S.c += gain; S.total += gain; S.grand += gain;
+      sub = L.rwGot.skip(fmt(gain));
+    }else if(id === 'boost'){
+      boost = {mult: Math.max(2, boostMult()),
+               until: Math.max(boost.until, Date.now() + 30*60*1000)};
+      sub = L.rwGot.boost;
+    }else if(id === 'orb'){
+      if(!orb && W > 80) spawnOrb();
+      orbTimer = nextOrbGap();
+      sub = L.rwGot.orb;
+    }else if(id === 'core'){
+      S.coreBonus = 0.25;
+      sub = L.rwGot.core;
+    }
+    S.adcd = S.adcd || {};
+    dailyLeft();                       // rolls the day over if needed
+    S.adUsed = (S.adUsed||0) + 1;
+    const def = REWARDS.find(r => r.id === id);
+    S.adcd[id] = Date.now() + def.cd*1000;
+    save(); refresh();
+    showBig(L.rwKicker, t[0], sub, '#7FE6E0');
+  }
+
+  /* 'test' is remembered; anything else clears the key so the page
+     goes back to detecting a real ad provider on its own */
+  function setAdMode(m){
+    try{
+      if(m === 'test') localStorage.setItem('cc-ads','test');
+      else localStorage.removeItem('cc-ads');
+    }catch(e){}
+    Ads.init();
+    buildAll();
+    setPaused(S.paused);
+    refresh(); refreshShare();
+    selectTab('menu');
+    const first = listMenu.querySelector('[data-ads]');
+    if(first) first.scrollIntoView({block:'center'});
+  }
+
+  function claimReward(def, btn){
+    if(!rewardReady(def)) return;
+    if(btn) btn.disabled = true;
+    Ads.show(def.id, () => grantReward(def.id), () => { toast(L.rwFail); refresh(); });
+  }
+
+  /* ---------- problem report ---------- */
+  function envLines(){
+    const scr = window.screen ? window.screen.width+'×'+window.screen.height : '?';
+    return [
+      'version ' + VERSION,
+      'lang ' + langId + ' / skin ' + skin.id + ' / text ' + FS[fsIndex],
+      'screen ' + scr + ' @' + (window.devicePixelRatio||1) + 'x, window ' +
+        window.innerWidth + '×' + window.innerHeight,
+      'depth ' + depthNow() + 'm, seam ' + (stageIndex()+1) + '/' + STAGES.length +
+        ', all time ' + Math.round(S.grand) + ', cores ' + S.cores +
+        ', taps ' + S.clicks + ', rebirths ' + S.resets,
+      'ua ' + navigator.userAgent
+    ];
+  }
+  function wireBugButtons(){
+    const env = $('bugEnv');
+    if(env) env.textContent = envLines().join('\n');
+    $('btnBugCopy').addEventListener('click', () => {
+      const holder = document.createElement('textarea');
+      holder.value = envLines().join('\n');
+      holder.style.cssText = 'position:fixed;left:-9999px;top:0';
+      document.body.appendChild(holder);
+      copyFrom(holder, L.bugEnv);
+      setTimeout(() => holder.remove(), 0);
+    });
+  }
+
+  /* ---------- share ---------- */
+  function shareString(){
+    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, coreMult().toFixed(2));
+  }
+  function refreshShare(){
+    const ta = $('shareText');
+    if(!ta) return;
+    const txt = shareString(), e = encodeURIComponent(txt);
+    ta.value = txt;
+    $('btnX').href = 'https://twitter.com/intent/tweet?text='+e;
+    $('btnBsky').href = 'https://bsky.app/intent/compose?text='+e;
+    $('btnLine').href = 'https://line.me/R/msg/text/?'+e;
+  }
+  function wireShareButtons(){
+    $('btnCopyShare').addEventListener('click', () => { refreshShare(); copyFrom($('shareText'), L.textLabel); });
+  }
+
+  /* ================================================================
+     refresh
+     ================================================================ */
+
+  let lastStage = -1;
+  function refresh(){
+    const r = rate(), b = boostMult();
+    const cTxt = fmt(S.c);
+    const cEl = $('count');
+    cEl.textContent = cTxt;
+    /* step the headline down as the digits pile up, so it never runs off */
+    cEl.classList.toggle('long',  cTxt.length > 11 && cTxt.length <= 16);
+    cEl.classList.toggle('xlong', cTxt.length > 16);
+    const v = fmtRate(r);
+    let html = (langId==='en'||langId==='es') ? v+' '+L.perSec : L.perSec+' '+v;
+    if(S.cores) html += '<span class="sep">|</span>'+L.coreMult+' ×'+coreMult().toFixed(2);
+    if(b > 1){
+      const ms = boost.until - Date.now();
+      html += '<span class="sep">|</span><span class="boost">'+L.resonance+' ×'+b+' '+
+        (ms > 60000 ? L.rwWait(mmss(ms)) : L.remain(Math.ceil(ms/1000)))+'</span>';
+    }
+    $('rate').innerHTML = html;
+
+    const si = stageIndex(), st = STAGES[si], col = stageColor(si,tick);
+    $('badge').style.setProperty('--stage-color',
+      'hsl('+Math.round(col.h)+','+col.s+'%,'+(skin.dark?Math.min(80,col.l):Math.max(28,col.l-34))+'%)');
+    $('stageName').textContent = L.stages[si];
+    const prog = stageProgress();
+    $('meterFill').style.width = (prog*100).toFixed(1)+'%';
+    $('meter').setAttribute('aria-valuenow', Math.round(prog*100));
+    $('meterLabel').textContent =
+      si >= STAGES.length-1 ? L.deepest
+      : si+1 >= seamsOpen() ? L.sealed
+      : L.nextIs(L.stages[si+1], fmt(STAGES[si+1].at));
+    $('depth').textContent = L.depth(num(depthNow()));
+
+    if(si !== lastStage){
+      if(lastStage >= 0){
+        Native.haptic('seam');
+        showBig(L.newVeinKicker, L.stages[si], L.newVeinSub(num(depthNow())),
+          'hsl('+Math.round(col.h)+','+col.s+'%,'+(skin.dark?Math.min(74,col.l):Math.max(30,col.l-30))+'%)');
+      }
+      lastStage = si;
+    }
+
+    for(const key in rows){
+      const row = rows[key], d = row.def;
+      const owned = row.kind==='tap' ? S.taps[d.id] : S.gens[d.id];
+      if(d.need && S.grand < d.need && owned === 0){ row.el.hidden = true; continue; }
+      row.el.hidden = false;
+      const k = Math.max(1, qtyFor(d, row.kind));
+      const cost = costN(d, owned, k);
+      const can = S.c >= cost && !S.paused && (buyQty !== 'max' || qtyFor(d,row.kind) >= 1);
+      row.el.disabled = !can;
+      row.el.classList.toggle('afford', can);
+      row.own.textContent = owned ? '×'+owned : '';
+      row.price.textContent = (k > 1 ? '×'+k+'  ' : '') + fmt(cost);
+
+      if(row.kind === 'gen'){
+        const m = msMult(owned);
+        row.badge.hidden = m <= 1;
+        row.badge.textContent = '×'+m;
+        const into = owned % MS_STEP;
+        row.bar.style.width = (owned === 0 ? 0 : (into/MS_STEP)*100)+'%';
+        row.ms.textContent = L.msNext(MS_STEP - into);
+        row.yld.textContent = '+'+fmtRate((owned ? genOutput(d) : d.rate)*coreMult()*b)+L.perSecShort;
+      }else{
+        row.yld.textContent = d.id === 'pick'
+          ? L.mine+' '+fmtRate(tapPower()) : L.pctOf(S.taps.glove+1);
+      }
+    }
+
+    for(const k in rwRows){
+      const r = rwRows[k], left = cdLeft(k);
+      const can = rewardReady(r.def);
+      r.el.disabled = !can;
+      r.el.classList.toggle('afford', can);
+      r.state.textContent = dailyLeft() <= 0 ? L.rwEmpty
+        : left > 0 ? L.rwWait(mmss(left)) : L.rwWatch;
+    }
+    const rwl = $('rw-left');
+    if(rwl){
+      const n = dailyLeft();
+      rwl.textContent = n > 0 ? L.rwOf(n, DAILY_MAX) : L.rwResetIn(hms(untilMidnight()));
+    }
+
+    const gain = coresOnReset();
+    const set = (id,v) => { const el = $(id); if(el) el.textContent = v; };
+    set('st-cores', S.cores);
+    set('st-mult', '×'+coreMult().toFixed(2));
+    set('st-gain', gain);
+    set('st-total', fmt(S.total));
+    set('st-grand', fmt(S.grand));
+    set('st-clicks', num(S.clicks));
+    set('st-events', S.events);
+    set('st-resets', S.resets);
+    set('st-loops', seamsOpen()+' / '+STAGES.length);
+    set('st-stage', L.stages[si]);
+    const rb = $('btnReset');
+    if(rb){
+      rb.disabled = gain <= 0;
+      rb.textContent = gain > 0 ? L.doRebirth(gain) : L.rebirthLocked;
+    }
+    tabs.core.classList.toggle('ready', gain > 0);
+  }
+
+  /* ================================================================
+     loop / boot
+     ================================================================ */
+
+  let last = performance.now(), acc = 0, saveAcc = 0;
+  function frame(now){
+    let dt = (now-last)/1000; last = now;
+    if(dt > 0.25) dt = 0.25;
+    if(!S.paused){
+      const r = rate();
+      if(r > 0){ const g = r*dt; S.c += g; S.total += g; S.grand += g; }
+      if(!orb){ orbTimer -= dt; if(orbTimer <= 0 && W > 80) spawnOrb(); }
+    }
+    draw(dt);
+    acc += dt; if(acc > 0.1){ acc = 0; refresh(); }
+    saveAcc += dt; if(saveAcc > 10){ saveAcc = 0; save(); }
+    requestAnimationFrame(frame);
+  }
+
+  function detectLang(){
+    try{
+      const stored = localStorage.getItem('cc-lang');
+      if(stored && T[stored]) return stored;
+    }catch(e){}
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'ja';
+    const low = nav.toLowerCase();
+    if(low.startsWith('ja')) return 'ja';
+    if(low.startsWith('zh')) return 'zh';
+    if(low.startsWith('ko')) return 'ko';
+    if(low.startsWith('es')) return 'es';
+    return 'en';
+  }
+
+  function start(hot){
+    langId = detectLang(); L = T[langId];
+    try{ applySkin(localStorage.getItem('cc-skin') || 'cave'); }catch(e){ applySkin('cave'); }
+    let fi = 1;
+    try{ const v = localStorage.getItem('cc-fs'); if(v !== null) fi = +v; }catch(e){}
+
+    if(hot && hot.state){
+      Object.assign(S, hot.state);
+    }else{
+      const savedAt = load();
+      if(savedAt && !S.paused){
+        const away = Math.min((Date.now()-savedAt)/1000, 8*3600);
+        const r = baseRate();
+        if(away > 60 && r > 0){
+          const earned = r*away*0.5;
+          S.c += earned; S.total += earned; S.grand += earned;
+          const mins = Math.floor(away/60);
+          setTimeout(() => showBig(L.backKicker, L.backTitle,
+            L.backSub(L.hm(Math.floor(mins/60), mins%60), fmt(earned)), '#7FE6E0'), 700);
+        }
+      }
+    }
+
+    Ads.init();
+    applyStaticText();
+    buildAll();
+    applyFs(fi);
+    if(S.clicks >= 6) $('hint').style.opacity = '0';
+    resize();
+    lastStage = stageIndex();
+    setPaused(!!S.paused);
+    refresh(); refreshShare();
+    selectTab('mine');
+    let seen = true;
+    try{ seen = !!localStorage.getItem('cc-seen'); }catch(e){}
+    if(!seen && S.grand === 0) showWelcome();
+    requestAnimationFrame(frame);
+    try{ window.claude && window.claude.hot && window.claude.hot.snapshot(() => ({state:S})); }catch(e){}
+  }
+
+  window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden){ save(); Native.idle(); }
+  });
+  window.addEventListener('pagehide', () => { save(); Native.idle(); });
+
+  try{
+    if(window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start);
+    else start(window.claude && window.claude.hot ? window.claude.hot.data : null);
+  }catch(e){ start(null); }
+})();
+</script>
+
+<!--
+  ============================================================
+  Turning the bonuses on
+  ============================================================
+
+  They are off by default. Nothing about advertising is shown
+  and no ad code runs until one of these is in place.
+
+  1. Trying them out
+     Menu tab, bottom card, "Try them". A fake ad "plays" for
+     half a second and the reward lands, so the wiring can be
+     checked without any ad account. The choice is remembered.
+     (?ads=test in the address does the same thing, but a query
+     string never reaches a sandboxed preview frame, so the
+     switch is the one that always works.)
+
+  2. Web build — AdSense H5 Games Ads
+     Add this ONCE, before the game's own <script>, on your own
+     domain (it will not load inside a claude.ai artifact, whose
+     content policy blocks the host):
+
+       <script async data-ad-client="ca-pub-2566692752938685"
+         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+       <script>
+         window.adsbygoogle = window.adsbygoogle || [];
+         window.adBreak   = function(o){ adsbygoogle.push(o); };
+         window.adConfig  = function(o){ adsbygoogle.push(o); };
+         adConfig({ preloadAdBreaks:'on', sound:'off' });
+       </script>
+
+     The publisher id above is already yours. The game
+     detects window.adBreak by itself and switches to 'h5'.
+     sound:'off' is correct here — this game never plays audio.
+
+  3. iOS build — AdMob through a WKWebView
+     Swift side: add a script message handler named "ccAds",
+     and on receiving { reward: "<id>" } show a rewarded ad.
+
+       // granted
+       webView.evaluateJavaScript("window.CCAds.grant('\(id)')")
+       // dismissed, failed to load, or no fill
+       webView.evaluateJavaScript("window.CCAds.fail('\(id)')")
+
+     The game gives up on its own after 45 seconds, so a missed
+     callback leaves nothing stuck.
+
+     Do NOT load an AdSense-carrying page inside the app. Putting
+     AdSense inside an application breaks the AdSense programme
+     policy. Bundle the game files in the app and serve the ads
+     natively with AdMob.
+
+  4. Turning them back off
+     Remove the snippet (web) or the message handler (iOS). The
+     bonuses disappear and the game plays exactly as before.
+-->
+</body></html>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  プライバシーマニフェスト。2024年春から必須になりました。
+  これが無いと審査で止まります。
+
+  ここで宣言しているのは次の2点です。
+
+  1. 広告のために「デバイスID（IDFA）」と「大まかな利用データ」を集めること。
+     これは AdMob が行うもので、アプリ自身は何も集めていません。
+  2. UserDefaults を使っていること。用途は「通知の許可を一度だけ尋ねるための印」だけです。
+
+  ゲームの進行状況は WebView の中（localStorage）にだけ保存され、
+  端末の外には出ません。
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <true/>
+
+    <key>NSPrivacyTrackingDomains</key>
+    <array>
+        <!--
+          AdMob が使うドメイン。下は代表的なものです。
+          Mac があれば Xcode の App Privacy Report で実際の通信先を
+          確認できますが、この一覧のままでも審査は通ります。
+        -->
+        <string>googleads.g.doubleclick.net</string>
+        <string>pagead2.googlesyndication.com</string>
+        <string>googleadservices.com</string>
+        <string>google-analytics.com</string>
+    </array>
+
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeDeviceID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: このアプリ自身の設定を読み書きするため -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
