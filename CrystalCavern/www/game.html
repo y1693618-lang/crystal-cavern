@@ -62,11 +62,19 @@
     font-variant-numeric:tabular-nums;font-weight:600;overflow-wrap:anywhere;max-width:100%}
   .rate .sep{color:var(--ink-faint);margin:0 .45em}
   .rate .boost{color:var(--gold)}
-  .stage-badge{text-align:right;display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:0 0 auto}
-  .stage-name{font-family:var(--font-display);font-size:var(--t-19);letter-spacing:.05em;color:var(--stage-color,var(--amethyst));line-height:1.15}
-  .meter{width:clamp(96px,30vw,168px);height:6px;border-radius:99px;background:var(--line-soft);border:1px solid var(--line);overflow:hidden}
+  /* flex:1 1 auto matters. Words differ in length by language, and at the
+     larger text sizes this block drops onto its own row. As flex:0 0 auto it
+     kept a narrow box and its right-aligned label spilled out of it — the
+     seam name looked stranded in mid-air. Growing to fill the row keeps the
+     three lines stacked against one edge whether it wraps or not. */
+  .stage-badge{text-align:right;display:flex;flex-direction:column;gap:5px;
+    align-items:flex-end;flex:1 1 auto;min-width:0;max-width:100%}
+  .stage-name{font-family:var(--font-display);font-size:var(--t-19);letter-spacing:.05em;
+    color:var(--stage-color,var(--amethyst));line-height:1.15;max-width:100%;overflow-wrap:anywhere}
+  .meter{width:clamp(96px,30vw,168px);max-width:100%;height:6px;border-radius:99px;background:var(--line-soft);border:1px solid var(--line);overflow:hidden}
   .meter i{display:block;height:100%;background:var(--stage-color,var(--amethyst));transition:width .35s ease}
-  .meter-label{font-size:var(--t-11);color:var(--ink-dim);letter-spacing:.02em;font-weight:500}
+  .meter-label{font-size:var(--t-11);color:var(--ink-dim);letter-spacing:.02em;font-weight:500;
+    max-width:100%;overflow-wrap:anywhere}
 
   /* ---------- layout ---------- */
   .main{flex:1 1 auto;min-height:0;display:grid;grid-template-rows:minmax(210px,1.05fr) minmax(0,1fr);gap:10px}
@@ -338,6 +346,12 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
 
+  /* The hidden attribute means "not here". A display rule on the same
+     element quietly outranks it, which left the dismissed welcome card
+     covering the screen and swallowing every tap from the second launch
+     onwards. One rule closes that whole class of bug. */
+  [hidden]{display:none !important}
+
   @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important} }
 </style>
 
@@ -423,9 +437,9 @@
 
   /* placeholder until the real inbox is decided — example.com is reserved
      for exactly this, so nothing can be sent anywhere by accident */
-  const SUPPORT_MAIL = 'support@example.com';
+  const SUPPORT_MAIL = 'r451mjkl@icloud.com';
   /* the site's contact page — swap in your own domain when it is live */
-  const CONTACT_URL = 'https://example.com/contact.html';
+  const CONTACT_URL = 'https://y1693618-lang.github.io/crystal-cavern/docs/support.html';
   const VERSION = '1.1';
 
   /* ================================================================
@@ -449,15 +463,19 @@
 
     init(){
       let m = '';
-      try{ m = new URLSearchParams(location.search).get('ads') || ''; }catch(e){}
+      /* Inside the app the real AdMob bridge is always the right answer.
+         'test' is a preview aid for the browser, and a flag left switched on
+         there would otherwise follow the player into the app and hide the
+         real ads behind a pretend one. So the bridge is checked first. */
+      const inApp = !!(window.webkit && window.webkit.messageHandlers
+                       && window.webkit.messageHandlers.ccAds);
+      if(inApp) m = 'native';
+      if(!m){ try{ m = new URLSearchParams(location.search).get('ads') || ''; }catch(e){} }
       /* the query string never reaches a sandboxed preview frame,
          so the switch in the menu is the reliable way in */
       if(!m){ try{ m = localStorage.getItem('cc-ads') || ''; }catch(e){} }
       if(!m && window.CC_AD_MODE) m = String(window.CC_AD_MODE);
-      if(!m){
-        if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.ccAds) m = 'native';
-        else if(typeof window.adBreak === 'function') m = 'h5';
-      }
+      if(!m && typeof window.adBreak === 'function') m = 'h5';
       this.mode = ['test','h5','native'].indexOf(m) >= 0 ? m : 'off';
       if(this.mode === 'native'){
         window.CCAds = {
@@ -1696,6 +1714,11 @@
         '<p class="quiet" style="margin-top:10px">'+L.bugEnvNote+'</p>'+
         '<div class="envbox" id="bugEnv"></div>'+
       '</div>'+
+      /* The pretend-ad switch is only useful in a browser, where there is
+         no ad provider to try the rewards against. In the app the real ones
+         play, so showing it there just invites people to turn the real
+         thing off by accident. */
+      (Native.on ? '' :
       '<div class="card">'+
         '<h3>'+L.adsTitle+'</h3><p>'+L.adsBody+'</p>'+
         '<div class="opt-grid">'+
@@ -1704,7 +1727,7 @@
           '<button class="opt" data-ads="off" aria-pressed="'+(Ads.mode!=='test')+'">'+
             '<span class="tickbox"></span>'+L.adsOff+'</button>'+
         '</div>'+
-      '</div>';
+      '</div>');
 
     listMenu.querySelectorAll('[data-fs]').forEach(b =>
       b.addEventListener('click', () => applyFs(+b.dataset.fs)));
