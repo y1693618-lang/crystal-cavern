@@ -50,7 +50,7 @@ targets:
     settings:
       base:
         # ▼▼▼ ここを自分のものに差し替える ▼▼▼
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.crystalcavern
+        PRODUCT_BUNDLE_IDENTIFIER: com.okanoyoshihiko.CrystalCavernIdleMine
         # ▲▲▲ codemagic.yaml の bundle_identifier も同じ値に ▲▲▲
 
         PRODUCT_NAME: CrystalCavern

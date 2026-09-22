@@ -30,7 +30,7 @@ workflows:
       ios_signing:
         distribution_type: app_store
         # ▼▼▼ project.yml の PRODUCT_BUNDLE_IDENTIFIER と同じ値に ▼▼▼
-        bundle_identifier: com.example.crystalcavern
+        bundle_identifier: com.okanoyoshihiko.CrystalCavernIdleMine
       vars:
         XCODE_SCHEME: CrystalCavern
         XCODE_PROJECT: CrystalCavern.xcodeproj
