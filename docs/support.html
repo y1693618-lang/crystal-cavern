@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>サポート — 結晶洞窟</title>
+<meta name="description" content="結晶洞窟 iOS アプリ版のお問い合わせ窓口と、よくある質問です。">
+<meta name="color-scheme" content="light dark">
+<style>
+:root{
+  --bg:#FFFFFF; --ink:#16130F; --dim:#4A443C; --line:#D7D0C6;
+  --link:#0A5C55; --card:#F7F4EF;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14110D; --ink:#F6F0E7; --dim:#C3B8A8; --line:#453B2E;
+    --link:#7FE6D6; --card:#1E1912;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  font-size:17px; line-height:1.85;
+}
+.wrap{max-width:44rem; margin:0 auto; padding:0 20px}
+header{border-bottom:1px solid var(--line); padding:18px 0}
+header .wrap{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+.brand{font-weight:700; text-decoration:none; color:var(--ink)}
+nav{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap}
+main{padding:36px 0 72px}
+h1{font-size:1.75rem; line-height:1.4; margin:0 0 .4em}
+h2{font-size:1.15rem; margin:2.2em 0 .5em; padding-top:.6em; border-top:1px solid var(--line)}
+h3{font-size:1.02rem; margin:1.8em 0 .4em}
+p,ul,ol{margin:0 0 1.1em}
+ul,ol{padding-left:1.4em}
+li{margin-bottom:.4em}
+a{color:var(--link)}
+.lede{color:var(--dim)}
+.meta{color:var(--dim); font-size:.92rem}
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:1.4em 0}
+.card p:last-child{margin-bottom:0}
+code{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.1em .35em; font-size:.92em}
+footer{border-top:1px solid var(--line); padding:24px 0; color:var(--dim); font-size:.92rem}
+.skip{position:absolute; left:-9999px}
+.skip:focus{left:8px; top:8px; background:var(--bg); padding:10px; z-index:9; border:2px solid var(--link)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">本文へ移動</a>
+<header><div class="wrap">
+  <a class="brand" href="index.html">結晶洞窟</a>
+  <nav><a href="privacy.html">プライバシーポリシー</a><a href="support.html">サポート</a><a href="en/privacy.html" hreflang="en" lang="en">English</a></nav>
+</div></header>
+<main id="main"><div class="wrap">
+
+<h1>サポート・お問い合わせ</h1>
+<p class="lede">不具合の報告、ご質問、ご要望はこちらへお願いします。</p>
+
+<div class="card">
+  <p><strong>メール：</strong><a href="mailto:support@example.com">support@example.com</a></p>
+  <p>個人で作っているため、お返事に数日いただくことがあります。</p>
+</div>
+
+<h2>不具合を知らせるとき</h2>
+<p>ゲーム内の <strong>メニュー → 動作環境をコピー</strong> を押すと、調査に必要な情報がまとめてコピーされます。メールに貼り付けてお送りください。</p>
+<p>コピーされるのは次のものです。<strong>氏名・メールアドレス・位置情報・端末の識別子は含まれません。</strong></p>
+<ul>
+  <li>ゲームのバージョン、選択中の言語・配色・文字サイズ</li>
+  <li>画面の大きさ</li>
+  <li>進行状況（深度、累計の採掘量など）</li>
+  <li>お使いの端末とソフトウェアの種類</li>
+</ul>
+
+<h2>よくある質問</h2>
+
+<h3>進行状況が消えました</h3>
+<p>アプリを削除すると、保存された内容も一緒に消えます。機種変更の前に、ゲーム内の <strong>メニュー → セーブコード</strong> を控えておいてください。新しい端末でそのコードを入れれば、続きから遊べます。</p>
+
+<h3>振動が返ってきません</h3>
+<ul>
+  <li><code>設定 → サウンドと触覚 → システムの触覚</code> が切れていないか確認してください</li>
+  <li>低電力モードでは弱くなります</li>
+  <li>iPad には触覚の機能がありません</li>
+</ul>
+
+<h3>広告が出ません</h3>
+<p>在庫がないときや通信が不安定なときは出ないことがあります。少し時間をおいて試してください。広告は任意のものなので、出なくてもゲームは進みます。</p>
+
+<h3>音が出ません</h3>
+<p>仕様です。このゲームは最初から音をいっさい使っていません。作っている人間が聴覚障害のため、音で伝わる情報を作らず、画面と振動だけで遊べる形にしています。</p>
+
+</div></main>
+<footer><div class="wrap">
+  <p>結晶洞窟 / Crystal Cavern</p>
+</div></footer>
+</body>
+</html>
