@@ -12,7 +12,7 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 UPDATED_JA = "2026年9月22日"
 UPDATED_EN = "22 September 2026"
-EMAIL = "support@example.com"          # ← 本当のアドレスが決まったらここだけ直す
+EMAIL = "r451mjkl@icloud.com"          # ← 本当のアドレスが決まったらここだけ直す
 APP_NAME_JA = "結晶洞窟"
 APP_NAME_EN = "Crystal Cavern"
 
