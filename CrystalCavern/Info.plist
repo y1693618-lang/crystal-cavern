@@ -10,10 +10,13 @@
 <dict>
 
     <!-- ===== 基本 ===== -->
+    <!-- 既定の言語。en.lproj/ja.lproj などが無い言語の人にはこれが出ます。 -->
     <key>CFBundleDevelopmentRegion</key>
-    <string>ja</string>
+    <string>en</string>
+    <!-- ホーム画面の名前。言語ごとの名前は *.lproj/InfoPlist.strings 側にあり、
+         そちらが優先されます。ここは最後の受け皿です。 -->
     <key>CFBundleDisplayName</key>
-    <string>結晶洞窟</string>
+    <string>Crystal Cavern</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -31,12 +34,12 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
 
-    <!-- App Store に出す言語。ゲームは5言語に対応しています。 -->
+    <!-- 対応している言語。CrystalCavern/*.lproj と対になっています。 -->
     <key>CFBundleLocalizations</key>
     <array>
-        <string>ja</string>
         <string>en</string>
-        <string>zh</string>
+        <string>ja</string>
+        <string>zh-Hans</string>
         <string>ko</string>
         <string>es</string>
     </array>
@@ -62,7 +65,8 @@
     <key>GADApplicationIdentifier</key>
     <string>ca-app-pub-3940256099942544~1458002511</string>
 
-    <!-- 追跡許可を求めるときに出る説明文。審査で読まれます。 -->
+    <!-- 追跡許可を求めるときに出る説明文。審査で読まれます。
+         言語ごとの文は *.lproj/InfoPlist.strings 側にあります。 -->
     <key>NSUserTrackingUsageDescription</key>
     <string>広告をあなたに合ったものにするために使います。許可しなくてもゲームの内容は変わりません。</string>
 

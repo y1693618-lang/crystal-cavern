@@ -1,0 +1,6 @@
+/* ホーム画面のアイコンの下に出る名前 */
+"CFBundleDisplayName" = "결정 동굴";
+"CFBundleName" = "결정 동굴";
+
+/* 「トラッキングを許可しますか」の画面に出る説明文 */
+"NSUserTrackingUsageDescription" = "표시되는 광고를 더 적합하게 만드는 데 사용됩니다. 허용하지 않아도 게임 내용은 달라지지 않습니다.";

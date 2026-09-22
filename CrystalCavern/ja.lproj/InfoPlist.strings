@@ -1,0 +1,6 @@
+/* ホーム画面のアイコンの下に出る名前 */
+"CFBundleDisplayName" = "結晶洞窟";
+"CFBundleName" = "結晶洞窟";
+
+/* 「トラッキングを許可しますか」の画面に出る説明文 */
+"NSUserTrackingUsageDescription" = "広告をあなたに合ったものにするために使います。許可しなくてもゲームの内容は変わりません。";
