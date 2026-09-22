@@ -23,7 +23,7 @@ workflows:
 
     integrations:
       # ▼▼▼ Codemagic に登録した API キーの名前に差し替える ▼▼▼
-      app_store_connect: CrystalCavernKey
+      app_store_connect: Codemagic
 
     environment:
       xcode: latest
