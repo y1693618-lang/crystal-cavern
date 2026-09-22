@@ -70,7 +70,7 @@ workflows:
       # 失敗したときにメールで知らせます
       email:
         recipients:
-          - support@example.com          # ← 自分のアドレスに差し替える
+          - r451mjkl@icloud.com
         notify:
           success: true
           failure: true
