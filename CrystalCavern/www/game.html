@@ -1,4 +1,5 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#0B0C0F}img{max-width:100%}[hidden]{display:none!important}</style><title>結晶洞窟</title>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#0B0C0F}img{max-width:100%}[hidden]{display:none!important}</style><meta charset="utf-8">
+<title>結晶洞窟</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chivo+Mono:wght@400;600&display=swap">
@@ -147,11 +148,27 @@
 
   /* ---------- panels ---------- */
   .shop{min-height:0;min-width:0;display:flex;flex-direction:column;gap:8px}
-  .tabs{flex:0 0 auto;display:flex;gap:6px}
+  /* Five tabs, and at the largest text size a word like "ボーナス" is wider
+     than a fifth of a phone. Rather than clip it, the row is allowed to fall
+     into two, and each tab asks for a share small enough that it only does so
+     when it really must. */
+  .tabs{flex:0 0 auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
   .tab{
-    flex:1;background:transparent;border:1px solid var(--line-soft);border-radius:10px;
-    padding:11px 4px;font-size:var(--t-13);letter-spacing:.03em;color:var(--ink-dim);
+    /* one step down from the body size: five labels then sit on one line
+       each at the three smaller text settings, and a wrapped two-line label
+       is harder to read than a slightly smaller one-line label */
+    font-size:var(--t-12);
+    /* em, not rem: the share each tab asks for grows with the reader's text
+       size, so the row breaks in two exactly when five words stop fitting —
+       instead of staying in one row and snapping "Rebirth" into "Rebirt/h". */
+    flex:1 1 4.6em;min-width:0;
+    /* when the row does break, the leftover tab is half a row at most,
+       centred, rather than one enormous button spanning the screen */
+    max-width:calc(50% - 3px);
+    background:transparent;border:1px solid var(--line-soft);border-radius:10px;
+    padding:11px 4px;letter-spacing:.03em;color:var(--ink-dim);
     cursor:pointer;transition:all .18s ease;font-weight:500;min-height:48px;
+    line-height:1.3;
   }
   .tab[aria-selected="true"]{background:var(--panel-2);color:var(--ink);border-color:var(--line);font-weight:700;box-shadow:inset 0 -3px 0 var(--cyan)}
   .tab:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
@@ -414,11 +431,13 @@
         <button class="tab" role="tab" id="tab-mine" aria-selected="true"></button>
         <button class="tab" role="tab" id="tab-core" aria-selected="false"><span id="tabCoreLabel"></span><span class="dot"></span></button>
         <button class="tab" role="tab" id="tab-bonus" aria-selected="false" hidden></button>
+        <button class="tab" role="tab" id="tab-howto" aria-selected="false"></button>
         <button class="tab" role="tab" id="tab-menu" aria-selected="false"></button>
       </div>
       <div class="list" id="listMine" role="tabpanel"></div>
       <div class="list" id="listCore" role="tabpanel" hidden></div>
       <div class="list" id="listBonus" role="tabpanel" hidden></div>
+      <div class="list" id="listHowto" role="tabpanel" hidden></div>
       <div class="list" id="listMenu" role="tabpanel" hidden></div>
     </section>
   </div>
@@ -684,7 +703,7 @@
     adsBody:'動画リワードの受け口を試すためのスイッチです。「試す」にすると「掘る」タブにボーナスが現れ、押すと本物の広告の代わりに0.6秒の待ち時間が入って報酬が届きます。広告は一切読み込みません。',
     adsOn:'試す', adsOff:'使わない',
     fsOn:'フル画面', fsOff:'もどす',
-    tabBonus:'ボーナス',
+    tabBonus:'ボーナス', tabHowto:'遊び方',
     rwLeft:'本日の残り', rwOf:(n,m)=>n+' / '+m+' 回',
     rwResetNote:'日付が変わると回数がリセットされます。',
     rwEmpty:'本日の回数を使い切りました', rwResetIn:t=>'リセットまで '+t,
@@ -793,7 +812,7 @@
     adsBody:'A switch for testing the rewarded-video hooks. Turn it on and the bonuses appear in the Mine tab; pressing one waits 0.6 seconds in place of a real advert and then hands you the reward. No advert is ever loaded.',
     adsOn:'Try them', adsOff:'Off',
     fsOn:'Full screen', fsOff:'Exit',
-    tabBonus:'Bonuses',
+    tabBonus:'Bonus', tabHowto:'Guide',
     rwLeft:'Left today', rwOf:(n,m)=>n+' of '+m,
     rwResetNote:'The count resets when the date changes.',
     rwEmpty:'None left today', rwResetIn:t=>'Resets in '+t,
@@ -901,7 +920,7 @@
     adsBody:'用于测试视频奖励接口的开关。打开后「挖掘」标签会出现奖励，按下时以0.6秒的等待代替真实广告，然后发放奖励。不会加载任何广告。',
     adsOn:'试用', adsOff:'关闭',
     fsOn:'全屏', fsOff:'退出',
-    tabBonus:'奖励',
+    tabBonus:'奖励', tabHowto:'玩法',
     rwLeft:'今天剩余', rwOf:(n,m)=>n+' / '+m+' 次',
     rwResetNote:'日期变更后次数会重置。',
     rwEmpty:'今天的次数已用完', rwResetIn:t=>'距离重置 '+t,
@@ -1010,7 +1029,7 @@
     adsBody:'영상 보상 연결부를 시험하기 위한 스위치입니다. 켜면 「채굴」탭에 보너스가 나타나고, 누르면 실제 광고 대신 0.6초를 기다린 뒤 보상이 들어옵니다. 광고는 전혀 불러오지 않습니다.',
     adsOn:'시험하기', adsOff:'사용 안 함',
     fsOn:'전체 화면', fsOff:'나가기',
-    tabBonus:'보너스',
+    tabBonus:'보너스', tabHowto:'도움말',
     rwLeft:'오늘 남은 횟수', rwOf:(n,m)=>n+' / '+m+'회',
     rwResetNote:'날짜가 바뀌면 횟수가 초기화됩니다.',
     rwEmpty:'오늘 횟수를 모두 사용했습니다', rwResetIn:t=>'초기화까지 '+t,
@@ -1030,7 +1049,7 @@
     tapHint:'Toca el cristal para excavar', tapAria:'Excavar el cristal',
     pause:'Pausa', resume:'Seguir', pauseAria:'Pausar o continuar',
     veilTitle:'En pausa', veilBody:'La excavación y los ingresos están detenidos. Nada se acumula mientras está en pausa.',
-    tabMine:'Excavar', tabCore:'Renacer', tabMenu:'Menú',
+    tabMine:'Cavar', tabCore:'Renacer', tabMenu:'Menú',
     taps:{pick:['Afilar el pico','+1 cristal por cada toque'], glove:['Guantes de resonancia','Cada toque suma un 3% de tus ingresos por segundo']},
     gens:{moss:['Musgo luminoso','El musgo de las paredes suelta polvo de cristal'], drill:['Taladro pequeño','Un mecanismo de cuerda desgasta la pared'],
       bat:['Murciélago porteador','Trae cristales desde la oscuridad'], vein:['Bomba de veta','Sube cristales junto con el agua subterránea'],
@@ -1119,7 +1138,7 @@
     adsBody:'Un interruptor para probar los enganches de vídeo recompensado. Al activarlo aparecen los bonus en la pestaña Excavar; al pulsar uno se espera 0,6 segundos en lugar de un anuncio real y llega la recompensa. No se carga ningún anuncio.',
     adsOn:'Probarlos', adsOff:'Desactivado',
     fsOn:'Pantalla completa', fsOff:'Salir',
-    tabBonus:'Bonus',
+    tabBonus:'Bonus', tabHowto:'Gu\u00eda',
     rwLeft:'Quedan hoy', rwOf:(n,m)=>n+' de '+m,
     rwResetNote:'La cuenta se reinicia al cambiar la fecha.',
     rwEmpty:'No quedan para hoy', rwResetIn:t=>'Se reinicia en '+t,
@@ -1628,7 +1647,7 @@
      ================================================================ */
 
   const listMine = $('listMine'), listCore = $('listCore'),
-        listBonus = $('listBonus'), listMenu = $('listMenu');
+        listBonus = $('listBonus'), listHowto = $('listHowto'), listMenu = $('listMenu');
   let rows = {}, rwRows = {};
   let currentTab = 'mine';
 
@@ -1739,6 +1758,16 @@
       '<button class="opt" data-skin="'+s.id+'" aria-pressed="'+(s.id===skin.id)+'">'+
       '<span class="sw" style="background:'+s.v['--bg']+'"></span>'+L.skins[s.id]+'</button>').join('');
 
+    /* The rules used to sit third in the menu, which pushed everything a
+       player might actually need — reporting a problem, most of all — below
+       the fold. They are the one part nobody edits while playing, so they
+       get a tab, and the menu keeps only the things you go there to change. */
+    listHowto.innerHTML =
+      '<div class="card">'+
+        '<h3>'+L.howtoTitle+'</h3><ol class="rules">'+rules+'</ol>'+
+        '<div class="btn-row"><button class="mini" id="btnGuide">'+L.reopenGuide+'</button></div>'+
+      '</div>';
+
     listMenu.innerHTML =
       '<div class="card">'+
         '<h3>'+L.sizeTitle+'</h3><p>'+L.sizeBody+'</p>'+
@@ -1748,9 +1777,16 @@
         '<h3>'+L.skinTitle+'</h3><p>'+L.skinBody+'</p>'+
         '<div class="opt-grid">'+skinOpts+'</div>'+
       '</div>'+
+      /* Third, where it can be reached without a scroll. Someone with a
+         problem to report should not have to hunt for the way to report it. */
       '<div class="card">'+
-        '<h3>'+L.howtoTitle+'</h3><ol class="rules">'+rules+'</ol>'+
-        '<div class="btn-row"><button class="mini" id="btnGuide">'+L.reopenGuide+'</button></div>'+
+        '<h3>'+L.bugTitle+'</h3><p>'+L.bugBody+'</p>'+
+        '<div class="btn-row">'+
+          '<a class="mini" id="btnBugPage" href="'+CONTACT_URL+'" target="_blank" rel="noopener">'+L.bugOpen+'</a>'+
+          '<button class="mini" id="btnBugCopy">'+L.bugCopyEnv+'</button>'+
+        '</div>'+
+        '<p class="quiet" style="margin-top:10px">'+L.bugEnvNote+'</p>'+
+        '<div class="envbox" id="bugEnv"></div>'+
       '</div>'+
       '<div class="card">'+
         '<h3>'+L.pauseSecTitle+'</h3><p>'+L.pauseSecBody+'</p>'+
@@ -1776,15 +1812,6 @@
           '<a class="mini" id="btnLine" href="#" target="_blank" rel="noopener">'+L.shareLine+'</a>'+
         '</div>'+
         '<p class="quiet" style="margin-top:12px">'+L.sharePrivacy+'</p>'+
-      '</div>'+
-      '<div class="card">'+
-        '<h3>'+L.bugTitle+'</h3><p>'+L.bugBody+'</p>'+
-        '<div class="btn-row">'+
-          '<a class="mini" id="btnBugPage" href="'+CONTACT_URL+'" target="_blank" rel="noopener">'+L.bugOpen+'</a>'+
-          '<button class="mini" id="btnBugCopy">'+L.bugCopyEnv+'</button>'+
-        '</div>'+
-        '<p class="quiet" style="margin-top:10px">'+L.bugEnvNote+'</p>'+
-        '<div class="envbox" id="bugEnv"></div>'+
       '</div>'+
       /* The pretend-ad switch is only useful in a browser, where there is
          no ad provider to try the rewards against. In the app the real ones
@@ -1841,6 +1868,7 @@
     $('tab-mine').textContent = L.tabMine;
     $('tabCoreLabel').textContent = L.tabCore;
     $('tab-bonus').textContent = L.tabBonus;
+    $('tab-howto').textContent = L.tabHowto;
     $('tab-menu').textContent = L.tabMenu;
     $('hint').textContent = L.tapHint;
     $('tap').setAttribute('aria-label', L.tapAria);
@@ -1889,8 +1917,10 @@
   });
 
   /* ---------- tabs ---------- */
-  const tabs = {mine:$('tab-mine'), core:$('tab-core'), bonus:$('tab-bonus'), menu:$('tab-menu')};
-  const panels = {mine:listMine, core:listCore, bonus:listBonus, menu:listMenu};
+  const tabs = {mine:$('tab-mine'), core:$('tab-core'), bonus:$('tab-bonus'),
+                howto:$('tab-howto'), menu:$('tab-menu')};
+  const panels = {mine:listMine, core:listCore, bonus:listBonus,
+                  howto:listHowto, menu:listMenu};
   function selectTab(which){
     if(which === 'bonus' && Ads.mode === 'off') which = 'mine';
     currentTab = which;
