@@ -28,6 +28,18 @@ workflows:
 
     environment:
       xcode: latest
+
+      # Codemagic の Settings → Code signing identities に置いてある
+      # 証明書とプロファイルを、このビルドに持ち込みます。
+      ios_signing:
+        provisioning_profiles:
+          - crystalcavern
+        certificates:
+          # 3つとも渡しておきます。プロファイルに合うものを Xcode が選びます。
+          - growwell
+          - growwell-v2
+          - muscleodyssey
+
       vars:
         # ▼▼▼ project.yml の PRODUCT_BUNDLE_IDENTIFIER と同じ値に ▼▼▼
         BUNDLE_ID: com.okanoyoshihiko.CrystalCavernIdleMine
@@ -49,16 +61,11 @@ workflows:
           xcodegen generate
           rm -f project.yml.bak
 
-      - name: 署名ファイルを用意する
+      - name: 署名の設定を流し込む
         script: |
           set -e
-          keychain initialize
-          # --create が要点。このアプリ用の証明書とプロファイルが
-          # まだ無ければ、Apple 側に作ってから持ってきます。
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
+          # 証明書とプロファイルは Codemagic が用意済みなので、
+          # それを Xcode プロジェクトに結びつけるだけです。
           xcode-project use-profiles
 
       - name: ビルドして .ipa を作る
