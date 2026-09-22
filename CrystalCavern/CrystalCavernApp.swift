@@ -36,7 +36,7 @@ struct CrystalCavernApp: App {
                     }
                 }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             // 前面に戻ってきたら、予約していた通知は役目を終えている
             if phase == .active {
                 NotificationManager.shared.cancelPending()
