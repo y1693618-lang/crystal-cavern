@@ -47,7 +47,7 @@
     flex:0 0 auto;padding-block:14px 10px;display:flex;align-items:flex-end;
     justify-content:space-between;gap:14px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
   }
-  .count-wrap{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 12rem}
+  .count-wrap{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 8rem}
   .eyebrow{font-size:var(--t-11);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
   .count{
     font-family:var(--font-num);font-weight:600;
@@ -67,8 +67,15 @@
      kept a narrow box and its right-aligned label spilled out of it — the
      seam name looked stranded in mid-air. Growing to fill the row keeps the
      three lines stacked against one edge whether it wraps or not. */
+  /* Both halves of the header ask for a small share and then grow into
+     whatever is left, so neither one's natural width can push the other
+     onto a second row. With flex:1 1 auto the seam block claimed the width
+     of its longest line — "Siguiente: Amatista (600)" at the largest text
+     size — and wrapped below the count in Spanish, English, Korean and
+     Chinese while Japanese happened to fit. A basis in rem, not content,
+     is what makes the row behave the same in every language. */
   .stage-badge{text-align:right;display:flex;flex-direction:column;gap:5px;
-    align-items:flex-end;flex:1 1 auto;min-width:0;max-width:100%}
+    align-items:flex-end;flex:1 1 9rem;min-width:0;max-width:22rem}
   .stage-name{font-family:var(--font-display);font-size:var(--t-19);letter-spacing:.05em;
     color:var(--stage-color,var(--amethyst));line-height:1.15;max-width:100%;overflow-wrap:anywhere}
   .meter{width:clamp(96px,30vw,168px);max-width:100%;height:6px;border-radius:99px;background:var(--line-soft);border:1px solid var(--line);overflow:hidden}
@@ -440,6 +447,11 @@
   const SUPPORT_MAIL = 'r451mjkl@icloud.com';
   /* the site's contact page — swap in your own domain when it is live */
   const CONTACT_URL = 'https://y1693618-lang.github.io/crystal-cavern/docs/support.html';
+  const PRIVACY_URL = 'https://y1693618-lang.github.io/crystal-cavern/docs/privacy.html';
+  /* Apple's standard licence. Every App Store app is covered by it unless
+     the developer supplies one of their own, and Apple expects it to be
+     reachable from inside the app — hence the card at the foot of the menu. */
+  const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
   const VERSION = '1.1';
 
   /* ================================================================
@@ -540,6 +552,12 @@
     /* Touch, standing where sound would be. This game has no audio at all,
        so on a phone the taptic engine is the one extra sense available. */
     haptic(kind){ this.post('ccHaptic', {kind: kind}); },
+    /* Asking for permission to notify happens here and nowhere else.
+       Left to the idle hook below it fired whenever the page was covered —
+       including by a full-screen advert, which put the system's permission
+       sheet on top of the ad. A permission is asked for when the player
+       reaches for it, or not at all. */
+    notify(){ this.post('ccNotify', {}); },
     /* Hand the app enough to schedule "the cave is full" for later. */
     idle(){
       this.post('ccIdle', {
@@ -602,7 +620,8 @@
     howto:[
       ['中央の結晶をタップする','これが基本の操作です。1回ごとに結晶が手に入ります。キーボードなら Tab キーで選び、スペースキーで掘れます。'],
       ['設備を買って自動化する','「掘る」タブで設備を買うと、放っておいても毎秒たまるようになります。買うほど値上がりしますが、<b>10個ごとに生産量が2倍</b>。上の「×10」「×MAX」でまとめ買いもできます。'],
-      ['鉱脈を深く進める','累計の採掘量が増えると鉱脈が変わり、結晶の色と形が変化します。石英から虹晶まで全7種類あります。'],
+      ['鉱脈を深く進める',(o,t)=>'累計の採掘量が増えると鉱脈が変わり、結晶の色と形が変化します。'
+        +'最初は石英から虹晶までの'+o+'種類。再結晶するたびに奥の鉱脈がひとつずつ開き、全部で'+t+'種類になります。'],
       ['光る球を拾う','ときどき光る球が画面を横切ります。消える前にタップするとボーナス。3種類あり、いちばん良いのは30秒間すべて5倍になる「結晶の共鳴」です。'],
       ['再結晶で強くなる','累計100万結晶で解放されます。すべてリセットする代わりに、永久に効く倍率「核」が残ります。2周目からが本番です。'],
       ['自動で保存される','進行状況はこの端末に自動保存されます。閉じても続きから始まります。留守のあいだも半分の速度でたまります（最大8時間分）。'],
@@ -668,7 +687,15 @@
     tabBonus:'ボーナス',
     rwLeft:'本日の残り', rwOf:(n,m)=>n+' / '+m+' 回',
     rwResetNote:'日付が変わると回数がリセットされます。',
-    rwEmpty:'本日の回数を使い切りました', rwResetIn:t=>'リセットまで '+t
+    rwEmpty:'本日の回数を使い切りました', rwResetIn:t=>'リセットまで '+t,
+    notifyTitle:'留守のあいだのお知らせ',
+    notifyBody:'留守のあいだに貯まる分は8時間で上限に達します。そのときに一度だけお知らせします。'
+      +'音は鳴りません。送るのはこれ1種類だけで、ほかに何かを送ることはありません。',
+    notifyBtn:'お知らせの設定',
+    legalTitle:'規約とプライバシー',
+    legalBody:'このアプリの利用規約は、Apple の標準の使用許諾契約です。'
+      +'個人情報の扱いはプライバシーポリシーに書いてあります。',
+    legalEula:'利用規約（Apple）', legalPrivacy:'プライバシーポリシー'
   },
   en:{
     crystals:'Crystals', perSec:'per sec', coreMult:'Cores', resonance:'Resonance', remain:n=>n+'s left',
@@ -701,7 +728,9 @@
     howto:[
       ['Tap the crystal','That is the whole basic move. Every tap gives you crystals. On a keyboard, press Tab to select it and Space to mine.'],
       ['Buy buildings to automate','Buildings in the Mine tab earn crystals every second, even while you do nothing. Each copy costs more than the last, but <b>every 10 copies doubles that building\u2019s output</b>. The \u00d710 and \u00d7MAX buttons buy in bulk.'],
-      ['Push the seam deeper','As your all-time total grows, the seam changes and the crystal shifts colour and shape. There are seven, from Quartz to Prism.'],
+      ['Push the seam deeper',(o,t)=>'As your all-time total grows, the seam changes and the crystal '
+        +'shifts colour and shape. '+o+' are open from the start, Quartz through Prism; each rebirth '
+        +'opens one more of the deeper seams, '+t+' in all.'],
       ['Catch the glowing orbs','Now and then a glowing orb drifts across the screen. Tap it before it fades for a bonus. There are three; the best is Crystal Resonance, which makes everything ×5 for 30 seconds.'],
       ['Rebirth to grow stronger','Unlocks at one million total crystals. You reset everything, but keep permanent multiplier cores. The second run is where the game opens up.'],
       ['It saves itself','Progress is stored on this device automatically. Close the page and pick up where you left off. While you are away it keeps earning at half speed, up to 8 hours.'],
@@ -767,7 +796,15 @@
     tabBonus:'Bonuses',
     rwLeft:'Left today', rwOf:(n,m)=>n+' of '+m,
     rwResetNote:'The count resets when the date changes.',
-    rwEmpty:'None left today', rwResetIn:t=>'Resets in '+t
+    rwEmpty:'None left today', rwResetIn:t=>'Resets in '+t,
+    notifyTitle:'Reminders while you are away',
+    notifyBody:'What builds up while you are away reaches its limit after eight hours. '
+      +'A single silent reminder is sent at that moment, and nothing else is ever sent.',
+    notifyBtn:'Reminder settings',
+    legalTitle:'Terms and privacy',
+    legalBody:'This app is covered by Apple\u2019s standard licence agreement. '
+      +'How your information is handled is set out in the privacy policy.',
+    legalEula:'Licence agreement (Apple)', legalPrivacy:'Privacy policy'
   },
   zh:{
     crystals:'结晶', perSec:'每秒', coreMult:'核', resonance:'共鸣', remain:n=>'剩余'+n+'秒',
@@ -800,7 +837,8 @@
     howto:[
       ['点击中央的结晶','这就是最基本的操作，每点一次就能获得结晶。用键盘时按 Tab 选中，再按空格键挖掘。'],
       ['购买设备实现自动化','在「挖掘」标签购买设备后，即使放着不管也会每秒累积结晶。买得越多价格越高，但<b>每满10个产量翻倍</b>。用上方的「×10」「×MAX」可以批量购买。'],
-      ['向更深的矿脉推进','累计挖掘量增加后矿脉会改变，结晶的颜色与形状也随之变化。从石英到虹晶共有7种。'],
+      ['向更深的矿脉推进',(o,t)=>'累计挖掘量增加后矿脉会改变，结晶的颜色与形状也随之变化。'
+        +'最初是从石英到虹晶的'+o+'种，每次重结晶都会多开启一层更深的矿脉，全部共'+t+'种。'],
       ['拾取光球','光球会不时横穿画面，在它消失前点击即可获得奖励。共有3种，最好的是让一切收入在30秒内变成5倍的「结晶共鸣」。'],
       ['用重结晶变强','累计100万结晶后解锁。代价是全部重置，但会留下永久生效的倍率「核」。第二轮才是真正的开始。'],
       ['自动保存','进度会自动保存在这台设备上，关掉页面也能接着玩。离开期间也会以一半的速度累积（最多8小时）。'],
@@ -866,7 +904,15 @@
     tabBonus:'奖励',
     rwLeft:'今天剩余', rwOf:(n,m)=>n+' / '+m+' 次',
     rwResetNote:'日期变更后次数会重置。',
-    rwEmpty:'今天的次数已用完', rwResetIn:t=>'距离重置 '+t
+    rwEmpty:'今天的次数已用完', rwResetIn:t=>'距离重置 '+t,
+    notifyTitle:'离开期间的提醒',
+    notifyBody:'离开期间累积的部分会在8小时后达到上限，届时只提醒一次。'
+      +'不会发出声音，也不会发送其他任何通知。',
+    notifyBtn:'提醒设置',
+    legalTitle:'条款与隐私',
+    legalBody:'本应用适用 Apple 的标准使用许可协议。'
+      +'个人信息的处理方式请见隐私政策。',
+    legalEula:'使用许可协议（Apple）', legalPrivacy:'隐私政策'
   },
   ko:{
     crystals:'결정', perSec:'초당', coreMult:'핵', resonance:'공명', remain:n=>n+'초 남음',
@@ -899,7 +945,9 @@
     howto:[
       ['가운데 결정을 누르기','가장 기본이 되는 조작입니다. 한 번 누를 때마다 결정을 얻습니다. 키보드에서는 Tab으로 선택하고 스페이스로 캘 수 있습니다.'],
       ['설비를 사서 자동화하기','「채굴」탭에서 설비를 사면 가만히 두어도 매초 결정이 쌓입니다. 살수록 값이 오르지만 <b>10개마다 생산량이 2배</b>가 됩니다. 위의 「×10」「×MAX」로 한꺼번에 살 수 있습니다.'],
-      ['광맥을 더 깊이 파기','누적 채굴량이 늘면 광맥이 바뀌고 결정의 색과 모양도 변합니다. 석영부터 무지개 결정까지 모두 7종류.'],
+      ['광맥을 더 깊이 파기',(o,t)=>'누적 채굴량이 늘면 광맥이 바뀌고 결정의 색과 모양도 변합니다. '
+        +'처음에는 석영부터 무지개 결정까지 '+o+'종류이며, 재결정할 때마다 더 깊은 광맥이 '
+        +'하나씩 열려 모두 '+t+'종류가 됩니다.'],
       ['빛의 구슬 줍기','이따금 빛나는 구슬이 화면을 지나갑니다. 사라지기 전에 누르면 보너스. 3종류가 있고, 가장 좋은 것은 30초간 모든 수입이 5배가 되는 「결정의 공명」입니다.'],
       ['재결정으로 강해지기','누적 100만 결정에서 해금됩니다. 전부 초기화하는 대신 영구히 적용되는 배율 「핵」이 남습니다. 두 번째 회차부터가 진짜입니다.'],
       ['자동으로 저장됨','진행 상황은 이 기기에 자동 저장됩니다. 닫아도 이어서 시작합니다. 자리를 비운 동안에도 절반 속도로 쌓입니다(최대 8시간분).'],
@@ -965,7 +1013,15 @@
     tabBonus:'보너스',
     rwLeft:'오늘 남은 횟수', rwOf:(n,m)=>n+' / '+m+'회',
     rwResetNote:'날짜가 바뀌면 횟수가 초기화됩니다.',
-    rwEmpty:'오늘 횟수를 모두 사용했습니다', rwResetIn:t=>'초기화까지 '+t
+    rwEmpty:'오늘 횟수를 모두 사용했습니다', rwResetIn:t=>'초기화까지 '+t,
+    notifyTitle:'자리를 비운 동안의 알림',
+    notifyBody:'자리를 비운 동안 쌓이는 양은 8시간이면 상한에 이릅니다. 그때 한 번만 알립니다. '
+      +'소리는 나지 않으며, 이 밖의 알림은 보내지 않습니다.',
+    notifyBtn:'알림 설정',
+    legalTitle:'약관과 개인정보',
+    legalBody:'이 앱에는 Apple의 표준 사용권 계약이 적용됩니다. '
+      +'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.',
+    legalEula:'사용권 계약(Apple)', legalPrivacy:'개인정보 처리방침'
   },
   es:{
     crystals:'Cristales', perSec:'por seg', coreMult:'Núcleos', resonance:'Resonancia', remain:n=>'quedan '+n+' s',
@@ -998,7 +1054,9 @@
     howto:[
       ['Toca el cristal del centro','Es todo el gesto básico. Cada toque te da cristales. Con teclado, selecciona con Tab y excava con la barra espaciadora.'],
       ['Compra instalaciones','Las instalaciones de la pestaña Excavar producen cristales cada segundo, incluso si no haces nada. Cada copia cuesta más que la anterior, pero <b>cada 10 copias duplican su producción</b>. Los botones ×10 y ×MAX compran en bloque.'],
-      ['Baja a vetas más profundas','Cuando crece tu total histórico, la veta cambia y el cristal cambia de color y forma. Hay siete, del Cuarzo al Prisma.'],
+      ['Baja a vetas más profundas',(o,t)=>'Cuando crece tu total histórico, la veta cambia y el '
+        +'cristal cambia de color y forma. Al principio hay '+o+', del Cuarzo al Prisma; cada renacer '
+        +'abre una veta más profunda, hasta '+t+' en total.'],
       ['Atrapa los orbes','De vez en cuando un orbe luminoso cruza la pantalla. Tócalo antes de que se apague para conseguir un premio. Hay tres; el mejor es Resonancia cristalina, que multiplica todo por 5 durante 30 segundos.'],
       ['Renace para hacerte fuerte','Se abre al llegar a un millón en total. Reinicias todo, pero conservas núcleos que multiplican para siempre. La segunda partida es donde empieza lo bueno.'],
       ['Se guarda solo','El progreso se guarda en este dispositivo. Puedes cerrar la página y continuar después. Mientras no estás sigue produciendo a mitad de velocidad, hasta 8 horas.'],
@@ -1064,7 +1122,15 @@
     tabBonus:'Bonus',
     rwLeft:'Quedan hoy', rwOf:(n,m)=>n+' de '+m,
     rwResetNote:'La cuenta se reinicia al cambiar la fecha.',
-    rwEmpty:'No quedan para hoy', rwResetIn:t=>'Se reinicia en '+t
+    rwEmpty:'No quedan para hoy', rwResetIn:t=>'Se reinicia en '+t,
+    notifyTitle:'Avisos mientras no est\u00e1s',
+    notifyBody:'Lo que se acumula mientras no est\u00e1s llega a su l\u00edmite a las ocho horas. '
+      +'En ese momento se env\u00eda un \u00fanico aviso, sin sonido, y nunca se env\u00eda nada m\u00e1s.',
+    notifyBtn:'Ajustes de avisos',
+    legalTitle:'Condiciones y privacidad',
+    legalBody:'Esta aplicaci\u00f3n se rige por el contrato de licencia est\u00e1ndar de Apple. '
+      +'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
+    legalEula:'Contrato de licencia (Apple)', legalPrivacy:'Pol\u00edtica de privacidad'
   }};
 
   let langId = 'ja';
@@ -1655,8 +1721,14 @@
       '</div>';
     $('btnReset').addEventListener('click', doReset);
 
+    /* One of these lines has to name how many seams there are, and a number
+       typed into five translations drifts the moment the game changes — it
+       already had, saying seven when the records panel said 7 / 12. A line
+       may be a function instead, and is handed the real counts. */
     const rules = L.howto.map((r,i) =>
-      '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+r[1]+'</span></span></li>'
+      '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+
+      (typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1])+
+      '</span></span></li>'
     ).join('');
 
     const sizeOpts = L.sizes.map((s,i) =>
@@ -1727,7 +1799,26 @@
           '<button class="opt" data-ads="off" aria-pressed="'+(Ads.mode!=='test')+'">'+
             '<span class="tickbox"></span>'+L.adsOff+'</button>'+
         '</div>'+
-      '</div>');
+      '</div>')+
+      /* Only the app can send a reminder, so the card only exists there. */
+      (Native.on ?
+      '<div class="card">'+
+        '<h3>'+L.notifyTitle+'</h3><p>'+L.notifyBody+'</p>'+
+        '<div class="btn-row"><button class="mini" id="btnNotify">'+L.notifyBtn+'</button></div>'+
+      '</div>' : '')+
+      /* Last card in the menu, so the legal text is always in the same
+         place however long the rest of the list grows. The licence link
+         only means anything inside the App Store build, so on the web the
+         card carries the privacy policy alone. */
+      '<div class="card">'+
+        '<h3>'+L.legalTitle+'</h3><p>'+L.legalBody+'</p>'+
+        '<div class="btn-row">'+
+          (Native.on ? '<a class="mini" href="'+EULA_URL+'" target="_blank" rel="noopener">'+
+            L.legalEula+'</a>' : '')+
+          '<a class="mini" href="'+PRIVACY_URL+'" target="_blank" rel="noopener">'+
+            L.legalPrivacy+'</a>'+
+        '</div>'+
+      '</div>';
 
     listMenu.querySelectorAll('[data-fs]').forEach(b =>
       b.addEventListener('click', () => applyFs(+b.dataset.fs)));
@@ -1737,6 +1828,8 @@
     $('btnGuide').addEventListener('click', showWelcome);
     listMenu.querySelectorAll('[data-ads]').forEach(b =>
       b.addEventListener('click', () => setAdMode(b.dataset.ads)));
+    const bn = $('btnNotify');
+    if(bn) bn.addEventListener('click', () => Native.notify());
     wireBugButtons();
     wireSaveButtons();
     wireShareButtons();
