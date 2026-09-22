@@ -8,7 +8,11 @@
 //  ・通知は「一度だけ」「8時間後」。それ以上は送りません。
 //  ・毎秒の収入がない人には送りません（知らせる中身がないため）。
 //  ・一時停止中の人にも送りません。
-//  ・許可は初回の離脱時にだけ尋ね、断られたら二度と尋ねません。
+//  ・許可はメニューの「お知らせの設定」を押したときにだけ尋ねます。
+//
+//  以前はアプリを離れたときに自動で尋ねていました。ところが全画面の広告が
+//  出ると WebView は「隠れた」と判断し、そこでも尋ねてしまい、広告の上に
+//  許可の確認画面が重なりました。自動で尋ねるのをやめて直しています。
 //
 
 import UIKit
@@ -20,35 +24,47 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     private override init() { super.init() }
 
     private let identifier = "cave-full"
-    private let askedKey = "cc-asked-notify"
 
     // MARK: - 予約
 
+    /// すでに許可されているときだけ予約します。ここで許可を求めることはありません。
     func scheduleCaveFull(afterSeconds seconds: Int, perSecond rate: Int, paused: Bool) {
         cancelPending()
 
-        // 知らせる価値がないときは、そもそも許可も求めない
+        // 知らせる中身がないときは何もしない
         guard !paused, rate > 0, seconds > 60 else { return }
 
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
             switch settings.authorizationStatus {
-
-            case .notDetermined:
-                // 初回だけ尋ねる。断られたらそれきり。
-                guard !UserDefaults.standard.bool(forKey: self.askedKey) else { return }
-                UserDefaults.standard.set(true, forKey: self.askedKey)
-                center.requestAuthorization(options: [.alert, .badge]) { granted, _ in
-                    if granted { self.add(seconds: seconds) }
-                }
-
             case .authorized, .provisional:
                 self.add(seconds: seconds)
-
             default:
-                break
+                break       // 未回答でも拒否でも、黙って何もしない
             }
         }
+    }
+
+    // MARK: - 許可（メニューから押されたときだけ）
+
+    /// まだ答えていなければ許可を尋ね、すでに答えたあとなら設定アプリを開きます。
+    /// どちらの場合も、押した本人が予期している動きになります。
+    func promptOrOpenSettings() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            if settings.authorizationStatus == .notDetermined {
+                // 音は使わないゲームなので、音の許可は求めません。
+                center.requestAuthorization(options: [.alert, .badge],
+                                            completionHandler: { _, _ in })
+            } else {
+                DispatchQueue.main.async { Self.openAppSettings() }
+            }
+        }
+    }
+
+    private static func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func add(seconds: Int) {

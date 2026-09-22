@@ -20,6 +20,7 @@ struct GameScreen: UIViewRepresentable {
         content.add(context.coordinator, name: "ccHaptic")  // 触覚
         content.add(context.coordinator, name: "ccAds")     // リワード広告
         content.add(context.coordinator, name: "ccIdle")    // 通知の予約
+        content.add(context.coordinator, name: "ccNotify")  // 通知の許可（メニューから）
         config.userContentController = content
 
         // 動画広告を全画面で出すので、勝手に再生されないようにはしない

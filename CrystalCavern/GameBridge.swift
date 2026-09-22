@@ -7,6 +7,7 @@
 //    ccHaptic  { kind: "tap" | "buy" | "orb" | "seam" | "rebirth" }
 //    ccAds     { reward: "skip" | "boost" | "orb" | "core" }
 //    ccIdle    { rate: Int, paused: Bool, fullAfterSeconds: Int }
+//    ccNotify  {}   メニューの「お知らせの設定」が押された
 //
 //  返事は window.CCAds.grant(id) / window.CCAds.fail(id) で返します。
 //
@@ -17,6 +18,11 @@ import WebKit
 final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
     weak var webView: WKWebView?
+
+    /// 広告を出している最中かどうか。
+    /// 全画面の広告が出ると WebView は「隠れた」と判断して ccIdle を送ってきますが、
+    /// 遊んでいる人はまだそこにいます。留守の予約をする場面ではありません。
+    private var adOnScreen = false
 
     // MARK: - JavaScript からの受け口
 
@@ -35,11 +41,15 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             showRewardedAd(for: reward)
 
         case "ccIdle":
+            guard !adOnScreen else { return }
             let rate = body["rate"] as? Int ?? 0
             let paused = body["paused"] as? Bool ?? false
             let seconds = body["fullAfterSeconds"] as? Int ?? 8 * 3600
             NotificationManager.shared.scheduleCaveFull(
                 afterSeconds: seconds, perSecond: rate, paused: paused)
+
+        case "ccNotify":
+            NotificationManager.shared.promptOrOpenSettings()
 
         default:
             break
@@ -49,7 +59,9 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     // MARK: - 広告
 
     private func showRewardedAd(for reward: String) {
+        adOnScreen = true
         AdsManager.shared.showRewarded { granted in
+            self.adOnScreen = false
             // JavaScript 側は45秒で自分から諦めるので、
             // 返事が遅れても固まることはありません。
             self.answer(reward: reward, granted: granted)
