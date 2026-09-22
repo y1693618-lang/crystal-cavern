@@ -1,0 +1,11 @@
+# XcodeGen が作るので、Git には入れません
+*.xcodeproj/
+*.xcworkspace/
+
+# Mac / Xcode の副産物
+.DS_Store
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+project.yml.bak

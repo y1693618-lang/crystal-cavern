@@ -1,0 +1,73 @@
+# ============================================================================
+#  project.yml — Xcode プロジェクトの「設計図」
+#
+#  Windows には Xcode がありません。そこで .xcodeproj そのものは
+#  GitHub に置かず、このファイルだけを置きます。
+#  Codemagic（Mac）がビルドのたびに XcodeGen でここから .xcodeproj を
+#  組み立てます。触るのはこのファイルだけで済みます。
+#
+#  ▼ 差し替えるのは PRODUCT_BUNDLE_IDENTIFIER の1行だけです。
+#    codemagic.yaml の bundle_identifier も同じ値にしてください。
+# ============================================================================
+
+name: CrystalCavern
+
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  # AdMob（リワード動画）。バージョンは固定しています。
+  # 勝手に上がるとある日突然ビルドが壊れるためです。
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    exactVersion: 13.10.0
+
+targets:
+  CrystalCavern:
+    type: application
+    platform: iOS
+
+    sources:
+      # Swift とプライバシーマニフェストと画像
+      - path: CrystalCavern
+        excludes:
+          - "www"
+          - "Info.plist"
+
+      # ゲーム本体。type: folder が Xcode でいう「青いフォルダ」＝
+      # フォルダ参照です。これでないと Bundle の中で www/game.html に
+      # ならず、起動しても真っ暗な画面になります。
+      - path: CrystalCavern/www
+        type: folder
+        buildPhase: resources
+
+    dependencies:
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
+
+    settings:
+      base:
+        # ▼▼▼ ここを自分のものに差し替える ▼▼▼
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.crystalcavern
+        # ▲▲▲ codemagic.yaml の bundle_identifier も同じ値に ▲▲▲
+
+        PRODUCT_NAME: CrystalCavern
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"      # Codemagic が毎回書き換えます
+        VERSIONING_SYSTEM: apple-generic
+
+        INFOPLIST_FILE: CrystalCavern/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"     # iPhone と iPad
+
+        SWIFT_VERSION: "5.0"
+        # Swift 6 の並行性チェックは警告が大量に出ます。
+        # まず動くものを作るため、最初は最小にしてあります。
+        SWIFT_STRICT_CONCURRENCY: minimal
+
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        ENABLE_MODULE_VERIFIER: NO

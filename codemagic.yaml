@@ -1,0 +1,82 @@
+# ============================================================================
+#  codemagic.yaml — Codemagic（Mac のビルド係）への指示書
+#
+#  流れは4つだけです。
+#    1. XcodeGen を入れる
+#    2. project.yml から .xcodeproj を組み立てる
+#    3. 署名して .ipa を作る
+#    4. TestFlight に送る
+#
+#  ▼ 事前に Codemagic の画面でやっておくこと
+#    Teams（または App）→ Integrations → App Store Connect に
+#    App Store Connect の API キー（.p8）を登録し、
+#    その「名前」を下の app_store_connect: に書きます。
+# ============================================================================
+
+workflows:
+  ios-testflight:
+    name: 結晶洞窟 — iOS
+
+    # 使えないと言われたら mac_mini_m1 に変えてください
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # ▼▼▼ Codemagic に登録した API キーの名前に差し替える ▼▼▼
+      app_store_connect: CrystalCavernKey
+
+    environment:
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        # ▼▼▼ project.yml の PRODUCT_BUNDLE_IDENTIFIER と同じ値に ▼▼▼
+        bundle_identifier: com.example.crystalcavern
+      vars:
+        XCODE_SCHEME: CrystalCavern
+        XCODE_PROJECT: CrystalCavern.xcodeproj
+
+    scripts:
+      - name: XcodeGen を入れる
+        script: |
+          set -e
+          brew install xcodegen
+
+      - name: project.yml から Xcode プロジェクトを組み立てる
+        script: |
+          set -e
+          # ビルド番号は Codemagic が毎回1つ増やしてくれる値を使う。
+          # 同じ番号で2回 TestFlight に送ると弾かれるため。
+          sed -i.bak "s/CURRENT_PROJECT_VERSION: \"1\"/CURRENT_PROJECT_VERSION: \"${BUILD_NUMBER:-1}\"/" project.yml
+          xcodegen generate
+          rm -f project.yml.bak
+
+      - name: 署名の設定を流し込む
+        script: |
+          set -e
+          xcode-project use-profiles
+
+      - name: ビルドして .ipa を作る
+        script: |
+          set -e
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      # 失敗したときにメールで知らせます
+      email:
+        recipients:
+          - support@example.com          # ← 自分のアドレスに差し替える
+        notify:
+          success: true
+          failure: true
+
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # 審査まで自動で出したくなるまでは、ここは false のままで構いません
+        submit_to_app_store: false
