@@ -182,7 +182,6 @@ SUPPORT_JA = f"""
 <ul>
   <li><code>設定 → サウンドと触覚 → システムの触覚</code> が切れていないか確認してください</li>
   <li>低電力モードでは弱くなります</li>
-  <li>iPad には触覚の機能がありません</li>
 </ul>
 
 <h3>広告が出ません</h3>
@@ -262,7 +261,6 @@ SUPPORT_EN = f"""
 <ul>
   <li>Check that <code>Settings → Sounds &amp; Haptics → System Haptics</code> is on</li>
   <li>Low Power Mode weakens it</li>
-  <li>iPad has no haptic engine</li>
 </ul>
 
 <h3>No advert appears</h3>
