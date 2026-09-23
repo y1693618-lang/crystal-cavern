@@ -4,14 +4,22 @@
   プライバシーマニフェスト。2024年春から必須になりました。
   これが無いと審査で止まります。
 
-  ここで宣言しているのは次の2点です。
+  中身は App Store Connect の「アプリのプライバシー」と同じ5種類に
+  そろえてあります。二か所で違うことを言わないためです。
+  内訳は Google が AdMob 利用者向けに公開している対応表に従いました。
+  （developers.google.com/admob/ios/privacy/data-disclosure）
 
-  1. 広告のために「デバイスID（IDFA）」と「大まかな利用データ」を集めること。
-     これは AdMob が行うもので、アプリ自身は何も集めていません。
-  2. UserDefaults を使っていること。用途は「通知の許可を一度だけ尋ねるための印」だけです。
+    デバイスID          広告のため   紐づけあり  トラッキングあり
+    広告データ          広告のため   紐づけあり  トラッキングあり
+    製品の操作          分析のため   紐づけあり  トラッキングなし
+    クラッシュデータ    動作のため   紐づけなし  トラッキングなし
+    パフォーマンスデータ 動作のため   紐づけあり  トラッキングなし
 
+  集めているのは同梱した AdMob の SDK で、アプリ自身は何も集めていません。
   ゲームの進行状況は WebView の中（localStorage）にだけ保存され、
   端末の外には出ません。
+
+  UserDefaults も使っています。用途はアプリ自身の設定の読み書きだけです。
 -->
 <plist version="1.0">
 <dict>
@@ -33,11 +41,12 @@
 
     <key>NSPrivacyCollectedDataTypes</key>
     <array>
+        <!-- 広告ID。広告を出すためだけに使われます。 -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeDeviceID</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
-            <false/>
+            <true/>
             <key>NSPrivacyCollectedDataTypeTracking</key>
             <true/>
             <key>NSPrivacyCollectedDataTypePurposes</key>
@@ -45,16 +54,60 @@
                 <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
             </array>
         </dict>
+
+        <!-- どの広告を見たか。 -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
-            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <string>NSPrivacyCollectedDataTypeAdvertisingData</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
-            <false/>
+            <true/>
             <key>NSPrivacyCollectedDataTypeTracking</key>
             <true/>
             <key>NSPrivacyCollectedDataTypePurposes</key>
             <array>
                 <string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+            </array>
+        </dict>
+
+        <!-- 起動やタップなどの操作。SDK が分析のために見ています。 -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+            </array>
+        </dict>
+
+        <!-- 落ちたときの記録。 -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeCrashData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- 起動にかかった時間など。 -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePerformanceData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
             </array>
         </dict>
     </array>
