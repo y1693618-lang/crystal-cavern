@@ -161,6 +161,9 @@
     /* em, not rem: the share each tab asks for grows with the reader's text
        size, so the row breaks in two exactly when five words stop fitting —
        instead of staying in one row and snapping "Rebirth" into "Rebirt/h". */
+    /* centred as a block, so a label that does take two lines still sits
+       level with its one-line neighbours instead of riding up */
+    display:flex;align-items:center;justify-content:center;text-align:center;
     flex:1 1 4.6em;min-width:0;
     /* when the row does break, the leftover tab is half a row at most,
        centred, rather than one enormous button spanning the screen */
@@ -172,7 +175,14 @@
   }
   .tab[aria-selected="true"]{background:var(--panel-2);color:var(--ink);border-color:var(--line);font-weight:700;box-shadow:inset 0 -3px 0 var(--cyan)}
   .tab:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
-  .tab .dot{display:inline-block;width:6px;height:6px;border-radius:99px;background:var(--gold);margin-left:5px;vertical-align:middle;opacity:0;transition:opacity .2s}
+  /* The "rebirth is ready" dot used to sit in the line of text. Once a label
+     was long enough — "Renacer" at the Large setting — the dot no longer fit
+     beside it and wrapped onto a second line, which made that one tab two
+     lines tall and left its word sitting higher than its neighbours. Lifted
+     out of the flow into the corner, it cannot push anything around. */
+  .tab{position:relative}
+  .tab .dot{position:absolute;top:6px;right:6px;width:6px;height:6px;
+    border-radius:99px;background:var(--gold);opacity:0;transition:opacity .2s}
   .tab.ready .dot{opacity:1}
 
   .list{
