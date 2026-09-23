@@ -481,7 +481,10 @@
      happening to them, so each build links to its own, in the nearest
      language the site has. */
   const APP_DOCS  = 'https://y1693618-lang.github.io/crystal-cavern/docs/';
-  const SITE_ROOT = 'https://y1693618-lang.github.io/';
+  /* The website moved to Cloudflare Pages for a name people can read.
+     The app's own pages stayed on GitHub, because their addresses are
+     registered with Apple and must not change. */
+  const SITE_ROOT = 'https://crystal-cavern.pages.dev/';
   const docs = page => Native.on
     ? APP_DOCS + (langId === 'ja' ? '' : 'en/') + (page === 'privacy' ? 'privacy.html' : 'support.html')
     : SITE_ROOT + (langId === 'ja' ? '' : 'en/') + (page === 'privacy' ? 'privacy.html' : 'contact.html');
