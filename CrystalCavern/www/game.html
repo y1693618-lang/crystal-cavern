@@ -474,9 +474,17 @@
   /* placeholder until the real inbox is decided — example.com is reserved
      for exactly this, so nothing can be sent anywhere by accident */
   const SUPPORT_MAIL = 'r451mjkl@icloud.com';
-  /* the site's contact page — swap in your own domain when it is live */
-  const CONTACT_URL = 'https://y1693618-lang.github.io/crystal-cavern/docs/support.html';
-  const PRIVACY_URL = 'https://y1693618-lang.github.io/crystal-cavern/docs/privacy.html';
+  /* Two sets of pages exist, and they say different things. The app's pages
+     talk about the App Store build — adverts, tracking permission, deleting
+     the app. The website's pages talk about a page in a browser. Sending a
+     browser reader to the app's policy would describe things that are not
+     happening to them, so each build links to its own, in the nearest
+     language the site has. */
+  const APP_DOCS  = 'https://y1693618-lang.github.io/crystal-cavern/docs/';
+  const SITE_ROOT = 'https://y1693618-lang.github.io/';
+  const docs = page => Native.on
+    ? APP_DOCS + (langId === 'ja' ? '' : 'en/') + (page === 'privacy' ? 'privacy.html' : 'support.html')
+    : SITE_ROOT + (langId === 'ja' ? '' : 'en/') + (page === 'privacy' ? 'privacy.html' : 'contact.html');
   /* Apple's standard licence. Every App Store app is covered by it unless
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
@@ -724,7 +732,8 @@
     legalTitle:'規約とプライバシー',
     legalBody:'このアプリの利用規約は、Apple の標準の使用許諾契約です。'
       +'個人情報の扱いはプライバシーポリシーに書いてあります。',
-    legalEula:'利用規約（Apple）', legalPrivacy:'プライバシーポリシー'
+    legalEula:'利用規約（Apple）', legalPrivacy:'プライバシーポリシー',
+    legalBodyWeb:'個人情報の扱いはプライバシーポリシーに書いてあります。'
   },
   en:{
     crystals:'Crystals', perSec:'per sec', coreMult:'Cores', resonance:'Resonance', remain:n=>n+'s left',
@@ -833,7 +842,8 @@
     legalTitle:'Terms and privacy',
     legalBody:'This app is covered by Apple\u2019s standard licence agreement. '
       +'How your information is handled is set out in the privacy policy.',
-    legalEula:'Licence agreement (Apple)', legalPrivacy:'Privacy policy'
+    legalEula:'Licence agreement (Apple)', legalPrivacy:'Privacy policy',
+    legalBodyWeb:'How your information is handled is set out in the privacy policy.'
   },
   zh:{
     crystals:'结晶', perSec:'每秒', coreMult:'核', resonance:'共鸣', remain:n=>'剩余'+n+'秒',
@@ -941,7 +951,8 @@
     legalTitle:'条款与隐私',
     legalBody:'本应用适用 Apple 的标准使用许可协议。'
       +'个人信息的处理方式请见隐私政策。',
-    legalEula:'使用许可协议（Apple）', legalPrivacy:'隐私政策'
+    legalEula:'使用许可协议（Apple）', legalPrivacy:'隐私政策',
+    legalBodyWeb:'个人信息的处理方式请见隐私政策。'
   },
   ko:{
     crystals:'결정', perSec:'초당', coreMult:'핵', resonance:'공명', remain:n=>n+'초 남음',
@@ -1050,7 +1061,8 @@
     legalTitle:'약관과 개인정보',
     legalBody:'이 앱에는 Apple의 표준 사용권 계약이 적용됩니다. '
       +'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.',
-    legalEula:'사용권 계약(Apple)', legalPrivacy:'개인정보 처리방침'
+    legalEula:'사용권 계약(Apple)', legalPrivacy:'개인정보 처리방침',
+    legalBodyWeb:'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.'
   },
   es:{
     crystals:'Cristales', perSec:'por seg', coreMult:'Núcleos', resonance:'Resonancia', remain:n=>'quedan '+n+' s',
@@ -1159,7 +1171,8 @@
     legalTitle:'Condiciones y privacidad',
     legalBody:'Esta aplicaci\u00f3n se rige por el contrato de licencia est\u00e1ndar de Apple. '
       +'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
-    legalEula:'Contrato de licencia (Apple)', legalPrivacy:'Pol\u00edtica de privacidad'
+    legalEula:'Contrato de licencia (Apple)', legalPrivacy:'Pol\u00edtica de privacidad',
+    legalBodyWeb:'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.'
   }};
 
   let langId = 'ja';
@@ -1792,7 +1805,7 @@
       '<div class="card">'+
         '<h3>'+L.bugTitle+'</h3><p>'+L.bugBody+'</p>'+
         '<div class="btn-row">'+
-          '<a class="mini" id="btnBugPage" href="'+CONTACT_URL+'" target="_blank" rel="noopener">'+L.bugOpen+'</a>'+
+          '<a class="mini" id="btnBugPage" href="'+docs('support')+'" target="_blank" rel="noopener">'+L.bugOpen+'</a>'+
           '<button class="mini" id="btnBugCopy">'+L.bugCopyEnv+'</button>'+
         '</div>'+
         '<p class="quiet" style="margin-top:10px">'+L.bugEnvNote+'</p>'+
@@ -1823,20 +1836,11 @@
         '</div>'+
         '<p class="quiet" style="margin-top:12px">'+L.sharePrivacy+'</p>'+
       '</div>'+
-      /* The pretend-ad switch is only useful in a browser, where there is
-         no ad provider to try the rewards against. In the app the real ones
-         play, so showing it there just invites people to turn the real
-         thing off by accident. */
-      (Native.on ? '' :
-      '<div class="card">'+
-        '<h3>'+L.adsTitle+'</h3><p>'+L.adsBody+'</p>'+
-        '<div class="opt-grid">'+
-          '<button class="opt" data-ads="test" aria-pressed="'+(Ads.mode==='test')+'">'+
-            '<span class="tickbox"></span>'+L.adsOn+'</button>'+
-          '<button class="opt" data-ads="off" aria-pressed="'+(Ads.mode!=='test')+'">'+
-            '<span class="tickbox"></span>'+L.adsOff+'</button>'+
-        '</div>'+
-      '</div>')+
+      /* The pretend-ad switch used to live here. It was a workbench tool —
+         it makes a fake advert "play" so the rewards can be tried without an
+         ad account — and on a public page it only offered strangers a
+         pretend advert and a switch with no purpose. Still reachable with
+         ?ads=test in the address for testing. */
       /* Only the app can send a reminder, so the card only exists there. */
       (Native.on ?
       '<div class="card">'+
@@ -1848,11 +1852,11 @@
          only means anything inside the App Store build, so on the web the
          card carries the privacy policy alone. */
       '<div class="card">'+
-        '<h3>'+L.legalTitle+'</h3><p>'+L.legalBody+'</p>'+
+        '<h3>'+L.legalTitle+'</h3><p>'+(Native.on ? L.legalBody : L.legalBodyWeb)+'</p>'+
         '<div class="btn-row">'+
           (Native.on ? '<a class="mini" href="'+EULA_URL+'" target="_blank" rel="noopener">'+
             L.legalEula+'</a>' : '')+
-          '<a class="mini" href="'+PRIVACY_URL+'" target="_blank" rel="noopener">'+
+          '<a class="mini" href="'+docs('privacy')+'" target="_blank" rel="noopener">'+
             L.legalPrivacy+'</a>'+
         '</div>'+
       '</div>';
