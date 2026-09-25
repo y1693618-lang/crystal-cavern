@@ -35,10 +35,72 @@ final class AdsManager: NSObject {
     /// 読み込みに失敗し続けたときに間を空けるための回数
     private var failures = 0
 
+    /// 広告の SDK を動かし始めたか。追跡許可の返事が出るまでは動かしません。
+    private var started = false
+    /// 起動時の手続き（同意の確認 → 追跡許可 → 広告の開始）の状態
+    private var preparing = false
+    private var prepared = false
+
+    // MARK: - 起動時の手続き
+
+    /// 起動時に一度だけ、次の順で進めます。
+    ///
+    ///   1. EU・イギリス向けの同意確認（対象外の地域では何も出ない）
+    ///   2. iOS の追跡許可（システムの確認画面）
+    ///   3. 広告の SDK を動かし始める
+    ///
+    /// ── 2026年9月の差し戻しを受けて変えたこと ──
+    ///
+    /// ・自前の説明画面をやめました。そこに「あとで」ボタンがあり、
+    ///   押すとシステムの確認画面が出ないまま終わっていました。
+    ///   Apple は、確認を先送りできる事前画面を認めていません。
+    ///   説明は、システムの確認画面の中の文（InfoPlist.strings）が担います。
+    ///
+    /// ・アプリが前面で操作できる状態（active）のときにだけ尋ねます。
+    ///   それ以外の状態で尋ねると、iOS は画面を出さずに黙って終わります。
+    ///   画面が出なかったときは、次に前面へ戻ってきたときにやり直します。
+    ///
+    /// ・広告の SDK は、追跡許可の返事が出てから動かし始めます。
+    ///   Apple は「追跡に使えるデータを集める前に尋ねること」を求めています。
+    ///
+    /// 何度呼んでも構いません。済んでいれば何もしません。
+    func prepareIfNeeded() async {
+        guard !prepared, !preparing else { return }
+        preparing = true
+        defer { preparing = false }
+
+        // 画面が出そろうのを少しだけ待つ
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        guard UIApplication.shared.applicationState == .active else { return }
+
+        await ConsentManager.shared.gather()
+        guard UIApplication.shared.applicationState == .active else { return }
+
+        if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+        }
+
+        // まだ「未回答」のまま＝確認画面が出なかった。次の機会にもう一度。
+        // （本体の設定で追跡の要求そのものを切っている人は、最初から
+        //   「拒否」扱いなので、ここは素通りして広告の開始へ進みます）
+        guard ATTrackingManager.trackingAuthorizationStatus != .notDetermined else { return }
+
+        prepared = true
+        start()
+    }
+
+    private func start() {
+        guard !started else { return }
+        started = true
+        MobileAds.shared.start { [weak self] _ in
+            Task { @MainActor in self?.preload() }
+        }
+    }
+
     // MARK: - 読み込み
 
     func preload() {
-        guard rewarded == nil, !isLoading else { return }
+        guard started, rewarded == nil, !isLoading else { return }
         isLoading = true
 
         Task {
@@ -92,68 +154,12 @@ final class AdsManager: NSObject {
         cb?(ok)
     }
 
-    // MARK: - 追跡の許可
-
-    /// 許可を求める前に、何のためかを画面で説明します。
-    /// いきなりシステムの確認画面を出すと、意味が分からないまま拒否されがちで、
-    /// 一度拒否されると設定から辿らない限り二度と聞けません。
-    func requestTrackingIfNeeded() async {
-        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
-            preload(); return
-        }
-
-        let agreed = await Self.showPrePrompt()
-        guard agreed else {
-            // ここで「あとで」を選んだ場合、システムの確認画面は出しません。
-            // 次の起動でもう一度説明します。
-            preload(); return
-        }
-
-        _ = await ATTrackingManager.requestTrackingAuthorization()
-        preload()
-    }
-
-    /// 事前説明。日本語と英語だけ用意し、それ以外の言語では英語を出します。
-    private static func showPrePrompt() async -> Bool {
-        await withCheckedContinuation { continuation in
-            guard let root = topViewController() else {
-                continuation.resume(returning: false); return
-            }
-
-            let ja = Locale.preferredLanguages.first?.hasPrefix("ja") ?? false
-
-            let alert = UIAlertController(
-                title: ja ? "広告について" : "About the ads",
-                message: ja
-                    ? "このゲームは無料で、遊ぶのに広告を見る必要はありません。\n\n"
-                      + "ボーナスを受け取るときだけ動画が流れます。次の画面で許可をいただけると、"
-                      + "表示される広告があなたに合ったものになり、そのぶん開発を続けやすくなります。\n\n"
-                      + "許可しなくても、ゲームの内容は何ひとつ変わりません。"
-                    : "This game is free, and you never have to watch an advert to play it.\n\n"
-                      + "A video only plays when you claim a bonus. Allowing tracking on the next "
-                      + "screen makes those adverts more relevant, which helps keep this game going.\n\n"
-                      + "Nothing about the game changes if you decline.",
-                preferredStyle: .alert)
-
-            alert.addAction(UIAlertAction(
-                title: ja ? "あとで" : "Not now", style: .cancel) { _ in
-                    continuation.resume(returning: false)
-                })
-            alert.addAction(UIAlertAction(
-                title: ja ? "続ける" : "Continue", style: .default) { _ in
-                    continuation.resume(returning: true)
-                })
-
-            root.present(alert, animated: true)
-        }
-    }
-
     // MARK: - 表示元の画面を探す
 
     static func topViewController() -> UIViewController? {
-        let scene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        // 前面で操作中の画面を優先し、見つからなければ最初の画面を使う
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
 
         var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController
         while let presented = top?.presentedViewController {

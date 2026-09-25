@@ -22,24 +22,19 @@ struct CrystalCavernApp: App {
                 // 洞窟の画面に合わせて、ステータスバーの文字を白にする
                 .preferredColorScheme(.dark)
                 .onAppear {
-                    // 起動して少し経ってから、広告まわりの確認をまとめて行う。
-                    // いきなり出すと「何の話か分からないまま拒否」になりやすい。
-                    Task {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
-
-                        // 1. EU・イギリス向けの同意確認（対象外の地域では何も起きない）
-                        //    ビルドが通らないときは、この1行を消してよい。
-                        await ConsentManager.shared.gather()
-
-                        // 2. iOS の追跡許可（事前に自前の説明を出してから）
-                        await AdsManager.shared.requestTrackingIfNeeded()
-                    }
+                    // 同意の確認 → 追跡許可 → 広告の開始。中身は AdsManager に。
+                    Task { await AdsManager.shared.prepareIfNeeded() }
                 }
         }
+        // 引数がひとつの書き方です。iOS 17 で新しい形に変わりましたが、
+        // このアプリは iOS 16 から動かすので、こちらを使います。
+        // （iOS 17 以降では「古い書き方です」という警告が出ますが、動きます）
         .onChange(of: scenePhase) { phase in
-            // 前面に戻ってきたら、予約していた通知は役目を終えている
             if phase == .active {
+                // 前面に戻ってきたら、予約していた通知は役目を終えている
                 NotificationManager.shared.cancelPending()
+                // 起動時に追跡許可の画面が出られなかった場合の、やり直し
+                Task { await AdsManager.shared.prepareIfNeeded() }
             }
         }
     }

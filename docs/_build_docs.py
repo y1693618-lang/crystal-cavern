@@ -10,8 +10,8 @@ GitHub Pages にそのまま置けるよう、1ファイルで完結させてい
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UPDATED_JA = "2026年9月22日"
-UPDATED_EN = "22 September 2026"
+UPDATED_JA = "2026年9月25日"
+UPDATED_EN = "25 September 2026"
 EMAIL = "r451mjkl@icloud.com"          # ← 本当のアドレスが決まったらここだけ直す
 APP_NAME_JA = "結晶洞窟"
 APP_NAME_EN = "Crystal Cavern"
@@ -86,12 +86,21 @@ def page(lang, title, desc, nav, body, home_label):
 """
 
 
-NAV_JA = ('<a href="privacy.html">プライバシーポリシー</a>'
-          '<a href="support.html">サポート</a>'
-          '<a href="en/privacy.html" hreflang="en" lang="en">English</a>')
-NAV_EN = ('<a href="privacy.html">Privacy</a>'
-          '<a href="support.html">Support</a>'
-          '<a href="../privacy.html" hreflang="ja" lang="ja">日本語</a>')
+# 言語を切り替えるリンクは、今いるページの相手側を指さなければ意味が
+# ありません。サポートを読んでいる人が English を押してプライバシー
+# ポリシーに飛ばされる、ということが起きないよう、行き先をページごとに
+# 渡すようにしてあります。
+# （英語版に index はないので、トップページだけは en/privacy.html を指します）
+
+def nav_ja(other_en):
+    return ('<a href="privacy.html">プライバシーポリシー</a>'
+            '<a href="support.html">サポート</a>'
+            f'<a href="{other_en}" hreflang="en" lang="en">English</a>')
+
+def nav_en(other_ja):
+    return ('<a href="privacy.html">Privacy</a>'
+            '<a href="support.html">Support</a>'
+            f'<a href="{other_ja}" hreflang="ja" lang="ja">日本語</a>')
 
 # ---------------------------------------------------------------- index (ja)
 
@@ -134,7 +143,7 @@ PRIVACY_JA = f"""
 <p>詳しくは <a href="https://policies.google.com/technologies/partner-sites?hl=ja" rel="noopener">Google のサービスを使用するサイトやアプリから収集した情報の Google による使用</a> をご覧ください。</p>
 
 <h2>トラッキングの許可について</h2>
-<p>初回の起動から少し経つと、まずアプリ自身の説明が出て、そのあとに iOS の「トラッキングを許可しますか」という確認が出ます。</p>
+<p>初回の起動から少し経つと、iOS の「トラッキングを許可しますか」という確認が出ます。確認の画面の中に、何のために使うのかの説明が書かれています。</p>
 <p><strong>許可しなくても、ゲームの内容は何ひとつ変わりません。</strong>広告があなたの興味に合わせたものではなくなるだけです。あとから <code>設定 → プライバシーとセキュリティ → トラッキング</code> で変更できます。</p>
 <p>EU・イギリスなど、同意の取得が必要な地域では、広告の同意確認画面が別に表示されます。</p>
 
@@ -213,7 +222,7 @@ PRIVACY_EN = f"""
 <p>See <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">How Google uses information from sites or apps that use our services</a>.</p>
 
 <h2>Tracking permission</h2>
-<p>Shortly after first launch the app explains what tracking is for, and then iOS asks whether you allow it.</p>
+<p>Shortly after first launch, iOS asks whether you allow tracking. The request itself explains what it is used for.</p>
 <p><strong>Declining changes nothing about the game.</strong> It only makes the adverts less relevant. You can change your mind later under <code>Settings → Privacy &amp; Security → Tracking</code>.</p>
 <p>In the EU, the UK and other regions where consent is required, a separate advertising consent screen is shown.</p>
 
@@ -281,16 +290,16 @@ def write(path, text):
 
 write("index.html", page("ja", f"{APP_NAME_JA} — iOS アプリ版",
                          "音を使わない結晶掘りゲーム、結晶洞窟 iOS アプリ版のプライバシーポリシーとサポート窓口です。",
-                         NAV_JA, INDEX_JA, APP_NAME_JA))
+                         nav_ja("en/privacy.html"), INDEX_JA, APP_NAME_JA))
 write("privacy.html", page("ja", f"プライバシーポリシー — {APP_NAME_JA}",
                            "iOS アプリ版 結晶洞窟における情報の取り扱い。保存先、広告、トラッキング許可、通知について説明します。",
-                           NAV_JA, PRIVACY_JA, APP_NAME_JA))
+                           nav_ja("en/privacy.html"), PRIVACY_JA, APP_NAME_JA))
 write("support.html", page("ja", f"サポート — {APP_NAME_JA}",
                            "結晶洞窟 iOS アプリ版のお問い合わせ窓口と、よくある質問です。",
-                           NAV_JA, SUPPORT_JA, APP_NAME_JA))
+                           nav_ja("en/support.html"), SUPPORT_JA, APP_NAME_JA))
 write("en/privacy.html", page("en", f"Privacy Policy — {APP_NAME_EN}",
                               "How the Crystal Cavern iOS app handles information: storage, advertising, tracking permission and notifications.",
-                              NAV_EN, PRIVACY_EN, APP_NAME_EN))
+                              nav_en("../privacy.html"), PRIVACY_EN, APP_NAME_EN))
 write("en/support.html", page("en", f"Support — {APP_NAME_EN}",
                               "Support contact and common questions for the Crystal Cavern iOS app.",
-                              NAV_EN, SUPPORT_EN, APP_NAME_EN))
+                              nav_en("../support.html"), SUPPORT_EN, APP_NAME_EN))
