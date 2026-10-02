@@ -46,6 +46,23 @@
     --font-num:"Chivo Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
     color-scheme:dark;
   }
+  /* Vietnamese letters such as ầ or ở are missing from the two Zen web
+     fonts, so each of them would be drawn from a different font in the
+     middle of a word. Vietnamese uses the system fonts throughout. */
+  html[lang="vi"]{
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+    --font-display:Georgia,"Times New Roman","Noto Serif",serif;
+  }
+  /* Chinese text must not borrow the Japanese fonts first in the list:
+     they contain the same characters but in Japanese shapes. */
+  html[lang="zh-Hans"]{
+    --font-body:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+    --font-display:"Songti SC","Noto Serif SC","PingFang SC",serif;
+  }
+  html[lang="zh-Hant"]{
+    --font-body:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    --font-display:"Songti TC","Noto Serif TC","PingFang TC",serif;
+  }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
@@ -133,23 +150,6 @@
   .chip svg{display:block;flex:0 0 auto}
   .chip[aria-expanded="true"]{color:var(--ink);border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
 
-  .langpop{
-    position:absolute;top:54px;right:9px;z-index:6;
-    background:var(--panel);border:1px solid var(--line);border-radius:12px;
-    padding:6px;display:flex;flex-direction:column;gap:3px;min-width:178px;
-    box-shadow:0 18px 44px rgba(0,0,0,.55);
-  }
-  .langpop button{
-    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
-    background:transparent;border:0;border-radius:8px;padding:11px 12px;min-height:46px;
-    font-size:var(--t-13);color:var(--ink-dim);cursor:pointer;font-weight:500;
-  }
-  .langpop button:hover{background:var(--panel-2);color:var(--ink)}
-  .langpop button[aria-pressed="true"]{color:var(--ink);font-weight:700;background:var(--panel-2)}
-  .langpop button:focus-visible{outline:3px solid var(--cyan);outline-offset:-2px}
-  .langpop .lc{font-family:var(--font-num);font-size:var(--t-11);color:var(--ink-faint);width:26px;flex:0 0 auto;font-weight:600}
-  .langpop button[aria-pressed="true"] .lc{color:var(--cyan)}
-  .langpop button.auto{border-bottom:1px solid var(--line-soft);margin-bottom:4px}
 
   .paused-veil{
     position:absolute;inset:0;z-index:2;display:grid;place-content:center;gap:12px;justify-items:center;
@@ -183,7 +183,10 @@
     /* centred as a block, so a label that does take two lines still sits
        level with its one-line neighbours instead of riding up */
     display:flex;align-items:center;justify-content:center;text-align:center;
-    flex:1 1 4.6em;min-width:0;
+    /* never narrower than its longest word: with seventeen languages some
+       labels are single long words (Перерождение, Odrodzenie), and a word
+       must not be cut or spill over the edge. The row wraps instead. */
+    flex:1 1 4.6em;min-width:min-content;
     /* when the row does break, the leftover tab is half a row at most,
        centred, rather than one enormous button spanning the screen */
     max-width:calc(50% - 3px);
@@ -227,6 +230,11 @@
   .glyph{width:38px;height:38px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--ink) 8%, transparent);flex:0 0 auto}
   .item-mid{flex:1 1 140px;min-width:0}
   .item-name{font-size:var(--t-15);font-weight:700;line-height:1.35;display:block}
+  /* Long compound words (Sterrenstofsmidse, Erinnerungseinstellungen) may
+     be hyphenated where the language allows, and only broken when a
+     single word is wider than the whole line. Never cut off. */
+  .item-name,.item-desc,.opt,.mini,.big-btn,h3,.stat-row span,.chip,.card p,.howto li{
+    overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
   .item-name b{font-family:var(--font-num);font-weight:600;font-size:var(--t-12);color:var(--ink-dim);margin-left:7px}
   .item-desc{font-size:var(--t-12);color:var(--ink-dim);line-height:1.55;margin-top:2px;display:block}
   .item-right{flex:0 1 auto;min-width:0;max-width:100%;margin-left:auto;text-align:right}
@@ -330,7 +338,10 @@
   .stat-row:last-of-type{border-bottom:0}
   .stat-row span:last-child{font-family:var(--font-num);color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
 
-  .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:7px;margin-top:8px}
+  /* flex rather than a fixed grid, so an option can grow to fit a long
+     word (Crepúsculo, Alacakaranlık) and the row wraps instead */
+  .opt-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .opt-grid .opt{flex:1 1 104px;min-width:min-content}
   .opt{
     display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:9px;cursor:pointer;min-height:44px;
     background:var(--panel-2);border:1px solid var(--line-soft);font-size:var(--t-13);color:var(--ink-dim);
@@ -437,16 +448,11 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="fsIcon"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/></svg>
           <span id="fsLabel"></span>
         </button>
-        <button class="chip" id="langBtn" aria-expanded="false" aria-haspopup="true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>
-          <span id="langCode">JA</span>
-        </button>
         <button class="chip" id="pauseBtn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" id="pauseIcon"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
           <span id="pauseLabel"></span>
         </button>
       </div>
-      <div class="langpop" id="langPop" role="menu" hidden></div>
       <div class="bigpop" id="bigpop" role="status" aria-live="polite">
         <div class="bp-kicker" id="bpKicker"></div>
         <div class="bp-title" id="bpTitle"></div>
@@ -663,12 +669,28 @@
      translations
      ================================================================ */
 
+  /* The languages this game is written in. Which one is shown is decided
+     by the device alone (see deviceLang). html is the page's lang attribute,
+     locale groups the digits the way that language does, and rateFirst
+     puts "per second" before the number (毎秒 12) rather than after. */
   const LANGS = [
-    {id:'ja', code:'JA', label:'日本語',    locale:'ja-JP', num:'ja'},
-    {id:'en', code:'EN', label:'English',   locale:'en-US', num:'en'},
-    {id:'zh', code:'ZH', label:'简体中文',  locale:'zh-CN', num:'zh'},
-    {id:'ko', code:'KO', label:'한국어',    locale:'ko-KR', num:'ko'},
-    {id:'es', code:'ES', label:'Español',   locale:'es-ES', num:'en'}
+    {id:'ja',  html:'ja',      locale:'ja-JP', rateFirst:true},
+    {id:'en',  html:'en',      locale:'en-US'},
+    {id:'zh',  html:'zh-Hans', locale:'zh-CN', rateFirst:true},
+    {id:'zht', html:'zh-Hant', locale:'zh-TW', rateFirst:true},
+    {id:'ko',  html:'ko',      locale:'ko-KR', rateFirst:true},
+    {id:'es',  html:'es',      locale:'es-ES'},
+    {id:'fr',  html:'fr',      locale:'fr-FR'},
+    {id:'de',  html:'de',      locale:'de-DE'},
+    {id:'it',  html:'it',      locale:'it-IT'},
+    {id:'pt',  html:'pt-BR',   locale:'pt-BR'},
+    {id:'nl',  html:'nl',      locale:'nl-NL'},
+    {id:'pl',  html:'pl',      locale:'pl-PL'},
+    {id:'ru',  html:'ru',      locale:'ru-RU'},
+    {id:'tr',  html:'tr',      locale:'tr-TR', rateFirst:true},
+    {id:'vi',  html:'vi',      locale:'vi-VN'},
+    {id:'th',  html:'th',      locale:'th-TH'},
+    {id:'id',  html:'id',      locale:'id-ID'}
   ];
 
   const T = {
@@ -713,7 +735,6 @@
     pauseSecTitle:'採掘を止める',
     pauseSecBody:'画面右上の「一時停止」を押すと、自動収入もタップも完全に止まります。もう一度押せば再開します。止めている間の時間は加算されません。',
     pauseSecBtn:'一時停止する', pauseSecBtnOn:'再開する',
-    langAuto:'自動（端末の言語）', langTitle:'言語', langBody:'表示する言語を選んでください。この端末に記憶されます。',
     sizeTitle:'文字の大きさ', sizeBody:'画面全体の文字が大きくなります。',
     sizes:['小','標準','大','特大'],
     skinTitle:'背景と配色', skinBody:'読みやすい配色を選んでください。下の2つはコントラストを最大にしたユニバーサル配色です。',
@@ -736,12 +757,8 @@
     hm:(h,m)=>h>0?h+'時間'+m+'分':m+'分',
     codeLabel:'セーブコード', textLabel:'文章', pasteHere:'ここにセーブコードを貼りつけ',
     bugTitle:'不具合の報告・お問い合わせ',
-    bugBody:'うまく動かないところや、こうしてほしいという要望があれば教えてください。下の欄に書いて、メールで送るか、内容をコピーして送ってください。',
-    bugPlaceholder:'例：特大の文字にすると設備の値段が読めません／こういう設備が欲しいです',
-    bugWith:'送信内容には、下の動作環境が自動で付きます（個人情報は含まれません）。',
-    bugMail:'メールで送る', bugCopy:'内容をコピー', bugSubject:'結晶洞窟：不具合の報告',
-    bugEnv:'動作環境', bugEmpty:'内容が空です', bugMailLabel:'あて先',
-    bugDummy:'※ いまのあて先は仮のものです。完成時に本物のアドレスに差し替えます。',
+    bugBody:'うまく動かないところや、こうしてほしいという要望があれば教えてください。下のボタンから報告ページを開けます。',
+    bugEnv:'動作環境',
     bugOpen:'報告ページを開く', bugCopyEnv:'動作環境をコピー',
     bugEnvNote:'報告するときは、下の動作環境もいっしょに貼り付けてください。個人情報は含まれません。',
     msNext:n=>'倍化まであと '+n,
@@ -763,9 +780,6 @@
       core:['核の増量','次の再結晶で得られる核が25%増える']},
     rwGot:{skip:v=>'結晶 +'+v, boost:'30分間、すべての収入が2倍',
       orb:'球が流れてきた', core:'次の再結晶で核が25%増える'},
-    adsTitle:'ボーナスのテスト表示',
-    adsBody:'動画リワードの受け口を試すためのスイッチです。「試す」にすると「掘る」タブにボーナスが現れ、押すと本物の広告の代わりに0.6秒の待ち時間が入って報酬が届きます。広告は一切読み込みません。',
-    adsOn:'試す', adsOff:'使わない',
     fsOn:'フル画面', fsOff:'もどす',
     tabBonus:'ボーナス', tabHowto:'遊び方',
     rwLeft:'本日の残り', rwOf:(n,m)=>n+' / '+m+' 回',
@@ -824,7 +838,6 @@
     pauseSecTitle:'Stopping the mine',
     pauseSecBody:'Press Pause at the top right and both income and tapping stop completely. Press it again to resume. Time spent paused is never counted.',
     pauseSecBtn:'Pause', pauseSecBtnOn:'Resume',
-    langAuto:'Automatic (device language)', langTitle:'Language', langBody:'Choose the language you want. It is remembered on this device.',
     sizeTitle:'Text size', sizeBody:'Scales every piece of text on the page.',
     sizes:['Small','Normal','Large','Largest'],
     skinTitle:'Background and colours', skinBody:'Pick whichever is easiest to read. The last two are maximum-contrast schemes.',
@@ -847,12 +860,8 @@
     hm:(h,m)=>h>0?h+'h '+m+'m':m+' min',
     codeLabel:'Save code', textLabel:'Text', pasteHere:'Paste a save code here',
     bugTitle:'Report a problem or get in touch',
-    bugBody:'Tell me about anything that does not work, or anything you would like changed. Write it below and either send it by email or copy the text and send it however you prefer.',
-    bugPlaceholder:'e.g. at the largest text size the prices are cut off / I would like a building that does X',
-    bugWith:'Your message is sent with the details below (no personal information is included).',
-    bugMail:'Send by email', bugCopy:'Copy the message', bugSubject:'Crystal Cavern: problem report',
-    bugEnv:'Details', bugEmpty:'The message is empty', bugMailLabel:'To',
-    bugDummy:'Note: this address is a placeholder and will be replaced with a real one when the game is finished.',
+    bugBody:'Tell me about anything that does not work, or anything you would like changed. The button below opens the report page.',
+    bugEnv:'Details',
     bugOpen:'Open the report page', bugCopyEnv:'Copy the details',
     bugEnvNote:'When you report something, paste the details below along with it. They contain no personal information.',
     msNext:n=>n+' to double',
@@ -874,9 +883,6 @@
       core:['Extra cores','25% more cores at your next rebirth']},
     rwGot:{skip:v=>'+'+v+' crystals', boost:'All income \u00d72 for 30 minutes',
       orb:'An orb drifts in', core:'25% more cores at your next rebirth'},
-    adsTitle:'Try out the bonuses',
-    adsBody:'A switch for testing the rewarded-video hooks. Turn it on and the bonuses appear in the Mine tab; pressing one waits 0.6 seconds in place of a real advert and then hands you the reward. No advert is ever loaded.',
-    adsOn:'Try them', adsOff:'Off',
     fsOn:'Full screen', fsOff:'Exit',
     tabBonus:'Bonus', tabHowto:'Guide',
     rwLeft:'Left today', rwOf:(n,m)=>n+' of '+m,
@@ -934,7 +940,6 @@
     pauseSecTitle:'停止挖掘',
     pauseSecBody:'按下画面右上角的「暂停」，自动收入与点击都会完全停止。再按一次即可继续。暂停期间的时间不会被计入。',
     pauseSecBtn:'暂停', pauseSecBtnOn:'继续',
-    langAuto:'自动（设备语言）', langTitle:'语言', langBody:'请选择显示语言。选择会记忆在这台设备上。',
     sizeTitle:'文字大小', sizeBody:'整个画面的文字都会放大。',
     sizes:['小','标准','大','特大'],
     skinTitle:'背景与配色', skinBody:'请选择看得最清楚的配色。最后两种是对比度最高的无障碍配色。',
@@ -957,12 +962,8 @@
     hm:(h,m)=>h>0?h+'小时'+m+'分':m+'分',
     codeLabel:'存档代码', textLabel:'文字', pasteHere:'在此粘贴存档代码',
     bugTitle:'问题反馈・联系',
-    bugBody:'如果有运作不正常的地方，或者希望改进的地方，请告诉我。写在下面的框里，用邮件发送，或者复制内容发给我。',
-    bugPlaceholder:'例：文字调到特大后设备价格看不全／希望增加这样的设备',
-    bugWith:'发送内容会自动附上下面的运行环境（不含个人信息）。',
-    bugMail:'用邮件发送', bugCopy:'复制内容', bugSubject:'结晶洞窟：问题反馈',
-    bugEnv:'运行环境', bugEmpty:'内容是空的', bugMailLabel:'收件人',
-    bugDummy:'※ 当前收件地址是临时的，游戏完成时会换成正式地址。',
+    bugBody:'如果有运作不正常的地方，或者希望改进的地方，请告诉我。点击下面的按钮可以打开反馈页面。',
+    bugEnv:'运行环境',
     bugOpen:'打开反馈页面', bugCopyEnv:'复制运行环境',
     bugEnvNote:'反馈时，请把下面的运行环境一起粘贴过去。其中不含个人信息。',
     msNext:n=>'再 '+n+' 个翻倍',
@@ -984,9 +985,6 @@
       core:['核增量','下次重结晶获得的核增加25%']},
     rwGot:{skip:v=>'结晶 +'+v, boost:'30分钟内所有收入×2',
       orb:'光球飘来了', core:'下次重结晶的核增加25%'},
-    adsTitle:'奖励的测试显示',
-    adsBody:'用于测试视频奖励接口的开关。打开后「挖掘」标签会出现奖励，按下时以0.6秒的等待代替真实广告，然后发放奖励。不会加载任何广告。',
-    adsOn:'试用', adsOff:'关闭',
     fsOn:'全屏', fsOff:'退出',
     tabBonus:'奖励', tabHowto:'玩法',
     rwLeft:'今天剩余', rwOf:(n,m)=>n+' / '+m+' 次',
@@ -1045,7 +1043,6 @@
     pauseSecTitle:'채굴 멈추기',
     pauseSecBody:'화면 오른쪽 위의 「일시정지」를 누르면 자동 수입과 터치가 완전히 멈춥니다. 한 번 더 누르면 재개됩니다. 멈춘 동안의 시간은 더해지지 않습니다.',
     pauseSecBtn:'일시정지', pauseSecBtnOn:'재개하기',
-    langAuto:'자동 (기기 언어)', langTitle:'언어', langBody:'표시할 언어를 선택하세요. 이 기기에 기억됩니다.',
     sizeTitle:'글자 크기', sizeBody:'화면 전체의 글자가 커집니다.',
     sizes:['작게','기본','크게','아주 크게'],
     skinTitle:'배경과 배색', skinBody:'읽기 쉬운 배색을 선택하세요. 아래 두 가지는 명암비를 최대로 한 배색입니다.',
@@ -1068,12 +1065,8 @@
     hm:(h,m)=>h>0?h+'시간 '+m+'분':m+'분',
     codeLabel:'세이브 코드', textLabel:'문장', pasteHere:'여기에 세이브 코드를 붙여넣기',
     bugTitle:'문제 신고・문의',
-    bugBody:'제대로 움직이지 않는 곳이나 이렇게 해 주었으면 하는 점이 있으면 알려 주세요. 아래 칸에 적어서 메일로 보내거나, 내용을 복사해 전달해 주세요.',
-    bugPlaceholder:'예: 글자를 아주 크게 하면 설비 가격이 보이지 않습니다 / 이런 설비를 원합니다',
-    bugWith:'보내는 내용에는 아래 동작 환경이 자동으로 붙습니다(개인정보는 포함되지 않습니다).',
-    bugMail:'메일로 보내기', bugCopy:'내용 복사', bugSubject:'결정 동굴: 문제 신고',
-    bugEnv:'동작 환경', bugEmpty:'내용이 비어 있습니다', bugMailLabel:'받는 곳',
-    bugDummy:'※ 현재 주소는 임시입니다. 완성 시 실제 주소로 교체합니다.',
+    bugBody:'제대로 움직이지 않는 곳이나 이렇게 해 주었으면 하는 점이 있으면 알려 주세요. 아래 버튼을 누르면 신고 페이지가 열립니다.',
+    bugEnv:'동작 환경',
     bugOpen:'신고 페이지 열기', bugCopyEnv:'동작 환경 복사',
     bugEnvNote:'신고하실 때 아래 동작 환경도 함께 붙여넣어 주세요. 개인정보는 포함되지 않습니다.',
     msNext:n=>'2배까지 '+n+'개',
@@ -1095,9 +1088,6 @@
       core:['핵 증량','다음 재결정에서 얻는 핵이 25% 증가']},
     rwGot:{skip:v=>'결정 +'+v, boost:'30분간 모든 수입이 2배',
       orb:'구슬이 흘러왔다', core:'다음 재결정에서 핵이 25% 증가'},
-    adsTitle:'보너스 테스트 표시',
-    adsBody:'영상 보상 연결부를 시험하기 위한 스위치입니다. 켜면 「채굴」탭에 보너스가 나타나고, 누르면 실제 광고 대신 0.6초를 기다린 뒤 보상이 들어옵니다. 광고는 전혀 불러오지 않습니다.',
-    adsOn:'시험하기', adsOff:'사용 안 함',
     fsOn:'전체 화면', fsOff:'나가기',
     tabBonus:'보너스', tabHowto:'도움말',
     rwLeft:'오늘 남은 횟수', rwOf:(n,m)=>n+' / '+m+'회',
@@ -1156,7 +1146,6 @@
     pauseSecTitle:'Detener la mina',
     pauseSecBody:'Pulsa Pausa arriba a la derecha y se detienen por completo los ingresos y los toques. Púlsalo otra vez para continuar. El tiempo en pausa nunca se cuenta.',
     pauseSecBtn:'Pausar', pauseSecBtnOn:'Continuar',
-    langAuto:'Automático (idioma del dispositivo)', langTitle:'Idioma', langBody:'Elige el idioma que prefieras. Se recuerda en este dispositivo.',
     sizeTitle:'Tamaño del texto', sizeBody:'Amplía todo el texto de la página.',
     sizes:['Pequeño','Normal','Grande','Muy grande'],
     skinTitle:'Fondo y colores', skinBody:'Elige la combinación que te resulte más legible. Las dos últimas tienen el contraste máximo.',
@@ -1179,12 +1168,8 @@
     hm:(h,m)=>h>0?h+' h '+m+' min':m+' min',
     codeLabel:'Código de guardado', textLabel:'Texto', pasteHere:'Pega aquí un código de guardado',
     bugTitle:'Informar de un fallo o contactar',
-    bugBody:'Cuéntame cualquier cosa que no funcione bien o que te gustaría cambiar. Escríbelo abajo y envíalo por correo, o copia el texto y mándalo como prefieras.',
-    bugPlaceholder:'p. ej.: con el texto muy grande no se ven los precios / me gustaría una instalación que haga X',
-    bugWith:'Tu mensaje se envía junto con los datos de abajo (no incluye información personal).',
-    bugMail:'Enviar por correo', bugCopy:'Copiar el mensaje', bugSubject:'Caverna de Cristal: informe de fallo',
-    bugEnv:'Datos', bugEmpty:'El mensaje está vacío', bugMailLabel:'Para',
-    bugDummy:'Nota: esta dirección es provisional y se cambiará por una real cuando el juego esté terminado.',
+    bugBody:'Cuéntame cualquier cosa que no funcione bien o que te gustaría cambiar. El botón de abajo abre la página para enviarlo.',
+    bugEnv:'Datos',
     bugOpen:'Abrir la página de contacto', bugCopyEnv:'Copiar los datos',
     bugEnvNote:'Cuando informes de algo, pega también los datos de abajo. No contienen información personal.',
     msNext:n=>n+' para duplicar',
@@ -1206,9 +1191,6 @@
       core:['Núcleos extra','25% más núcleos en tu próximo renacer']},
     rwGot:{skip:v=>'+'+v+' cristales', boost:'Todos los ingresos ×2 durante 30 minutos',
       orb:'Llega un orbe', core:'25% más núcleos en tu próximo renacer'},
-    adsTitle:'Probar los bonus',
-    adsBody:'Un interruptor para probar los enganches de vídeo recompensado. Al activarlo aparecen los bonus en la pestaña Excavar; al pulsar uno se espera 0,6 segundos en lugar de un anuncio real y llega la recompensa. No se carga ningún anuncio.',
-    adsOn:'Probarlos', adsOff:'Desactivado',
     fsOn:'Pantalla completa', fsOff:'Salir',
     tabBonus:'Bonus', tabHowto:'Gu\u00eda',
     rwLeft:'Quedan hoy', rwOf:(n,m)=>n+' de '+m,
@@ -1224,7 +1206,1232 @@
       +'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
     legalEula:'Contrato de licencia (Apple)', legalPrivacy:'Pol\u00edtica de privacidad',
     legalBodyWeb:'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.'
-  }};
+  },
+  zht:{
+    crystals:'結晶', perSec:'每秒', coreMult:'核', resonance:'共鳴', remain:n=>'剩餘'+n+'秒',
+    stages:['石英','紫水晶','螢石','黃玉','紅寶石','黑曜石','虹晶','深淵晶','星核晶','虛空晶','黎明晶','終晶'],
+    nextIs:(n,c)=>'下一層：'+n+'（'+c+'）', deepest:'最深處', depth:d=>'深度 '+d+'m',
+    tapHint:'點擊結晶即可挖掘', tapAria:'挖掘結晶',
+    pause:'暫停', resume:'繼續', pauseAria:'暫停或繼續',
+    veilTitle:'已暫停', veilBody:'挖掘與自動收入都已停止。暫停期間不會增加任何結晶。',
+    tabMine:'挖掘', tabCore:'重結晶', tabMenu:'選單',
+    taps:{pick:['磨利十字鎬','每次挖掘獲得的結晶 +1'], glove:['共鳴手套','每次挖掘額外獲得每秒收入的 3%']},
+    gens:{moss:['發光的苔蘚','牆上的苔蘚灑落結晶粉末'], drill:['小型鑽機','發條裝置不停地磨削岩壁'],
+      bat:['蝙蝠搬運工','從黑暗深處把結晶運出來'], vein:['地脈幫浦','連同地下水一起把結晶抽上來'],
+      golem:['結晶魔像','用岩石之軀鑿開礦脈'], forge:['星塵熔爐','把墜落的星屑煉成結晶'],
+      react:['地核反應爐','直接從行星中心汲取']},
+    mine:'每次挖掘', perSecShort:'/秒', pctOf:n=>'每秒收入的3%×'+n,
+    evKicker:'小事件',
+    events:{lode:['豐饒礦脈','結晶從岩壁的裂縫中灑落'],
+      echo:['結晶共鳴','30秒內所有收入 ×5'],
+      visitor:['迷路的訪客','留下了一份伴手禮']},
+    gainLine:v=>'結晶 +'+v,
+    rebirthTitle:'重結晶',
+    rebirthBody:'將所有結晶與設備熔解成<em>核</em>。每個核可讓之後的挖掘量與每秒收入 <em>+2%</em>。挖得越深，留下的核越多。',
+    haveCores:'目前持有的核', curMult:'目前倍率', gainCores:'重結晶可得的核',
+    doRebirth:n=>'重結晶並獲得 '+n+' 個核', rebirthLocked:'累計100萬結晶後解鎖',
+    rebirthKicker:'重結晶', rebirthDone:(n,m)=>'獲得了 '+n+' 個核<br>之後的收入為 ×'+m,
+    recordsTitle:'紀錄', recRun:'本輪挖掘量', recAll:'累計挖掘量', recClicks:'手動挖掘次數',
+    recEvents:'撿到的光球', recResets:'重結晶次數', recStage:'到達的礦脈', recLoops:'已開啟的礦脈',
+    sealed:'重結晶後會開啟下一層礦脈', unlockSub:n=>'開啟了新礦脈「'+n+'」',
+    howtoTitle:'玩法說明',
+    howto:[
+      ['點擊中央的結晶','這就是最基本的操作，每點一次就能獲得結晶。使用鍵盤時按 Tab 選取，再按空白鍵挖掘。'],
+      ['購買設備自動化','在「挖掘」分頁購買設備後，即使放著不管也會每秒累積結晶。買得越多價格越高，但<b>每滿10個產量加倍</b>。用上方的「×10」「×MAX」可以一次大量購買。'],
+      ['往更深的礦脈前進',(o,t)=>'累計挖掘量增加後礦脈會改變，結晶的顏色與形狀也隨之變化。'
+        +'一開始是從石英到虹晶的'+o+'種，每次重結晶都會多開啟一層更深的礦脈，全部共'+t+'種。'],
+      ['撿起光球','光球會不時橫越畫面，在它消失前點擊即可獲得獎勵。共有3種，最好的是讓所有收入在30秒內變成5倍的「結晶共鳴」。'],
+      ['用重結晶變強','累計100萬結晶後解鎖。代價是全部重置，但會留下永久有效的倍率「核」。第二輪才是真正的開始。'],
+      ['自動存檔','進度會自動保存在這台裝置上，關掉也能接著玩。離開期間也會以一半的速度累積（最多8小時）。'],
+      ['想停下來就暫停','按鈕在畫面右上角。暫停期間數字完全不會變動。']
+    ],
+    pauseSecTitle:'停止挖掘',
+    pauseSecBody:'按下畫面右上角的「暫停」，自動收入與點擊都會完全停止。再按一次即可繼續。暫停期間的時間不會被計入。',
+    pauseSecBtn:'暫停', pauseSecBtnOn:'繼續',
+    sizeTitle:'文字大小', sizeBody:'整個畫面的文字都會放大。',
+    sizes:['小','標準','大','特大'],
+    skinTitle:'背景與配色', skinBody:'請選擇看得最清楚的配色。最後兩種是對比度最高的無障礙配色。',
+    skins:{cave:'洞窟',sea:'深海',dusk:'暮色',moss:'苔',washi:'和紙',ink:'墨',hcd:'高對比（黑）',hcl:'高對比（白）'},
+    saveTitle:'存檔資料',
+    saveBody1:'平時會自動存檔，什麼都不用做。只有想<b>換到其他裝置</b>或留個備份時，才需要複製下面的代碼保存起來。',
+    saveBody2:'讀取時，貼上代碼並按「讀取」。目前的進度會被覆蓋。',
+    makeCode:'產生代碼', copyCode:'複製', loadCode:'讀取', wipe:'從頭開始', wipeArm:'真的要刪除？（再按一次）',
+    codeMade:'已產生代碼', copied:n=>'已複製'+n, copyManual:'已選取。請長按或用 Ctrl+C 複製。',
+    emptyCode:'代碼是空的', badCode:'無法讀取這個代碼',
+    loadKicker:'讀取', loadTitle:'讀取完成', loadSub:v=>'從累計 '+v+' 結晶的進度繼續',
+    wipeDone:'已重新開始',
+    shareTitle:'分享成果', shareBody:'把目前的紀錄變成一段文字。按下按鈕會開啟發文畫面。',
+    copyText:'複製文字', shareX:'發到 X', shareBsky:'發到 Bluesky', shareLine:'用 LINE 傳送',
+    sharePrivacy:'文字最後附有本遊戲網站的連結。不包含姓名或裝置資訊。',
+    shareLines:(d,s,g,c,m)=>['放置遊戲《結晶洞窟》','深度 '+d+'m，'+s+'礦脈','累計挖掘了 '+g+' 個結晶']
+      .concat(c>0?['核 '+c+' 個（收入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
+    newVeinKicker:'新礦脈', newVeinSub:d=>'到達了新的礦脈<br>深度 '+d+'m',
+    backKicker:'歡迎回來', backTitle:'歡迎回來', backSub:(t,v)=>'離開的 '+t+'裡<br>結晶 +'+v,
+    hm:(h,m)=>h>0?h+'小時'+m+'分鐘':m+'分鐘',
+    codeLabel:'存檔代碼', textLabel:'文字', pasteHere:'在此貼上存檔代碼',
+    bugTitle:'問題回報與聯絡',
+    bugBody:'如果有運作不正常的地方，或希望改進的地方，請告訴我。點下方的按鈕即可開啟回報頁面。',
+    bugEnv:'執行環境',
+    bugOpen:'開啟回報頁面', bugCopyEnv:'複製執行環境',
+    bugEnvNote:'回報時，請把下面的執行環境一起貼上。其中不含個人資訊。',
+    msNext:n=>'再 '+n+' 個產量加倍',
+    welcomeTitle:'歡迎來到結晶洞窟',
+    welcomeLead:'完全不使用聲音的安靜放置遊戲。只要記住三件事就能玩。',
+    welcomeLines:['點擊中央的結晶，即可獲得結晶',
+      '用結晶購買設備，之後放著不管也會持續增加',
+      '光球飄過時，在它消失前點擊即可獲得獎勵'],
+    welcomeStart:'開始',
+    welcomeMore:'詳細玩法、文字大小和背景配色，隨時都能在選單中查看或更改。',
+    reopenGuide:'再看一次開場說明',
+    rwTitle:'獎勵',
+    rwNote:'觀看短片即可領取。不看也能玩到最後。',
+    rwWatch:'觀看影片', rwWait:s=>'還有 '+s, rwKicker:'獎勵',
+    rwFail:'廣告載入失敗，請稍後再試。',
+    rewards:{skip:['時間跳躍','立即領取8小時的放置收益'],
+      boost:['共鳴延長','30分鐘內所有收入×2'],
+      orb:['召喚光球','立刻讓小事件的光球出現'],
+      core:['核數加成','下次重結晶獲得的核增加25%']},
+    rwGot:{skip:v=>'結晶 +'+v, boost:'30分鐘內所有收入×2',
+      orb:'光球飄來了', core:'下次重結晶的核增加25%'},
+    fsOn:'全螢幕', fsOff:'退出',
+    tabBonus:'獎勵', tabHowto:'玩法',
+    rwLeft:'今天剩餘', rwOf:(n,m)=>n+' / '+m+' 次',
+    rwResetNote:'日期變更後次數會重置。',
+    rwEmpty:'今天的次數已用完', rwResetIn:t=>'距離重置 '+t,
+    notifyTitle:'離開期間的提醒',
+    notifyBody:'離開期間累積的部分會在8小時後達到上限，屆時只提醒一次。'
+      +'不會發出聲音，也不會傳送其他任何通知。',
+    notifyBtn:'提醒設定',
+    privacyBtn:'隱私權設定',
+    legalTitle:'條款與隱私權',
+    legalBody:'本 App 適用 Apple 的標準使用授權合約。'
+      +'個人資料的處理方式請見隱私權政策。',
+    legalEula:'使用授權合約（Apple）', legalPrivacy:'隱私權政策',
+    legalBodyWeb:'個人資料的處理方式請見隱私權政策。'
+  },
+  fr:{
+    crystals:'Cristaux', perSec:'par s', coreMult:'Noyaux', resonance:'Résonance', remain:n=>'encore '+n+'\u00a0s',
+    stages:['Quartz','Améthyste','Fluorite','Topaze','Rubis','Obsidienne','Prisme','Abyssite','Cœur d’étoile','Verre du vide','Pierre d’aube','Oméga'],
+    nextIs:(n,c)=>'Suivant\u00a0: '+n+' ('+c+')', deepest:'Filon le plus profond', depth:d=>'Profondeur '+d+'\u00a0m',
+    tapHint:'Touchez le cristal pour creuser', tapAria:'Creuser le cristal',
+    pause:'Pause', resume:'Reprendre', pauseAria:'Mettre en pause ou reprendre',
+    veilTitle:'En pause', veilBody:'L’extraction et les revenus sont arrêtés. Rien ne s’accumule pendant la pause.',
+    tabMine:'Creuser', tabCore:'Renaître', tabMenu:'Menu',
+    taps:{pick:['Aiguiser la pioche','+1 cristal par toucher'], glove:['Gants de résonance','Chaque toucher ajoute aussi 3\u202f% de vos revenus par seconde']},
+    gens:{moss:['Mousse lumineuse','La mousse des parois perd de la poussière de cristal'], drill:['Petite foreuse','Une mèche à remontoir ronge la paroi sans relâche'],
+      bat:['Chauve-souris porteuse','Rapporte des cristaux depuis l’obscurité'], vein:['Pompe tellurique','Fait remonter les cristaux avec l’eau souterraine'],
+      golem:['Golem de cristal','Ouvre le filon avec son corps de pierre'], forge:['Forge d’étoiles','Transforme les éclats d’étoiles tombées en cristaux'],
+      react:['Réacteur du noyau','Puise directement au cœur de la planète']},
+    mine:'Par toucher', perSecShort:'/s', pctOf:n=>'3\u202f% des revenus ×'+n,
+    evKicker:'MINI-ÉVÉNEMENT',
+    events:{lode:['Filon riche','Des cristaux jaillissent d’une fissure'],
+      echo:['Résonance cristalline','Tous les revenus ×5 pendant 30 secondes'],
+      visitor:['Visiteur égaré','Il a laissé un cadeau']},
+    gainLine:v=>'Cristaux\u00a0: +'+v,
+    rebirthTitle:'Renaissance',
+    rebirthBody:'Faites fondre tous vos cristaux et bâtiments pour les changer en <em>noyaux</em>. Chaque noyau ajoute <em>+2\u202f%</em> à vos gains par toucher et à vos revenus pour la suite. Plus vous creusez profond, plus il reste de noyaux.',
+    haveCores:'Noyaux possédés', curMult:'Multiplicateur actuel', gainCores:'Noyaux à la renaissance',
+    doRebirth:n=>'Renaître (noyaux\u00a0: +'+n+')', rebirthLocked:'Se débloque à 1 million de cristaux au total',
+    rebirthKicker:'Renaissance', rebirthDone:(n,m)=>'Noyaux obtenus\u00a0: '+n+'<br>Revenus désormais ×'+m,
+    recordsTitle:'Statistiques', recRun:'Cette partie', recAll:'Depuis le début', recClicks:'Touchers',
+    recEvents:'Orbes attrapés', recResets:'Renaissances', recStage:'Filon le plus profond', recLoops:'Filons ouverts',
+    sealed:'Renaissez pour ouvrir le filon suivant', unlockSub:n=>'Nouveau filon ouvert\u00a0: '+n,
+    howtoTitle:'Comment jouer',
+    howto:[
+      ['Touchez le cristal','C’est le geste de base. Chaque toucher vous donne des cristaux. Au clavier, sélectionnez-le avec la touche Tab et creusez avec la barre d’espace.'],
+      ['Achetez des bâtiments pour automatiser','Les bâtiments de l’onglet Creuser rapportent des cristaux chaque seconde, même sans rien faire. Chaque exemplaire coûte plus cher, mais <b>tous les 10 exemplaires, la production du bâtiment double</b>. Les boutons ×10 et ×MAX permettent d’acheter par lots.'],
+      ['Creusez plus profond',(o,t)=>'Quand votre total cumulé augmente, le filon change, et le cristal change de couleur et de forme. '
+        +o+' filons sont ouverts dès le début, du Quartz au Prisme\u202f; chaque renaissance en ouvre un plus profond, '+t+' en tout.'],
+      ['Attrapez les orbes lumineux','De temps en temps, un orbe lumineux traverse l’écran. Touchez-le avant qu’il ne disparaisse pour obtenir un bonus. Il en existe trois\u202f; le meilleur, Résonance cristalline, multiplie tout par 5 pendant 30 secondes.'],
+      ['Renaissez pour gagner en puissance','Se débloque à un million de cristaux au total. Tout repart de zéro, mais vous gardez des noyaux qui multiplient vos gains pour toujours. C’est à la deuxième partie que le jeu s’ouvre vraiment.'],
+      ['Sauvegarde automatique','La progression est enregistrée sur cet appareil. Vous pouvez fermer le jeu et reprendre où vous en étiez. Pendant votre absence, les gains continuent à mi-vitesse, jusqu’à 8 heures.'],
+      ['Mettez en pause quand vous voulez','Le bouton est en haut à droite. Plus rien ne bouge tant qu’il est activé.']
+    ],
+    pauseSecTitle:'Arrêter de creuser',
+    pauseSecBody:'Appuyez sur Pause en haut à droite\u00a0: les revenus et les touchers s’arrêtent complètement. Appuyez à nouveau pour reprendre. Le temps passé en pause n’est jamais compté.',
+    pauseSecBtn:'Pause', pauseSecBtnOn:'Reprendre',
+    sizeTitle:'Taille du texte', sizeBody:'Agrandit tout le texte de la page.',
+    sizes:['Petite','Normale','Grande','Très grande'],
+    skinTitle:'Fond et couleurs', skinBody:'Choisissez ce qui se lit le mieux. Les deux derniers sont des thèmes à contraste maximal.',
+    skins:{cave:'Grotte',sea:'Grands fonds',dusk:'Crépuscule',moss:'Mousse',washi:'Papier',ink:'Encre',hcd:'Contraste élevé (sombre)',hcl:'Contraste élevé (clair)'},
+    saveTitle:'Sauvegarde',
+    saveBody1:'Le jeu s’enregistre tout seul, il n’y a donc rien à faire. Copiez le code ci-dessous seulement pour <b>passer sur un autre appareil</b> ou garder une copie.',
+    saveBody2:'Pour restaurer, collez un code et appuyez sur Charger. La progression actuelle sera remplacée.',
+    makeCode:'Créer un code', copyCode:'Copier', loadCode:'Charger', wipe:'Recommencer', wipeArm:'Vraiment tout effacer\u202f? (appuyez encore)',
+    codeMade:'Code créé', copied:n=>'Copié\u00a0: '+n, copyManual:'Sélectionné. Copiez avec Ctrl+C ou un appui long.',
+    emptyCode:'Le code est vide', badCode:'Ce code n’a pas pu être lu',
+    loadKicker:'Chargement', loadTitle:'Partie chargée', loadSub:v=>'Reprise — cristaux au total\u00a0: '+v,
+    wipeDone:'Retour au début',
+    shareTitle:'Partager votre progression', shareBody:'Transforme votre progression actuelle en texte. Les boutons ouvrent une fenêtre de publication.',
+    copyText:'Copier le texte', shareX:'Publier sur X', shareBsky:'Publier sur Bluesky', shareLine:'Envoyer sur LINE',
+    sharePrivacy:'Le texte se termine par un lien vers le site du jeu. Il ne contient ni nom ni information sur votre appareil.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, un jeu idle','Profondeur '+d+'\u00a0m, filon '+s,'Cristaux extraits au total\u00a0: '+g]
+      .concat(c>0?['Noyaux\u00a0: '+c+' (revenus ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NOUVEAU FILON', newVeinSub:d=>'Vous avez atteint un nouveau filon<br>Profondeur '+d+'\u00a0m',
+    backKicker:'BON RETOUR', backTitle:'Bon retour', backSub:(t,v)=>'Pendant votre absence ('+t+')<br>Cristaux\u00a0: +'+v,
+    hm:(h,m)=>h>0?h+'\u00a0h\u00a0'+m+'\u00a0min':m+'\u00a0min',
+    codeLabel:'Code de sauvegarde', textLabel:'Texte', pasteHere:'Collez ici un code de sauvegarde',
+    bugTitle:'Signaler un problème ou me contacter',
+    bugBody:'Dites-moi ce qui ne fonctionne pas, ou ce que vous aimeriez voir changer. Le bouton ci-dessous ouvre la page pour l’envoyer.',
+    bugEnv:'Infos techniques',
+    bugOpen:'Ouvrir la page de contact', bugCopyEnv:'Copier les infos techniques',
+    bugEnvNote:'Quand vous signalez un problème, collez aussi les infos techniques ci-dessous. Ils ne contiennent aucune information personnelle.',
+    msNext:n=>'encore '+n+' pour doubler',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Un jeu idle paisible, sans aucun son. Trois choses suffisent pour jouer.',
+    welcomeLines:['Touchez le cristal au centre pour gagner des cristaux',
+      'Dépensez-les en bâtiments, qui continuent de produire pendant votre absence',
+      'Quand un orbe lumineux passe, touchez-le avant qu’il ne disparaisse pour obtenir un bonus'],
+    welcomeStart:'Commencer',
+    welcomeMore:'Les règles complètes, la taille du texte et les couleurs sont dans l’onglet Menu, quand vous voulez.',
+    reopenGuide:'Revoir le guide de départ',
+    rwTitle:'Bonus',
+    rwNote:'Regardez une courte vidéo pour en obtenir un. Le jeu reste entièrement jouable sans eux.',
+    rwWatch:'Regarder une vidéo', rwWait:s=>'encore '+s, rwKicker:'BONUS',
+    rwFail:'La publicité n’a pas pu être chargée. Réessayez dans un instant.',
+    rewards:{skip:['Saut dans le temps','Recevez tout de suite 8 heures de gains passifs'],
+      boost:['Résonance prolongée','Tous les revenus ×2 pendant 30 minutes'],
+      orb:['Appeler un orbe','Faites apparaître tout de suite un orbe de mini-événement'],
+      core:['Noyaux en plus','25\u202f% de noyaux en plus à la prochaine renaissance']},
+    rwGot:{skip:v=>'Cristaux\u00a0: +'+v, boost:'Tous les revenus ×2 pendant 30 minutes',
+      orb:'Un orbe arrive', core:'25\u202f% de noyaux en plus à la prochaine renaissance'},
+    fsOn:'Plein écran', fsOff:'Quitter',
+    tabBonus:'Bonus', tabHowto:'Guide',
+    rwLeft:'Restants aujourd’hui', rwOf:(n,m)=>n+' sur '+m,
+    rwResetNote:'Le compteur repart à zéro au changement de date.',
+    rwEmpty:'Plus aucun aujourd’hui', rwResetIn:t=>'Remise à zéro dans '+t,
+    notifyTitle:'Rappels pendant votre absence',
+    notifyBody:'Ce qui s’accumule pendant votre absence atteint sa limite au bout de huit heures. '
+      +'Un seul rappel silencieux est envoyé à ce moment-là, et rien d’autre.',
+    notifyBtn:'Réglages des rappels',
+    privacyBtn:'Réglages de confidentialité',
+    legalTitle:'Conditions et confidentialité',
+    legalBody:'Cette app est couverte par le contrat de licence standard d’Apple. '
+      +'Le traitement de vos informations est décrit dans la politique de confidentialité.',
+    legalEula:'Contrat de licence (Apple)', legalPrivacy:'Politique de confidentialité',
+    legalBodyWeb:'Le traitement de vos informations est décrit dans la politique de confidentialité.'
+  },
+  de:{
+    crystals:'Kristalle', perSec:'pro Sek.', coreMult:'Kerne', resonance:'Resonanz', remain:n=>'noch '+n+'\u00a0s',
+    stages:['Quarz','Amethyst','Fluorit','Topas','Rubin','Obsidian','Prisma','Abyssit','Sternkern','Leerenglas','Morgenstein','Omega'],
+    nextIs:(n,c)=>'Als Nächstes: '+n+' ('+c+')', deepest:'Tiefste Ader', depth:d=>'Tiefe '+d+'\u00a0m',
+    tapHint:'Tippe auf den Kristall, um zu graben', tapAria:'Kristall abbauen',
+    pause:'Pause', resume:'Weiter', pauseAria:'Pausieren oder fortsetzen',
+    veilTitle:'Pausiert', veilBody:'Abbau und Einnahmen sind angehalten. Während der Pause sammelt sich nichts an.',
+    tabMine:'Graben', tabCore:'Neustart', tabMenu:'Menü',
+    taps:{pick:['Spitzhacke schärfen','+1 Kristall pro Tippen'], glove:['Resonanzhandschuhe','Jedes Tippen bringt zusätzlich 3\u00a0% deiner Einnahmen pro Sekunde']},
+    gens:{moss:['Leuchtmoos','Vom Moos an den Wänden rieselt Kristallstaub'], drill:['Kleiner Bohrer','Ein Bohrer mit Aufziehwerk nagt unermüdlich an der Wand'],
+      bat:['Trägerfledermaus','Trägt Kristalle aus der Dunkelheit'], vein:['Erdaderpumpe','Fördert Kristalle mit dem Grundwasser'],
+      golem:['Kristallgolem','Gräbt sich mit seinem Körper aus Stein durch die Ader'], forge:['Sternenstaubschmiede','Macht aus gefallenen Sternsplittern Kristall'],
+      react:['Erdkernreaktor','Schöpft direkt aus dem Herzen des Planeten']},
+    mine:'Pro Tippen', perSecShort:'/s', pctOf:n=>'3\u00a0% der Einnahmen ×'+n,
+    evKicker:'MINI-EREIGNIS',
+    events:{lode:['Reiche Ader','Aus einem Spalt in der Wand rieseln Kristalle'],
+      echo:['Kristallresonanz','Alle Einnahmen 30 Sekunden lang ×5'],
+      visitor:['Verirrter Besucher','Hat ein Geschenk dagelassen']},
+    gainLine:v=>'Kristalle: +'+v,
+    rebirthTitle:'Neustart',
+    rebirthBody:'Schmilz alle Kristalle und Gebäude zu <em>Kernen</em> ein. Jeder Kern erhöht von da an deine Tipp-Ausbeute und Einnahmen um <em>+2\u00a0%</em>. Je tiefer du gräbst, desto mehr Kerne bleiben übrig.',
+    haveCores:'Vorhandene Kerne', curMult:'Aktueller Multiplikator', gainCores:'Kerne durch Neustart',
+    doRebirth:n=>'Neustart (Kerne: +'+n+')', rebirthLocked:'Verfügbar ab 1 Million Kristallen insgesamt',
+    rebirthKicker:'Neustart', rebirthDone:(n,m)=>'Kerne erhalten: '+n+'<br>Einnahmen jetzt ×'+m,
+    recordsTitle:'Statistik', recRun:'Dieser Durchgang', recAll:'Insgesamt', recClicks:'Von Hand gegraben',
+    recEvents:'Gefangene Kugeln', recResets:'Neustarts', recStage:'Tiefste Ader', recLoops:'Geöffnete Adern',
+    sealed:'Ein Neustart öffnet die nächste Ader', unlockSub:n=>'Neue Ader geöffnet: '+n,
+    howtoTitle:'So wird gespielt',
+    howto:[
+      ['Tippe auf den Kristall','Das ist die Grundbedienung. Jedes Tippen bringt Kristalle. Mit der Tastatur wählst du ihn mit der Tab-Taste aus und gräbst mit der Leertaste.'],
+      ['Automatisiere mit Gebäuden','Gebäude im Tab „Graben“ bringen jede Sekunde Kristalle, auch wenn du nichts tust. Jedes weitere kostet mehr, aber <b>alle 10 Stück verdoppelt sich die Leistung des Gebäudes</b>. Mit ×10 und ×MAX kaufst du mehrere auf einmal.'],
+      ['Grabe tiefer',(o,t)=>'Wenn deine Gesamtausbeute wächst, wechselt die Ader, und der Kristall ändert Farbe und Form. '
+        +o+' Adern sind von Anfang an offen, von Quarz bis Prisma; jeder Neustart öffnet eine weitere, tiefere Ader – insgesamt sind es '+t+'.'],
+      ['Fange die leuchtenden Kugeln','Ab und zu schwebt eine leuchtende Kugel über den Bildschirm. Tippe sie an, bevor sie verblasst, und du bekommst einen Bonus. Es gibt drei; die beste ist die Kristallresonanz, die 30 Sekunden lang alles verfünffacht.'],
+      ['Werde durch Neustarts stärker','Freigeschaltet ab einer Million Kristallen insgesamt. Alles wird zurückgesetzt, aber du behältst Kerne, die deine Einnahmen dauerhaft vervielfachen. Im zweiten Durchgang geht das Spiel richtig los.'],
+      ['Automatisches Speichern','Der Fortschritt wird automatisch auf diesem Gerät gespeichert. Du kannst das Spiel schließen und später dort weitermachen, wo du aufgehört hast. Während du weg bist, sammelt es mit halber Geschwindigkeit weiter, bis zu 8 Stunden.'],
+      ['Pausiere, wann du willst','Der Knopf ist oben rechts. Solange er an ist, bewegt sich nichts.']
+    ],
+    pauseSecTitle:'Abbau anhalten',
+    pauseSecBody:'Drücke oben rechts auf „Pause“, dann stoppen Einnahmen und Tippen vollständig. Drücke ihn noch einmal, um fortzusetzen. Pausenzeit wird nie mitgezählt.',
+    pauseSecBtn:'Pause', pauseSecBtnOn:'Weiter',
+    sizeTitle:'Textgröße', sizeBody:'Vergrößert jeden Text auf der Seite.',
+    sizes:['Klein','Normal','Groß','Sehr groß'],
+    skinTitle:'Hintergrund und Farben', skinBody:'Wähle, was sich am besten lesen lässt. Die letzten beiden haben maximalen Kontrast.',
+    skins:{cave:'Höhle',sea:'Tiefsee',dusk:'Dämmerung',moss:'Moos',washi:'Papier',ink:'Tusche',hcd:'Hoher Kontrast (dunkel)',hcl:'Hoher Kontrast (hell)'},
+    saveTitle:'Spielstand',
+    saveBody1:'Das Spiel speichert automatisch, du musst also normalerweise nichts tun. Kopiere den Code unten nur, wenn du <b>auf ein anderes Gerät wechseln</b> oder eine Sicherung behalten willst.',
+    saveBody2:'Zum Wiederherstellen fügst du einen Code ein und drückst auf „Laden“. Dein aktueller Fortschritt wird dabei überschrieben.',
+    makeCode:'Code erstellen', copyCode:'Kopieren', loadCode:'Laden', wipe:'Von vorn beginnen', wipeArm:'Wirklich löschen? (noch einmal drücken)',
+    codeMade:'Code erstellt', copied:n=>n+' kopiert', copyManual:'Ausgewählt. Mit Strg+C oder langem Drücken kopieren.',
+    emptyCode:'Der Code ist leer', badCode:'Dieser Code konnte nicht gelesen werden',
+    loadKicker:'Laden', loadTitle:'Spielstand geladen', loadSub:v=>'Weiter geht’s – Kristalle insgesamt: '+v,
+    wipeDone:'Zurück auf Anfang',
+    shareTitle:'Fortschritt teilen', shareBody:'Macht aus deinem aktuellen Stand einen Text. Die Knöpfe öffnen ein Fenster zum Posten.',
+    copyText:'Text kopieren', shareX:'Auf X posten', shareBsky:'Auf Bluesky posten', shareLine:'Per LINE senden',
+    sharePrivacy:'Der Text endet mit einem Link zur Website des Spiels. Er enthält keinen Namen und nichts über dein Gerät.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, ein Idle-Spiel','Tiefe '+d+'\u00a0m, Ader '+s,'Kristalle insgesamt abgebaut: '+g]
+      .concat(c>0?['Kerne: '+c+' (Einnahmen ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NEUE ADER', newVeinSub:d=>'Du hast eine neue Ader erreicht<br>Tiefe '+d+'\u00a0m',
+    backKicker:'WILLKOMMEN ZURÜCK', backTitle:'Willkommen zurück', backSub:(t,v)=>'Während deiner Abwesenheit ('+t+')<br>Kristalle: +'+v,
+    hm:(h,m)=>h>0?h+'\u00a0Std. '+m+'\u00a0Min.':m+'\u00a0Min.',
+    codeLabel:'Speichercode', textLabel:'Text', pasteHere:'Speichercode hier einfügen',
+    bugTitle:'Problem melden oder Kontakt aufnehmen',
+    bugBody:'Sag mir, was nicht funktioniert oder was du dir anders wünschst. Über den Knopf unten öffnest du die Seite dafür.',
+    bugEnv:'Systeminfo',
+    bugOpen:'Kontaktseite öffnen', bugCopyEnv:'Systeminfo kopieren',
+    bugEnvNote:'Wenn du etwas meldest, füge bitte die Systeminfo unten mit ein. Sie enthält keine persönlichen Daten.',
+    msNext:n=>'noch '+n+' bis zur Verdopplung',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Ein ruhiges Idle-Spiel ganz ohne Ton. Drei Dinge reichen zum Spielen.',
+    welcomeLines:['Tippe auf den Kristall in der Mitte, um Kristalle zu bekommen',
+      'Kaufe damit Gebäude, die auch weiterarbeiten, wenn du weg bist',
+      'Schwebt eine leuchtende Kugel vorbei, tippe sie vor dem Verblassen an und hol dir einen Bonus'],
+    welcomeStart:'Los geht’s',
+    welcomeMore:'Alle Regeln, die Textgröße und die Farben findest du jederzeit im Tab „Menü“.',
+    reopenGuide:'Einführung erneut anzeigen',
+    rwTitle:'Boni',
+    rwNote:'Sieh dir ein kurzes Video an, um einen zu bekommen. Das Spiel ist auch ohne sie vollständig spielbar.',
+    rwWatch:'Video ansehen', rwWait:s=>'noch '+s, rwKicker:'BONUS',
+    rwFail:'Die Werbung konnte nicht geladen werden. Bitte versuche es gleich noch einmal.',
+    rewards:{skip:['Zeitsprung','Erhalte sofort 8 Stunden Leerlauf-Einnahmen'],
+      boost:['Verlängerte Resonanz','Alle Einnahmen 30 Minuten lang ×2'],
+      orb:['Kugel herbeirufen','Lass sofort eine Mini-Ereignis-Kugel erscheinen'],
+      core:['Zusätzliche Kerne','25\u00a0% mehr Kerne beim nächsten Neustart']},
+    rwGot:{skip:v=>'Kristalle: +'+v, boost:'Alle Einnahmen 30 Minuten lang ×2',
+      orb:'Eine Kugel schwebt herein', core:'25\u00a0% mehr Kerne beim nächsten Neustart'},
+    fsOn:'Vollbild', fsOff:'Vollbild aus',
+    tabBonus:'Bonus', tabHowto:'Anleitung',
+    rwLeft:'Heute übrig', rwOf:(n,m)=>n+' von '+m,
+    rwResetNote:'Der Zähler wird beim Datumswechsel zurückgesetzt.',
+    rwEmpty:'Für heute aufgebraucht', rwResetIn:t=>'Zurückgesetzt in '+t,
+    notifyTitle:'Erinnerung während deiner Abwesenheit',
+    notifyBody:'Was sich während deiner Abwesenheit ansammelt, erreicht nach acht Stunden seine Grenze. '
+      +'Genau dann kommt eine einzige lautlose Erinnerung, sonst nichts.',
+    notifyBtn:'Erinnerungseinstellungen',
+    privacyBtn:'Datenschutzeinstellungen',
+    legalTitle:'Bedingungen und Datenschutz',
+    legalBody:'Für diese App gilt die Standard-Lizenzvereinbarung von Apple. '
+      +'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.',
+    legalEula:'Lizenzvereinbarung (Apple)', legalPrivacy:'Datenschutzerklärung',
+    legalBodyWeb:'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.'
+  },
+  it:{
+    crystals:'Cristalli', perSec:'al sec', coreMult:'Nuclei', resonance:'Risonanza', remain:n=>'ancora '+n+'\u00a0s',
+    stages:['Quarzo','Ametista','Fluorite','Topazio','Rubino','Ossidiana','Prisma','Abissite','Cuore stellare','Vetro del vuoto','Pietra dell’alba','Omega'],
+    nextIs:(n,c)=>'Prossima: '+n+' ('+c+')', deepest:'Vena più profonda', depth:d=>'Profondità '+d+'\u00a0m',
+    tapHint:'Tocca il cristallo per scavare', tapAria:'Scava il cristallo',
+    pause:'Pausa', resume:'Riprendi', pauseAria:'Metti in pausa o riprendi',
+    veilTitle:'In pausa', veilBody:'Scavo e guadagni sono fermi. Durante la pausa non si accumula nulla.',
+    tabMine:'Scava', tabCore:'Rinascita', tabMenu:'Menu',
+    taps:{pick:['Affila il piccone','+1 cristallo per tocco'], glove:['Guanti di risonanza','Ogni tocco aggiunge anche il 3% dei guadagni al secondo']},
+    gens:{moss:['Muschio luminoso','Il muschio sulle pareti perde polvere di cristallo'], drill:['Piccola trivella','Una punta a molla rosicchia la parete'],
+      bat:['Pipistrello portatore','Porta fuori i cristalli dal buio'], vein:['Pompa tellurica','Tira su i cristalli insieme all’acqua di falda'],
+      golem:['Golem di cristallo','Apre la vena con un corpo di pietra'], forge:['Forgia di polvere stellare','Trasforma i frammenti di stelle cadute in cristallo'],
+      react:['Reattore del nucleo','Attinge direttamente dal cuore del pianeta']},
+    mine:'Per tocco', perSecShort:'/s', pctOf:n=>'3% dei guadagni ×'+n,
+    evKicker:'MINI EVENTO',
+    events:{lode:['Vena ricca','Da una crepa nella parete escono cristalli'],
+      echo:['Risonanza cristallina','Tutti i guadagni ×5 per 30 secondi'],
+      visitor:['Visitatore smarrito','Ha lasciato un regalo']},
+    gainLine:v=>'Cristalli: +'+v,
+    rebirthTitle:'Rinascita',
+    rebirthBody:'Fondi tutti i cristalli e gli edifici in <em>nuclei</em>. Ogni nucleo aggiunge <em>+2%</em> alla resa di ogni tocco e ai guadagni da quel momento in poi. Più scavi a fondo, più nuclei restano.',
+    haveCores:'Nuclei posseduti', curMult:'Moltiplicatore attuale', gainCores:'Nuclei dalla rinascita',
+    doRebirth:n=>'Rinasci (nuclei: +'+n+')', rebirthLocked:'Si sblocca a 1 milione di cristalli totali',
+    rebirthKicker:'Rinascita', rebirthDone:(n,m)=>'Nuclei ottenuti: '+n+'<br>Guadagni ora ×'+m,
+    recordsTitle:'Statistiche', recRun:'Questa partita', recAll:'In totale', recClicks:'Tocchi',
+    recEvents:'Sfere prese', recResets:'Rinascite', recStage:'Vena più profonda', recLoops:'Vene aperte',
+    sealed:'Rinasci per aprire la vena successiva', unlockSub:n=>'Nuova vena aperta: '+n,
+    howtoTitle:'Come si gioca',
+    howto:[
+      ['Tocca il cristallo','È la mossa di base. Ogni tocco ti dà cristalli. Con la tastiera selezionalo con il tasto Tab e scava con la barra spaziatrice.'],
+      ['Compra edifici per automatizzare','Gli edifici nella scheda Scava producono cristalli ogni secondo, anche quando non fai nulla. Ogni copia costa di più, ma <b>ogni 10 copie la produzione di quell’edificio raddoppia</b>. I pulsanti ×10 e ×MAX servono a comprare in blocco.'],
+      ['Scava più a fondo',(o,t)=>'Quando il totale complessivo cresce, la vena cambia e il cristallo cambia colore e forma. '
+        +o+' vene sono aperte fin dall’inizio, dal Quarzo al Prisma; ogni rinascita ne apre un’altra più profonda, '+t+' in tutto.'],
+      ['Prendi le sfere luminose','Ogni tanto una sfera luminosa attraversa lo schermo. Toccala prima che svanisca per un bonus. Ce ne sono tre; la migliore è la Risonanza cristallina, che per 30 secondi moltiplica tutto per 5.'],
+      ['Rinasci per diventare più forte','Si sblocca a un milione di cristalli totali. Si riparte da zero, ma tieni i nuclei che moltiplicano i guadagni per sempre. È dalla seconda partita che il gioco si apre davvero.'],
+      ['Si salva da solo','I progressi vengono salvati su questo dispositivo. Puoi chiudere il gioco e riprendere da dove avevi lasciato. Mentre sei via continua a guadagnare a metà velocità, fino a 8 ore.'],
+      ['Metti in pausa quando vuoi','Il pulsante è in alto a destra. Finché è attivo non si muove nulla.']
+    ],
+    pauseSecTitle:'Fermare lo scavo',
+    pauseSecBody:'Premi Pausa in alto a destra: guadagni e tocchi si fermano del tutto. Premi di nuovo per riprendere. Il tempo in pausa non viene mai conteggiato.',
+    pauseSecBtn:'Pausa', pauseSecBtnOn:'Riprendi',
+    sizeTitle:'Dimensione del testo', sizeBody:'Ingrandisce tutto il testo della pagina.',
+    sizes:['Piccolo','Normale','Grande','Molto grande'],
+    skinTitle:'Sfondo e colori', skinBody:'Scegli quello che si legge meglio. Gli ultimi due hanno il massimo contrasto.',
+    skins:{cave:'Grotta',sea:'Abisso marino',dusk:'Crepuscolo',moss:'Muschio',washi:'Carta',ink:'Inchiostro',hcd:'Alto contrasto (scuro)',hcl:'Alto contrasto (chiaro)'},
+    saveTitle:'Salvataggio',
+    saveBody1:'Il gioco si salva da solo, quindi di solito non c’è nulla da fare. Copia il codice qui sotto solo se vuoi <b>passare a un altro dispositivo</b> o tenere una copia.',
+    saveBody2:'Per ripristinare, incolla un codice e premi Carica. I progressi attuali verranno sovrascritti.',
+    makeCode:'Crea un codice', copyCode:'Copia', loadCode:'Carica', wipe:'Ricomincia', wipeArm:'Cancellare davvero? (premi di nuovo)',
+    codeMade:'Codice creato', copied:n=>'Copiato: '+n, copyManual:'Selezionato. Copia con Ctrl+C o tenendo premuto.',
+    emptyCode:'Il codice è vuoto', badCode:'Impossibile leggere questo codice',
+    loadKicker:'Caricamento', loadTitle:'Partita caricata', loadSub:v=>'Si riprende – cristalli totali: '+v,
+    wipeDone:'Si riparte dall’inizio',
+    shareTitle:'Condividi i progressi', shareBody:'Trasforma i tuoi progressi attuali in testo. I pulsanti aprono una finestra di pubblicazione.',
+    copyText:'Copia il testo', shareX:'Pubblica su X', shareBsky:'Pubblica su Bluesky', shareLine:'Invia su LINE',
+    sharePrivacy:'Il testo termina con un link al sito del gioco. Non contiene nomi né informazioni sul tuo dispositivo.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, un gioco idle','Profondità '+d+'\u00a0m, vena di '+s,'Cristalli estratti in totale: '+g]
+      .concat(c>0?['Nuclei: '+c+' (guadagni ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NUOVA VENA', newVeinSub:d=>'Hai raggiunto una nuova vena<br>Profondità '+d+'\u00a0m',
+    backKicker:'RIECCOTI', backTitle:'Rieccoti', backSub:(t,v)=>'Durante la tua assenza ('+t+')<br>Cristalli: +'+v,
+    hm:(h,m)=>h>0?h+'\u00a0h '+m+'\u00a0min':m+'\u00a0min',
+    codeLabel:'Codice di salvataggio', textLabel:'Testo', pasteHere:'Incolla qui un codice di salvataggio',
+    bugTitle:'Segnala un problema o contattami',
+    bugBody:'Dimmi cosa non funziona o cosa vorresti cambiare. Il pulsante qui sotto apre la pagina per inviarlo.',
+    bugEnv:'Dati tecnici',
+    bugOpen:'Apri la pagina dei contatti', bugCopyEnv:'Copia i dati tecnici',
+    bugEnvNote:'Quando segnali qualcosa, incolla anche i dati tecnici qui sotto. Non contengono informazioni personali.',
+    msNext:n=>'ancora '+n+' per raddoppiare',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Un gioco idle tranquillo, senza alcun suono. Bastano tre cose per giocare.',
+    welcomeLines:['Tocca il cristallo al centro per ottenere cristalli',
+      'Spendili in edifici, che continuano a produrre mentre sei via',
+      'Quando passa una sfera luminosa, toccala prima che svanisca per un bonus'],
+    welcomeStart:'Inizia',
+    welcomeMore:'Le regole complete, la dimensione del testo e i colori sono nella scheda Menu, quando vuoi.',
+    reopenGuide:'Rivedi la guida iniziale',
+    rwTitle:'Bonus',
+    rwNote:'Guarda un breve video per ottenerne uno. Il gioco si può completare anche senza.',
+    rwWatch:'Guarda un video', rwWait:s=>'ancora '+s, rwKicker:'BONUS',
+    rwFail:'Impossibile caricare la pubblicità. Riprova tra un momento.',
+    rewards:{skip:['Salto nel tempo','Ricevi subito 8 ore di guadagni passivi'],
+      boost:['Risonanza prolungata','Tutti i guadagni ×2 per 30 minuti'],
+      orb:['Chiama una sfera','Fai comparire subito una sfera evento'],
+      core:['Nuclei extra','25% di nuclei in più alla prossima rinascita']},
+    rwGot:{skip:v=>'Cristalli: +'+v, boost:'Tutti i guadagni ×2 per 30 minuti',
+      orb:'Arriva una sfera', core:'25% di nuclei in più alla prossima rinascita'},
+    fsOn:'Schermo intero', fsOff:'Esci',
+    tabBonus:'Bonus', tabHowto:'Guida',
+    rwLeft:'Rimasti oggi', rwOf:(n,m)=>n+' su '+m,
+    rwResetNote:'Il conteggio si azzera al cambio di data.',
+    rwEmpty:'Esauriti per oggi', rwResetIn:t=>'Si azzera tra '+t,
+    notifyTitle:'Promemoria mentre sei via',
+    notifyBody:'Ciò che si accumula mentre sei via raggiunge il limite dopo otto ore. '
+      +'In quel momento arriva un solo promemoria silenzioso, e nient’altro.',
+    notifyBtn:'Impostazioni promemoria',
+    privacyBtn:'Impostazioni privacy',
+    legalTitle:'Termini e privacy',
+    legalBody:'Questa app è coperta dal contratto di licenza standard di Apple. '
+      +'Come vengono trattate le tue informazioni è spiegato nell’informativa sulla privacy.',
+    legalEula:'Contratto di licenza (Apple)', legalPrivacy:'Informativa sulla privacy',
+    legalBodyWeb:'Come vengono trattate le tue informazioni è spiegato nell’informativa sulla privacy.'
+  },
+  pt:{
+    crystals:'Cristais', perSec:'por seg', coreMult:'Núcleos', resonance:'Ressonância', remain:n=>'restante: '+n+' s',
+    stages:['Quartzo','Ametista','Fluorita','Topázio','Rubi','Obsidiana','Prisma','Abissita','Núcleo estelar','Vidro do vazio','Pedra da aurora','Ômega'],
+    nextIs:(n,c)=>'Próximo: '+n+' ('+c+')', deepest:'Veio mais profundo', depth:d=>'Profundidade '+d+' m',
+    tapHint:'Toque no cristal para minerar', tapAria:'Minerar o cristal',
+    pause:'Pausar', resume:'Continuar', pauseAria:'Pausar ou continuar',
+    veilTitle:'Pausado', veilBody:'A mineração e a renda estão paradas. Nada se acumula durante a pausa.',
+    tabMine:'Minerar', tabCore:'Renascer', tabMenu:'Menu',
+    taps:{pick:['Afiar a picareta','+1 cristal por toque'], glove:['Luvas de ressonância','Cada toque também soma 3% da sua renda por segundo']},
+    gens:{moss:['Musgo luminoso','O musgo nas paredes solta pó de cristal'], drill:['Pequena broca','Uma broca de corda desgasta a parede'],
+      bat:['Morcego carregador','Traz cristais para fora do escuro'], vein:['Bomba telúrica','Puxa cristais junto com a água subterrânea'],
+      golem:['Golem de cristal','Escava o veio com seu corpo de pedra'], forge:['Forja de poeira estelar','Transforma fragmentos de estrelas caídas em cristal'],
+      react:['Reator do núcleo','Extrai direto do coração do planeta']},
+    mine:'Por toque', perSecShort:'/s', pctOf:n=>'3% da renda ×'+n,
+    evKicker:'MINIEVENTO',
+    events:{lode:['Veio rico','Cristais escorrem de uma fenda na parede'],
+      echo:['Ressonância cristalina','Toda a renda ×5 por 30 segundos'],
+      visitor:['Visitante perdido','Deixou um presente']},
+    gainLine:v=>'Cristais: +'+v,
+    rebirthTitle:'Renascimento',
+    rebirthBody:'Derreta todos os cristais e construções e transforme tudo em <em>núcleos</em>. Cada núcleo soma <em>+2%</em> ao valor do toque e à renda daí em diante. Quanto mais fundo você cavar, mais núcleos sobram.',
+    haveCores:'Núcleos que você tem', curMult:'Multiplicador atual', gainCores:'Núcleos ao renascer',
+    doRebirth:n=>'Renascer (núcleos: +'+n+')', rebirthLocked:'Desbloqueia com 1 milhão de cristais no total',
+    rebirthKicker:'Renascimento', rebirthDone:(n,m)=>'Núcleos recebidos: '+n+'<br>Renda agora ×'+m,
+    recordsTitle:'Estatísticas', recRun:'Esta rodada', recAll:'No total', recClicks:'Toques',
+    recEvents:'Orbes pegos', recResets:'Renascimentos', recStage:'Veio mais profundo', recLoops:'Veios abertos',
+    sealed:'Renasça para abrir o próximo veio', unlockSub:n=>'Novo veio aberto: '+n,
+    howtoTitle:'Como jogar',
+    howto:[
+      ['Toque no cristal','Esse é o movimento básico. Cada toque dá cristais. No teclado, selecione com Tab e minere com a barra de espaço.'],
+      ['Compre construções para automatizar','As construções da aba Minerar rendem cristais a cada segundo, mesmo sem você fazer nada. Cada unidade custa mais que a anterior, mas <b>a cada 10 unidades a produção dessa construção dobra</b>. Os botões ×10 e ×MAX compram em lote.'],
+      ['Cave mais fundo',(o,t)=>'Conforme o total acumulado cresce, o veio muda e o cristal ganha outra cor e outra forma. '
+        +o+' veios ficam abertos desde o início, do Quartzo ao Prisma; cada renascimento abre mais um veio profundo, '+t+' no total.'],
+      ['Pegue os orbes brilhantes','De vez em quando um orbe brilhante atravessa a tela. Toque nele antes que suma para ganhar um bônus. São três tipos; o melhor é a Ressonância cristalina, que deixa tudo ×5 por 30 segundos.'],
+      ['Renasça para ficar mais forte','Desbloqueia com um milhão de cristais no total. Tudo recomeça, mas você mantém núcleos que multiplicam a renda para sempre. É na segunda rodada que o jogo se abre de verdade.'],
+      ['Salvamento automático','O progresso é salvo neste aparelho automaticamente. Feche e continue de onde parou. Enquanto você está fora, o jogo continua rendendo na metade da velocidade, por até 8 horas.'],
+      ['Pause quando quiser','O botão fica no canto superior direito. Enquanto o jogo estiver pausado, nada se mexe.']
+    ],
+    pauseSecTitle:'Pausar a mineração',
+    pauseSecBody:'Toque em Pausar no canto superior direito e a renda e os toques param por completo. Toque de novo para continuar. O tempo em pausa nunca é contado.',
+    pauseSecBtn:'Pausar', pauseSecBtnOn:'Continuar',
+    sizeTitle:'Tamanho do texto', sizeBody:'Ajusta o tamanho de todo o texto da página.',
+    sizes:['Pequeno','Normal','Grande','Muito grande'],
+    skinTitle:'Fundo e cores', skinBody:'Escolha o que for mais fácil de ler. Os dois últimos têm contraste máximo.',
+    skins:{cave:'Caverna',sea:'Mar profundo',dusk:'Crepúsculo',moss:'Musgo',washi:'Papel',ink:'Nanquim',hcd:'Alto contraste (escuro)',hcl:'Alto contraste (claro)'},
+    saveTitle:'Dados salvos',
+    saveBody1:'O jogo salva sozinho, então normalmente não há nada a fazer. Copie o código abaixo só se quiser <b>passar para outro aparelho</b> ou guardar uma cópia.',
+    saveBody2:'Para restaurar, cole um código e toque em Carregar. O progresso atual será substituído.',
+    makeCode:'Criar código', copyCode:'Copiar', loadCode:'Carregar', wipe:'Recomeçar', wipeArm:'Apagar mesmo? (toque de novo)',
+    codeMade:'Código criado', copied:n=>'Copiado: '+n, copyManual:'Selecionado. Copie com Ctrl+C ou tocando e segurando.',
+    emptyCode:'O código está vazio', badCode:'Não foi possível ler esse código',
+    loadKicker:'Carregamento', loadTitle:'Carregado', loadSub:v=>'Continuando de onde parou (cristais no total: '+v+')',
+    wipeDone:'De volta ao começo',
+    shareTitle:'Compartilhar progresso', shareBody:'Transforma seu progresso atual em texto. Os botões abrem uma janela de publicação.',
+    copyText:'Copiar o texto', shareX:'Publicar no X', shareBsky:'Publicar no Bluesky', shareLine:'Enviar pelo LINE',
+    sharePrivacy:'O texto termina com um link para o site do jogo. Não inclui nome nem informações do seu aparelho.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, um jogo idle','Profundidade '+d+' m, veio de '+s,'Cristais minerados no total: '+g]
+      .concat(c>0?['Núcleos: '+c+' (renda ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NOVO VEIO', newVeinSub:d=>'Você chegou a um novo veio<br>Profundidade '+d+' m',
+    backKicker:'BOAS-VINDAS DE VOLTA', backTitle:'Que bom ver você de novo', backSub:(t,v)=>'Você esteve fora por '+t+'<br>Cristais: +'+v,
+    hm:(h,m)=>h>0?h+' h '+m+' min':m+' min',
+    codeLabel:'Código de salvamento', textLabel:'Texto', pasteHere:'Cole aqui um código de salvamento',
+    bugTitle:'Relatar um problema ou falar comigo',
+    bugBody:'Conte o que não funciona ou o que você gostaria que mudasse. O botão abaixo abre a página para enviar.',
+    bugEnv:'Detalhes',
+    bugOpen:'Abrir a página de contato', bugCopyEnv:'Copiar os detalhes',
+    bugEnvNote:'Ao relatar algo, cole também os detalhes abaixo. Eles não contêm informações pessoais.',
+    msNext:n=>'mais '+n+' para dobrar',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Um jogo idle tranquilo, sem nenhum som. Três coisas bastam para jogar.',
+    welcomeLines:['Toque no cristal no centro para ganhar cristais',
+      'Gaste-os em construções, que continuam rendendo enquanto você está fora',
+      'Quando passar um orbe brilhante, toque nele antes que suma para ganhar um bônus'],
+    welcomeStart:'Começar',
+    welcomeMore:'As regras completas, o tamanho do texto e as cores estão na aba Menu, quando quiser.',
+    reopenGuide:'Ver o guia inicial de novo',
+    rwTitle:'Bônus',
+    rwNote:'Assista a um vídeo curto para receber um. Dá para jogar até o fim sem eles.',
+    rwWatch:'Ver um vídeo', rwWait:s=>'faltam '+s, rwKicker:'BÔNUS',
+    rwFail:'Não foi possível carregar o anúncio. Tente de novo daqui a pouco.',
+    rewards:{skip:['Salto no tempo','Receba agora 8 horas de renda passiva'],
+      boost:['Ressonância estendida','Toda a renda ×2 por 30 minutos'],
+      orb:['Chamar um orbe','Faça aparecer agora um orbe de minievento'],
+      core:['Núcleos extras','25% a mais de núcleos no próximo renascimento']},
+    rwGot:{skip:v=>'Cristais: +'+v, boost:'Toda a renda ×2 por 30 minutos',
+      orb:'Um orbe está chegando', core:'25% a mais de núcleos no próximo renascimento'},
+    fsOn:'Tela cheia', fsOff:'Sair',
+    tabBonus:'Bônus', tabHowto:'Guia',
+    rwLeft:'Restam hoje', rwOf:(n,m)=>n+' de '+m,
+    rwResetNote:'A contagem zera quando a data muda.',
+    rwEmpty:'Acabaram por hoje', rwResetIn:t=>'Zera em '+t,
+    notifyTitle:'Aviso enquanto você está fora',
+    notifyBody:'O que se acumula enquanto você está fora chega ao limite depois de oito horas. '
+      +'Nesse momento chega um único aviso silencioso, e nada mais.',
+    notifyBtn:'Ajustes do aviso',
+    privacyBtn:'Ajustes de privacidade',
+    legalTitle:'Termos e privacidade',
+    legalBody:'Este app segue o contrato de licença padrão da Apple. '
+      +'O tratamento das suas informações está descrito na política de privacidade.',
+    legalEula:'Contrato de licença (Apple)', legalPrivacy:'Política de privacidade',
+    legalBodyWeb:'O tratamento das suas informações está descrito na política de privacidade.'
+  },
+  nl:{
+    crystals:'Kristallen', perSec:'per sec', coreMult:'Kernen', resonance:'Resonantie', remain:n=>'nog '+n+' s',
+    stages:['Kwarts','Amethist','Fluoriet','Topaas','Robijn','Obsidiaan','Prisma','Abyssiet','Sterrenkern','Leegteglas','Dageraadsteen','Omega'],
+    nextIs:(n,c)=>'Volgende: '+n+' ('+c+')', deepest:'Diepste ader', depth:d=>'Diepte '+d+' m',
+    tapHint:'Tik op het kristal om te graven', tapAria:'Het kristal uithakken',
+    pause:'Pauze', resume:'Verder', pauseAria:'Pauzeren of hervatten',
+    veilTitle:'Gepauzeerd', veilBody:'Graven en inkomsten staan allebei stil. Tijdens de pauze komt er niets bij.',
+    tabMine:'Graven', tabCore:'Herstart', tabMenu:'Menu',
+    taps:{pick:['Houweel slijpen','+1 kristal per tik'], glove:['Resonantiehandschoenen','Elke tik levert ook 3% van je inkomsten per seconde op']},
+    gens:{moss:['Lichtgevend mos','Mos op de wanden laat kristalstof vallen'], drill:['Kleine boor','Een opwindboor knaagt aan de wand'],
+      bat:['Vleermuisdrager','Brengt kristallen uit het donker'], vein:['Aardaderpomp','Pompt kristallen op met het grondwater'],
+      golem:['Kristalgolem','Graaft de ader open met een lijf van steen'], forge:['Sterrenstofsmidse','Maakt van gevallen sterrensplinters kristal'],
+      react:['Aardkernreactor','Put rechtstreeks uit het hart van de planeet']},
+    mine:'Per tik', perSecShort:'/s', pctOf:n=>'3% van inkomsten ×'+n,
+    evKicker:'MINI-EVENT',
+    events:{lode:['Rijke ader','Uit een spleet in de wand stromen kristallen'],
+      echo:['Kristalresonantie','Alle inkomsten 30 seconden ×5'],
+      visitor:['Verdwaalde bezoeker','Heeft een cadeautje achtergelaten']},
+    gainLine:v=>'Kristallen: +'+v,
+    rebirthTitle:'Herstart',
+    rebirthBody:'Smelt alle kristallen en gebouwen om tot <em>kernen</em>. Elke kern geeft vanaf dan <em>+2%</em> op je tikken en inkomsten. Hoe dieper je graaft, hoe meer kernen er overblijven.',
+    haveCores:'Kernen in bezit', curMult:'Huidige vermenigvuldiger', gainCores:'Kernen bij herstart',
+    doRebirth:n=>'Herstart (kernen: +'+n+')', rebirthLocked:'Beschikbaar vanaf 1 miljoen kristallen in totaal',
+    rebirthKicker:'Herstart', rebirthDone:(n,m)=>'Kernen gekregen: '+n+'<br>Inkomsten nu ×'+m,
+    recordsTitle:'Statistieken', recRun:'Deze ronde', recAll:'Totaal', recClicks:'Tikken',
+    recEvents:'Gevangen bollen', recResets:'Herstarts', recStage:'Diepste ader', recLoops:'Geopende aders',
+    sealed:'Herstart om de volgende ader te openen', unlockSub:n=>'Nieuwe ader geopend: '+n,
+    howtoTitle:'Zo speel je',
+    howto:[
+      ['Tik op het kristal','Dat is de basis. Elke tik levert kristallen op. Met een toetsenbord kies je het met Tab en graaf je met de spatiebalk.'],
+      ['Automatiseer met gebouwen','Gebouwen in het tabblad Graven leveren elke seconde kristallen op, ook als je niets doet. Elk exemplaar kost meer dan het vorige, maar <b>elke 10 exemplaren verdubbelt de opbrengst van dat gebouw</b>. Met ×10 en ×MAX koop je er meerdere tegelijk.'],
+      ['Graaf dieper',(o,t)=>'Als je totale opbrengst groeit, verandert de ader en krijgt het kristal een andere kleur en vorm. '
+        +o+' aders zijn vanaf het begin open, van Kwarts tot Prisma; elke herstart opent er nog een diepere, '+t+' in totaal.'],
+      ['Vang de gloeiende bollen','Af en toe zweeft er een gloeiende bol over het scherm. Tik erop voordat hij vervaagt en je krijgt een bonus. Er zijn drie soorten; de beste is Kristalresonantie, die alles 30 seconden ×5 maakt.'],
+      ['Herstart om sterker te worden','Beschikbaar vanaf een miljoen kristallen in totaal. Alles begint opnieuw, maar je houdt kernen die je inkomsten blijvend vermenigvuldigen. Pas in de tweede ronde komt het spel echt op gang.'],
+      ['Automatisch opslaan','Je voortgang wordt automatisch op dit apparaat bewaard. Sluit het spel en ga later verder. Terwijl je weg bent, verdien je op halve snelheid door, tot maximaal 8 uur.'],
+      ['Pauzeer wanneer je wilt','De knop zit rechtsboven. Zolang de pauze aan staat, beweegt er niets.']
+    ],
+    pauseSecTitle:'De mijn stilzetten',
+    pauseSecBody:'Druk rechtsboven op Pauze en inkomsten en tikken stoppen helemaal. Druk nog eens om verder te gaan. Pauzetijd telt nooit mee.',
+    pauseSecBtn:'Pauze', pauseSecBtnOn:'Verder',
+    sizeTitle:'Tekstgrootte', sizeBody:'Maakt alle tekst op de pagina groter.',
+    sizes:['Klein','Normaal','Groot','Grootst'],
+    skinTitle:'Achtergrond en kleuren', skinBody:'Kies wat voor jou het best leest. De laatste twee hebben maximaal contrast.',
+    skins:{cave:'Grot',sea:'Diepzee',dusk:'Schemering',moss:'Mos',washi:'Papier',ink:'Inkt',hcd:'Hoog contrast (donker)',hcl:'Hoog contrast (licht)'},
+    saveTitle:'Opgeslagen spel',
+    saveBody1:'Het spel slaat zichzelf op, dus normaal hoef je niets te doen. Kopieer de code hieronder alleen als je <b>naar een ander apparaat wilt</b> of een reservekopie wilt bewaren.',
+    saveBody2:'Om terug te zetten plak je een code en druk je op Laden. Je huidige voortgang wordt overschreven.',
+    makeCode:'Code maken', copyCode:'Kopiëren', loadCode:'Laden', wipe:'Opnieuw beginnen', wipeArm:'Echt wissen? (druk nog eens)',
+    codeMade:'Code gemaakt', copied:n=>n+' gekopieerd', copyManual:'Geselecteerd. Kopieer met Ctrl+C of door lang te drukken.',
+    emptyCode:'De code is leeg', badCode:'Deze code kon niet worden gelezen',
+    loadKicker:'Laden', loadTitle:'Geladen', loadSub:v=>'Verder waar je was (kristallen in totaal: '+v+')',
+    wipeDone:'Terug naar het begin',
+    shareTitle:'Voortgang delen', shareBody:'Zet je huidige voortgang om in tekst. De knoppen openen een venster om te posten.',
+    copyText:'Tekst kopiëren', shareX:'Posten op X', shareBsky:'Posten op Bluesky', shareLine:'Versturen via LINE',
+    sharePrivacy:'De tekst eindigt met een link naar de website van het spel. Er staat geen naam in en niets over je apparaat.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, een idle game','Diepte '+d+' m, ader '+s,'Kristallen gedolven in totaal: '+g]
+      .concat(c>0?['Kernen: '+c+' (inkomsten ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NIEUWE ADER', newVeinSub:d=>'Je hebt een nieuwe ader bereikt<br>Diepte '+d+' m',
+    backKicker:'WELKOM TERUG', backTitle:'Welkom terug', backSub:(t,v)=>'Je was '+t+' weg<br>Kristallen: +'+v,
+    hm:(h,m)=>h>0?h+' u '+m+' min':m+' min',
+    codeLabel:'Opslagcode', textLabel:'Tekst', pasteHere:'Plak hier een opslagcode',
+    bugTitle:'Probleem melden of contact opnemen',
+    bugBody:'Laat me weten wat niet werkt of wat je graag anders zou zien. Met de knop hieronder open je de meldingspagina.',
+    bugEnv:'Gegevens',
+    bugOpen:'Meldingspagina openen', bugCopyEnv:'Gegevens kopiëren',
+    bugEnvNote:'Plak bij een melding ook de gegevens hieronder. Er staat geen persoonlijke informatie in.',
+    msNext:n=>'nog '+n+' tot verdubbeling',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Een rustige idle game zonder enig geluid. Drie dingen zijn genoeg om te spelen.',
+    welcomeLines:['Tik op het kristal in het midden om kristallen te verdienen',
+      'Koop er gebouwen mee, die doorwerken terwijl je weg bent',
+      'Zweeft er een gloeiende bol voorbij? Tik erop voordat hij vervaagt en je krijgt een bonus'],
+    welcomeStart:'Beginnen',
+    welcomeMore:'De volledige regels, de tekstgrootte en de kleuren vind je altijd in het tabblad Menu.',
+    reopenGuide:'De introductie opnieuw tonen',
+    rwTitle:'Bonussen',
+    rwNote:'Bekijk een korte video om er een te krijgen. Het spel is ook zonder volledig te spelen.',
+    rwWatch:'Video bekijken', rwWait:s=>'nog '+s, rwKicker:'BONUS',
+    rwFail:'De advertentie kon niet worden geladen. Probeer het zo nog eens.',
+    rewards:{skip:['Tijdsprong','Ontvang nu meteen 8 uur aan passieve inkomsten'],
+      boost:['Verlengde resonantie','Alle inkomsten 30 minuten ×2'],
+      orb:['Bol oproepen','Laat meteen een mini-eventbol verschijnen'],
+      core:['Extra kernen','25% meer kernen bij je volgende herstart']},
+    rwGot:{skip:v=>'Kristallen: +'+v, boost:'Alle inkomsten 30 minuten ×2',
+      orb:'Er zweeft een bol binnen', core:'25% meer kernen bij je volgende herstart'},
+    fsOn:'Volledig scherm', fsOff:'Terug',
+    tabBonus:'Bonus', tabHowto:'Uitleg',
+    rwLeft:'Vandaag over', rwOf:(n,m)=>n+' van '+m,
+    rwResetNote:'De teller gaat terug naar nul als de datum verandert.',
+    rwEmpty:'Op voor vandaag', rwResetIn:t=>'Reset over '+t,
+    notifyTitle:'Melding terwijl je weg bent',
+    notifyBody:'Wat zich ophoopt terwijl je weg bent, bereikt na acht uur zijn grens. '
+      +'Op dat moment komt er één stille melding, en verder niets.',
+    notifyBtn:'Meldingsinstellingen',
+    privacyBtn:'Privacy-instellingen',
+    legalTitle:'Voorwaarden en privacy',
+    legalBody:'Voor deze app geldt de standaard licentieovereenkomst van Apple. '
+      +'Hoe er met je gegevens wordt omgegaan, staat in het privacybeleid.',
+    legalEula:'Licentieovereenkomst (Apple)', legalPrivacy:'Privacybeleid',
+    legalBodyWeb:'Hoe er met je gegevens wordt omgegaan, staat in het privacybeleid.'
+  },
+  pl:{
+    crystals:'Kryształy', perSec:'na sek.', coreMult:'Rdzenie', resonance:'Rezonans', remain:n=>'jeszcze '+n+' s',
+    stages:['Kwarc','Ametyst','Fluoryt','Topaz','Rubin','Obsydian','Pryzmat','Otchłanit','Gwiezdny rdzeń','Szkło pustki','Kamień świtu','Omega'],
+    nextIs:(n,c)=>'Następna: '+n+' ('+c+')', deepest:'Najgłębsza żyła', depth:d=>'Głębokość '+d+' m',
+    tapHint:'Dotknij kryształu, aby kopać', tapAria:'Kop kryształ',
+    pause:'Pauza', resume:'Wznów', pauseAria:'Wstrzymaj lub wznów',
+    veilTitle:'Wstrzymano', veilBody:'Wydobycie i dochód są zatrzymane. Podczas pauzy nic się nie zbiera.',
+    tabMine:'Kop', tabCore:'Odrodzenie', tabMenu:'Menu',
+    taps:{pick:['Naostrz kilof','+1 kryształ za dotknięcie'], glove:['Rękawice rezonansu','Każde dotknięcie dodaje też 3% tego, co zarabiasz na sekundę']},
+    gens:{moss:['Świecący mech','Mech na ścianach sypie kryształowym pyłem'], drill:['Małe wiertło','Nakręcane wiertło drąży ścianę'],
+      bat:['Nietoperz tragarz','Wynosi kryształy z ciemności'], vein:['Pompa żył ziemi','Wypompowuje kryształy razem z wodą gruntową'],
+      golem:['Kryształowy golem','Rozkopuje żyłę kamiennym ciałem'], forge:['Kuźnia gwiezdnego pyłu','Zamienia odłamki spadłych gwiazd w kryształ'],
+      react:['Reaktor jądra planety','Czerpie prosto z serca planety']},
+    mine:'Za dotknięcie', perSecShort:'/s', pctOf:n=>'3% dochodu ×'+n,
+    evKicker:'MINIWYDARZENIE',
+    events:{lode:['Bogata żyła','Ze szczeliny w ścianie sypią się kryształy'],
+      echo:['Kryształowy rezonans','Cały dochód ×5 przez 30 sekund'],
+      visitor:['Zabłąkany gość','Zostawił prezent']},
+    gainLine:v=>'Kryształy: +'+v,
+    rebirthTitle:'Odrodzenie',
+    rebirthBody:'Przetop wszystkie kryształy i budynki na <em>rdzenie</em>. Każdy rdzeń dodaje od tej chwili <em>+2%</em> do wartości dotknięcia i do dochodu. Im głębiej kopiesz, tym więcej rdzeni zostaje.',
+    haveCores:'Posiadane rdzenie', curMult:'Obecny mnożnik', gainCores:'Rdzenie z odrodzenia',
+    doRebirth:n=>'Odródź się (rdzenie: +'+n+')', rebirthLocked:'Odblokowuje się przy 1 mln kryształów łącznie',
+    rebirthKicker:'Odrodzenie', rebirthDone:(n,m)=>'Zdobyte rdzenie: '+n+'<br>Dochód teraz ×'+m,
+    recordsTitle:'Statystyki', recRun:'Ta runda', recAll:'Łącznie', recClicks:'Dotknięcia',
+    recEvents:'Złapane kule', recResets:'Odrodzenia', recStage:'Najgłębsza żyła', recLoops:'Otwarte żyły',
+    sealed:'Odródź się, aby otworzyć kolejną żyłę', unlockSub:n=>'Otwarto nową żyłę: '+n,
+    howtoTitle:'Jak grać',
+    howto:[
+      ['Dotknij kryształu','To podstawowa czynność. Każde dotknięcie daje kryształy. Na klawiaturze wybierz go klawiszem Tab i kop spacją.'],
+      ['Kupuj budynki','Budynki w zakładce „Kop” dają kryształy co sekundę, nawet gdy nic nie robisz. Każdy kolejny kosztuje więcej, ale <b>co 10 sztuk wydajność budynku się podwaja</b>. Przyciski ×10 i ×MAX kupują hurtem.'],
+      ['Kop głębiej',(o,t)=>'Gdy rośnie łączna liczba kryształów, zmienia się żyła, a kryształ zmienia kolor i kształt. '
+        +'Od początku otwartych jest '+o+' żył, od Kwarcu do Pryzmatu; każde odrodzenie otwiera kolejną głęboką żyłę, łącznie '+t+'.'],
+      ['Łap świecące kule','Od czasu do czasu przez ekran przelatuje świecąca kula. Dotknij jej, zanim zniknie, aby dostać premię. Są trzy rodzaje; najlepszy to Kryształowy rezonans, który przez 30 sekund mnoży wszystko ×5.'],
+      ['Odradzaj się, aby rosnąć w siłę','Odblokowuje się przy milionie kryształów łącznie. Wszystko się zeruje, ale zachowujesz rdzenie, które na stałe mnożą dochód. Prawdziwa gra zaczyna się w drugiej rundzie.'],
+      ['Zapisuje się sama','Postęp zapisuje się automatycznie na tym urządzeniu. Zamknij grę i wróć, kiedy chcesz. Pod twoją nieobecność gra zarabia dalej, o połowę wolniej, maksymalnie przez 8 godzin.'],
+      ['Wstrzymaj, kiedy chcesz','Przycisk jest w prawym górnym rogu. Gdy jest włączony, nic się nie rusza.']
+    ],
+    pauseSecTitle:'Zatrzymanie kopalni',
+    pauseSecBody:'Naciśnij „Pauza” w prawym górnym rogu, a dochód i dotknięcia całkowicie się zatrzymają. Naciśnij ponownie, aby wznowić. Czas pauzy nigdy się nie liczy.',
+    pauseSecBtn:'Pauza', pauseSecBtnOn:'Wznów',
+    sizeTitle:'Rozmiar tekstu', sizeBody:'Powiększa cały tekst na stronie.',
+    sizes:['Mały','Normalny','Duży','Największy'],
+    skinTitle:'Tło i kolory', skinBody:'Wybierz to, co czyta się najlepiej. Ostatnie dwa mają maksymalny kontrast.',
+    skins:{cave:'Jaskinia',sea:'Głębia morza',dusk:'Zmierzch',moss:'Mech',washi:'Papier',ink:'Tusz',hcd:'Wysoki kontrast (ciemny)',hcl:'Wysoki kontrast (jasny)'},
+    saveTitle:'Zapis gry',
+    saveBody1:'Gra zapisuje się sama, więc zwykle nie trzeba nic robić. Skopiuj kod poniżej tylko wtedy, gdy chcesz <b>przenieść się na inne urządzenie</b> albo mieć kopię zapasową.',
+    saveBody2:'Aby przywrócić, wklej kod i naciśnij „Wczytaj”. Obecny postęp zostanie nadpisany.',
+    makeCode:'Utwórz kod', copyCode:'Kopiuj', loadCode:'Wczytaj', wipe:'Zacznij od nowa', wipeArm:'Na pewno usunąć? (naciśnij jeszcze raz)',
+    codeMade:'Utworzono kod', copied:n=>'Skopiowano: '+n, copyManual:'Zaznaczono. Skopiuj klawiszami Ctrl+C lub długim naciśnięciem.',
+    emptyCode:'Kod jest pusty', badCode:'Nie udało się odczytać tego kodu',
+    loadKicker:'Wczytywanie', loadTitle:'Wczytano', loadSub:v=>'Kontynuujesz grę (kryształy łącznie: '+v+')',
+    wipeDone:'Powrót do początku',
+    shareTitle:'Udostępnij postęp', shareBody:'Zamienia twój obecny wynik w tekst. Przyciski otwierają okno publikowania.',
+    copyText:'Kopiuj tekst', shareX:'Opublikuj na X', shareBsky:'Opublikuj na Bluesky', shareLine:'Wyślij przez LINE',
+    sharePrivacy:'Tekst kończy się linkiem do strony gry. Nie zawiera imienia ani informacji o twoim urządzeniu.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, gra idle','Głębokość '+d+' m, żyła: '+s,'Kryształy wydobyte łącznie: '+g]
+      .concat(c>0?['Rdzenie: '+c+' (dochód ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'NOWA ŻYŁA', newVeinSub:d=>'Osiągnięto nową żyłę<br>Głębokość '+d+' m',
+    backKicker:'WITAJ Z POWROTEM', backTitle:'Witaj z powrotem', backSub:(t,v)=>'Podczas nieobecności ('+t+')<br>Kryształy: +'+v,
+    hm:(h,m)=>h>0?h+' godz. '+m+' min':m+' min',
+    codeLabel:'Kod zapisu', textLabel:'Tekst', pasteHere:'Wklej tutaj kod zapisu',
+    bugTitle:'Zgłoś problem lub napisz do mnie',
+    bugBody:'Daj znać, co nie działa albo co według ciebie warto zmienić. Przycisk poniżej otwiera stronę zgłoszeń.',
+    bugEnv:'Szczegóły',
+    bugOpen:'Otwórz stronę zgłoszeń', bugCopyEnv:'Kopiuj szczegóły',
+    bugEnvNote:'Przy zgłoszeniu wklej też szczegóły poniżej. Nie zawierają danych osobowych.',
+    msNext:n=>'jeszcze '+n+' do podwojenia',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Spokojna gra idle, w której nie ma żadnego dźwięku. Wystarczy zapamiętać trzy rzeczy.',
+    welcomeLines:['Dotknij kryształu na środku, aby zdobywać kryształy',
+      'Wydawaj je na budynki, które pracują także pod twoją nieobecność',
+      'Gdy przeleci świecąca kula, dotknij jej, zanim zniknie, aby dostać premię'],
+    welcomeStart:'Zaczynamy',
+    welcomeMore:'Pełne zasady, rozmiar tekstu i kolory znajdziesz w każdej chwili w zakładce Menu.',
+    reopenGuide:'Pokaż ponownie wprowadzenie',
+    rwTitle:'Premie',
+    rwNote:'Obejrzyj krótki film, aby odebrać premię. Grę można przejść i bez nich.',
+    rwWatch:'Obejrzyj film', rwWait:s=>'jeszcze '+s, rwKicker:'PREMIA',
+    rwFail:'Nie udało się wczytać reklamy. Spróbuj ponownie za chwilę.',
+    rewards:{skip:['Skok w czasie','Odbierz od razu 8 godzin dochodu pasywnego'],
+      boost:['Przedłużony rezonans','Cały dochód ×2 przez 30 minut'],
+      orb:['Przywołaj kulę','Od razu przywołaj kulę miniwydarzenia'],
+      core:['Dodatkowe rdzenie','O 25% więcej rdzeni przy następnym odrodzeniu']},
+    rwGot:{skip:v=>'Kryształy: +'+v, boost:'Cały dochód ×2 przez 30 minut',
+      orb:'Nadlatuje kula', core:'O 25% więcej rdzeni przy następnym odrodzeniu'},
+    fsOn:'Pełny ekran', fsOff:'Wyjdź',
+    tabBonus:'Premie', tabHowto:'Zasady',
+    rwLeft:'Zostało dziś', rwOf:(n,m)=>n+' z '+m,
+    rwResetNote:'Licznik zeruje się wraz ze zmianą daty.',
+    rwEmpty:'Na dziś wykorzystane', rwResetIn:t=>'Zerowanie za '+t,
+    notifyTitle:'Przypomnienie pod twoją nieobecność',
+    notifyBody:'To, co zbiera się pod twoją nieobecność, osiąga limit po ośmiu godzinach. '
+      +'Wtedy przychodzi jedno ciche przypomnienie i nic więcej.',
+    notifyBtn:'Ustawienia przypomnień',
+    privacyBtn:'Ustawienia prywatności',
+    legalTitle:'Warunki i prywatność',
+    legalBody:'Tę aplikację obejmuje standardowa umowa licencyjna Apple. '
+      +'Sposób przetwarzania twoich danych opisuje polityka prywatności.',
+    legalEula:'Umowa licencyjna (Apple)', legalPrivacy:'Polityka prywatności',
+    legalBodyWeb:'Sposób przetwarzania twoich danych opisuje polityka prywatności.'
+  },
+  ru:{
+    crystals:'Кристаллы', perSec:'в секунду', coreMult:'Ядра', resonance:'Резонанс', remain:n=>'ещё '+n+' с',
+    stages:['Кварц','Аметист','Флюорит','Топаз','Рубин','Обсидиан','Призма','Бездонит','Звёздное ядро','Стекло пустоты','Камень зари','Омега'],
+    nextIs:(n,c)=>'Дальше: '+n+' ('+c+')', deepest:'Самая глубокая жила', depth:d=>'Глубина '+d+' м',
+    tapHint:'Нажмите на кристалл, чтобы копать', tapAria:'Добыть кристалл',
+    pause:'Пауза', resume:'Продолжить', pauseAria:'Пауза или продолжение',
+    veilTitle:'Пауза', veilBody:'Добыча и доход остановлены. Во время паузы ничего не накапливается.',
+    tabMine:'Добыча', tabCore:'Ядра', tabMenu:'Меню',
+    taps:{pick:['Заточить кирку','+1 кристалл за нажатие'], glove:['Перчатки резонанса','Каждое нажатие приносит ещё 3% от дохода за секунду']},
+    gens:{moss:['Светящийся мох','Мох на стенах осыпается кристальной пылью'], drill:['Маленький бур','Заводной бур без устали точит стену'],
+      bat:['Летучая мышь-носильщик','Выносит кристаллы из темноты'], vein:['Глубинный насос','Качает кристаллы вместе с грунтовой водой'],
+      golem:['Кристальный голем','Раскапывает жилу каменным телом'], forge:['Кузня звёздной пыли','Превращает осколки упавших звёзд в кристаллы'],
+      react:['Реактор земного ядра','Черпает прямо из сердца планеты']},
+    mine:'За нажатие', perSecShort:'/с', pctOf:n=>'3% дохода ×'+n,
+    evKicker:'МИНИ-СОБЫТИЕ',
+    events:{lode:['Богатая жила','Из трещины в стене сыплются кристаллы'],
+      echo:['Кристальный резонанс','Весь доход ×5 на 30 секунд'],
+      visitor:['Заблудившийся гость','Оставил подарок']},
+    gainLine:v=>'Кристаллы: +'+v,
+    rebirthTitle:'Перерождение',
+    rebirthBody:'Все кристаллы и постройки переплавляются в <em>ядра</em>. Каждое ядро с этого момента даёт <em>+2%</em> к добыче за нажатие и к доходу. Чем глубже вы копаете, тем больше ядер остаётся.',
+    haveCores:'Ваши ядра', curMult:'Текущий множитель', gainCores:'Ядер за перерождение',
+    doRebirth:n=>'Переродиться и получить ядра: '+n, rebirthLocked:'Откроется при 1 млн кристаллов за всё время',
+    rebirthKicker:'Перерождение', rebirthDone:(n,m)=>'Получено ядер: '+n+'<br>Доход теперь ×'+m,
+    recordsTitle:'Статистика', recRun:'Текущий цикл', recAll:'За всё время', recClicks:'Нажатия',
+    recEvents:'Пойманные сферы', recResets:'Перерождения', recStage:'Самая глубокая жила', recLoops:'Открытые жилы',
+    sealed:'Переродитесь, чтобы открыть следующую жилу', unlockSub:n=>'Открыта новая жила: '+n,
+    howtoTitle:'Как играть',
+    howto:[
+      ['Нажимайте на кристалл','Это и есть основное действие. Каждое нажатие приносит кристаллы. С клавиатуры выберите кристалл клавишей Tab и копайте пробелом.'],
+      ['Покупайте постройки','Постройки на вкладке «Добыча» приносят кристаллы каждую секунду, даже если вы ничего не делаете. Каждая следующая дороже, но <b>каждые 10 штук удваивают доход этой постройки</b>. Кнопки ×10 и ×MAX покупают сразу несколько.'],
+      ['Копайте глубже',(o,t)=>'По мере роста добычи за всё время жила меняется, а с ней цвет и форма кристалла. '
+        +'Сначала открыты жилы от Кварца до Призмы (всего '+o+'); каждое перерождение открывает ещё одну, более глубокую. Всего жил: '+t+'.'],
+      ['Ловите светящиеся сферы','Время от времени по экрану проплывает светящаяся сфера. Нажмите на неё, пока она не исчезла, и получите бонус. Бывает три вида; лучший — «Кристальный резонанс», который на 30 секунд умножает всё на 5.'],
+      ['Перерождайтесь, чтобы стать сильнее','Открывается, когда за всё время добыт миллион кристаллов. Всё сбрасывается, но остаются ядра, которые навсегда умножают доход. Настоящая игра начинается со второго цикла.'],
+      ['Сохраняется сама','Прогресс автоматически сохраняется на этом устройстве. Можно закрыть игру и потом продолжить с того же места. Пока вас нет, доход идёт с половинной скоростью — до 8 часов.'],
+      ['Ставьте на паузу когда угодно','Кнопка в правом верхнем углу. Пока пауза включена, совсем ничего не движется.']
+    ],
+    pauseSecTitle:'Остановка добычи',
+    pauseSecBody:'Нажмите «Пауза» в правом верхнем углу, и доход, и нажатия полностью остановятся. Нажмите ещё раз, чтобы продолжить. Время паузы никогда не засчитывается.',
+    pauseSecBtn:'Пауза', pauseSecBtnOn:'Продолжить',
+    sizeTitle:'Размер текста', sizeBody:'Увеличивает весь текст на экране.',
+    sizes:['Мелкий','Обычный','Крупный','Самый крупный'],
+    skinTitle:'Фон и цвета', skinBody:'Выберите вариант, который легче всего читать. Последние два — с максимальной контрастностью.',
+    skins:{cave:'Пещера',sea:'Глубокое море',dusk:'Сумерки',moss:'Мох',washi:'Бумага',ink:'Тушь',hcd:'Высокий контраст (тёмный)',hcl:'Высокий контраст (светлый)'},
+    saveTitle:'Сохранение',
+    saveBody1:'Игра сохраняется сама, так что обычно ничего делать не нужно. Копируйте код ниже, только если хотите <b>перейти на другое устройство</b> или сохранить копию.',
+    saveBody2:'Чтобы восстановить, вставьте код и нажмите «Загрузить». Текущий прогресс будет перезаписан.',
+    makeCode:'Создать код', copyCode:'Копировать', loadCode:'Загрузить', wipe:'Начать заново', wipeArm:'Точно стереть? (нажмите ещё раз)',
+    codeMade:'Код создан', copied:n=>'Скопировано: '+n, copyManual:'Выделено. Скопируйте через Ctrl+C или долгим нажатием.',
+    emptyCode:'Код пустой', badCode:'Не удалось прочитать этот код',
+    loadKicker:'Загрузка', loadTitle:'Загружено', loadSub:v=>'Игра продолжается. Кристаллов за всё время: '+v,
+    wipeDone:'Игра начата заново',
+    shareTitle:'Поделиться прогрессом', shareBody:'Превращает ваши текущие результаты в текст. Кнопки открывают окно публикации.',
+    copyText:'Копировать текст', shareX:'Опубликовать в X', shareBsky:'Опубликовать в Bluesky', shareLine:'Отправить в LINE',
+    sharePrivacy:'В конце текста — ссылка на сайт игры. В тексте нет ни имени, ни сведений о вашем устройстве.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, idle-игра','Глубина '+d+' м, жила: '+s,'Всего добыто кристаллов: '+g]
+      .concat(c>0?['Ядра: '+c+' (доход ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'НОВАЯ ЖИЛА', newVeinSub:d=>'Вы добрались до новой жилы<br>Глубина '+d+' м',
+    backKicker:'С ВОЗВРАЩЕНИЕМ', backTitle:'С возвращением', backSub:(t,v)=>'Пока вас не было ('+t+'):<br>кристаллы +'+v,
+    hm:(h,m)=>h>0?h+' ч '+m+' мин':m+' мин',
+    codeLabel:'Код сохранения', textLabel:'Текст', pasteHere:'Вставьте сюда код сохранения',
+    bugTitle:'Сообщить о проблеме или написать мне',
+    bugBody:'Расскажите, что не работает или что вы хотели бы изменить. Кнопка ниже открывает страницу для отправки.',
+    bugEnv:'Сведения о системе',
+    bugOpen:'Открыть страницу связи', bugCopyEnv:'Копировать сведения о системе',
+    bugEnvNote:'Когда сообщаете о проблеме, вставьте также сведения о системе ниже. Личных данных в них нет.',
+    msNext:n=>'ещё '+n+' до удвоения',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Спокойная idle-игра совсем без звука. Чтобы играть, достаточно запомнить три вещи.',
+    welcomeLines:['Нажимайте на кристалл в центре, чтобы получать кристаллы',
+      'Тратьте их на постройки — они работают, даже пока вас нет',
+      'Когда пролетает светящаяся сфера, нажмите на неё, пока она не исчезла, и получите бонус'],
+    welcomeStart:'Начать',
+    welcomeMore:'Полные правила, размер текста и цвета — всегда на вкладке «Меню».',
+    reopenGuide:'Показать вступление ещё раз',
+    rwTitle:'Бонусы',
+    rwNote:'Посмотрите короткое видео, чтобы получить бонус. Игру можно пройти и без них.',
+    rwWatch:'Смотреть видео', rwWait:s=>'ещё '+s, rwKicker:'БОНУС',
+    rwFail:'Не удалось загрузить рекламу. Попробуйте ещё раз чуть позже.',
+    rewards:{skip:['Прыжок во времени','Получите сразу 8 часов пассивного дохода'],
+      boost:['Долгий резонанс','Весь доход ×2 на 30 минут'],
+      orb:['Призвать сферу','Сразу вызовите сферу мини-события'],
+      core:['Больше ядер','На 25% больше ядер при следующем перерождении']},
+    rwGot:{skip:v=>'Кристаллы: +'+v, boost:'Весь доход ×2 на 30 минут',
+      orb:'Прилетает сфера', core:'На 25% больше ядер при следующем перерождении'},
+    fsOn:'Во весь экран', fsOff:'Выйти',
+    tabBonus:'Бонусы', tabHowto:'Правила',
+    rwLeft:'Осталось сегодня', rwOf:(n,m)=>n+' из '+m,
+    rwResetNote:'Счётчик обнуляется при смене даты.',
+    rwEmpty:'На сегодня всё', rwResetIn:t=>'Сброс через '+t,
+    notifyTitle:'Напоминание в ваше отсутствие',
+    notifyBody:'То, что копится в ваше отсутствие, достигает предела через восемь часов. '
+      +'В этот момент приходит одно беззвучное напоминание. Больше ничего не присылается.',
+    notifyBtn:'Настройки напоминаний',
+    privacyBtn:'Настройки конфиденциальности',
+    legalTitle:'Условия и конфиденциальность',
+    legalBody:'На это приложение распространяется стандартное лицензионное соглашение Apple. '
+      +'Как обрабатываются ваши данные, описано в политике конфиденциальности.',
+    legalEula:'Лицензионное соглашение (Apple)', legalPrivacy:'Политика конфиденциальности',
+    legalBodyWeb:'Как обрабатываются ваши данные, описано в политике конфиденциальности.'
+  },
+  tr:{
+    crystals:'Kristal', perSec:'saniyede', coreMult:'Çekirdek', resonance:'Rezonans', remain:n=>n+' sn kaldı',
+    stages:['Kuvars','Ametist','Florit','Topaz','Yakut','Obsidyen','Prizma','Uçurumit','Yıldız çekirdeği','Boşluk camı','Şafak taşı','Omega'],
+    nextIs:(n,c)=>'Sıradaki: '+n+' ('+c+')', deepest:'En derin damar', depth:d=>'Derinlik '+d+' m',
+    tapHint:'Kazmak için kristale dokun', tapAria:'Kristali kaz',
+    pause:'Duraklat', resume:'Devam', pauseAria:'Duraklat veya devam et',
+    veilTitle:'Duraklatıldı', veilBody:'Kazı ve gelir durduruldu. Duraklatma sürerken hiçbir şey birikmez.',
+    tabMine:'Kazı', tabCore:'Çekirdek', tabMenu:'Menü',
+    taps:{pick:['Kazma bileme','Dokunuş başına +1 kristal'], glove:['Rezonans eldivenleri','Her dokunuş saniyelik gelirin %3’ünü de ekler']},
+    gens:{moss:['Parlayan yosun','Duvarlardaki yosun kristal tozu döker'], drill:['Küçük matkap','Kurmalı bir uç durmadan duvarı oyar'],
+      bat:['Taşıyıcı yarasa','Kristalleri karanlıktan dışarı taşır'], vein:['Derin kuyu pompası','Kristalleri yeraltı suyuyla birlikte yukarı çeker'],
+      golem:['Kristal golem','Taştan bedeniyle damarı açar'], forge:['Yıldız tozu ocağı','Düşen yıldız parçalarını kristale çevirir'],
+      react:['Yer çekirdeği reaktörü','Doğrudan gezegenin kalbinden çeker']},
+    mine:'Dokunuş başına', perSecShort:'/sn', pctOf:n=>'gelirin %3’ü ×'+n,
+    evKicker:'MİNİ OLAY',
+    events:{lode:['Zengin damar','Duvardaki bir çatlaktan kristaller dökülüyor'],
+      echo:['Kristal rezonansı','30 saniye boyunca tüm gelir ×5'],
+      visitor:['Kayıp ziyaretçi','Bir hediye bırakıp gitti']},
+    gainLine:v=>'+'+v+' kristal',
+    rebirthTitle:'Yeniden doğuş',
+    rebirthBody:'Tüm kristaller ve binalar eritilip <em>çekirdeklere</em> dönüştürülür. Her çekirdek o andan itibaren dokunuş başına kazancına ve gelirine <em>+%2</em> ekler. Ne kadar derine kazarsan o kadar çok çekirdek kalır.',
+    haveCores:'Sahip olunan çekirdek', curMult:'Şu anki çarpan', gainCores:'Kazanılacak çekirdek',
+    doRebirth:n=>n+' çekirdek için yeniden doğ', rebirthLocked:'Toplam 1 milyon kristalde açılır',
+    rebirthKicker:'Yeniden doğuş', rebirthDone:(n,m)=>n+' çekirdek kazandın<br>Gelir artık ×'+m,
+    recordsTitle:'İstatistikler', recRun:'Bu tur', recAll:'Tüm zamanlar', recClicks:'Dokunuşlar',
+    recEvents:'Yakalanan küreler', recResets:'Yeniden doğuşlar', recStage:'En derin damar', recLoops:'Açılan damarlar',
+    sealed:'Sonraki damarı açmak için yeniden doğ', unlockSub:n=>'Yeni damar açıldı: '+n,
+    howtoTitle:'Nasıl oynanır',
+    howto:[
+      ['Kristale dokun','Temel hareket budur. Her dokunuş kristal kazandırır. Klavyede Tab tuşuyla seçip Boşluk tuşuyla kazabilirsin.'],
+      ['Bina alıp otomatikleştir','Kazı sekmesindeki binalar sen hiçbir şey yapmasan da her saniye kristal kazandırır. Her yenisi bir öncekinden pahalıdır, ama <b>her 10 adette o binanın üretimi ikiye katlanır</b>. ×10 ve ×MAX düğmeleri toplu satın alır.'],
+      ['Daha derine kaz',(o,t)=>'Toplam kazdığın miktar arttıkça damar değişir; kristalin rengi ve şekli de değişir. '
+        +'Başta Kuvars’tan Prizma’ya kadar '+o+' damar açıktır; her yeniden doğuş daha derindeki damarlardan birini açar. Toplam '+t+' damar vardır.'],
+      ['Parlayan küreleri yakala','Ara sıra ekranda parlayan bir küre süzülerek geçer. Kaybolmadan önce dokunursan bonus alırsın. Üç çeşit var; en iyisi her şeyi 30 saniye boyunca ×5 yapan Kristal rezonansı.'],
+      ['Güçlenmek için yeniden doğ','Toplam bir milyon kristalde açılır. Her şey sıfırlanır, ama geliri kalıcı olarak katlayan çekirdekler sende kalır. Asıl oyun ikinci turda başlar.'],
+      ['Kendi kendine kaydeder','İlerleme bu cihaza otomatik kaydedilir. Kapatıp kaldığın yerden devam edebilirsin. Sen yokken yarı hızda kazanmaya devam eder, en fazla 8 saat.'],
+      ['İstediğin zaman duraklat','Düğme sağ üstte. Duraklatılmışken hiçbir şey hareket etmez.']
+    ],
+    pauseSecTitle:'Kazıyı durdurmak',
+    pauseSecBody:'Sağ üstteki Duraklat’a bas; gelir ve dokunuşlar tamamen durur. Devam etmek için tekrar bas. Duraklatılan süre hiç sayılmaz.',
+    pauseSecBtn:'Duraklat', pauseSecBtnOn:'Devam',
+    sizeTitle:'Yazı boyutu', sizeBody:'Ekrandaki tüm yazıları büyütür.',
+    sizes:['Küçük','Normal','Büyük','En büyük'],
+    skinTitle:'Arka plan ve renkler', skinBody:'En kolay okunanı seç. Son ikisi en yüksek kontrastlıdır.',
+    skins:{cave:'Mağara',sea:'Derin deniz',dusk:'Alacakaranlık',moss:'Yosun',washi:'Kâğıt',ink:'Mürekkep',hcd:'Yüksek kontrast (koyu)',hcl:'Yüksek kontrast (açık)'},
+    saveTitle:'Kayıt verisi',
+    saveBody1:'Oyun kendini kaydeder, yani normalde bir şey yapmana gerek yok. Aşağıdaki kodu yalnızca <b>başka bir cihaza geçmek</b> ya da yedek almak istersen kopyala.',
+    saveBody2:'Geri yüklemek için bir kod yapıştırıp Yükle’ye bas. Şu anki ilerlemenin üzerine yazılır.',
+    makeCode:'Kod oluştur', copyCode:'Kopyala', loadCode:'Yükle', wipe:'Baştan başla', wipeArm:'Gerçekten silinsin mi? (tekrar bas)',
+    codeMade:'Kod oluşturuldu', copied:n=>n+' kopyalandı', copyManual:'Seçildi. Ctrl+C veya uzun basarak kopyala.',
+    emptyCode:'Kod boş', badCode:'Bu kod okunamadı',
+    loadKicker:'Yükleme', loadTitle:'Yüklendi', loadSub:v=>'Toplam '+v+' kristalden devam ediliyor',
+    wipeDone:'Başa dönüldü',
+    shareTitle:'İlerlemeni paylaş', shareBody:'Şu anki ilerlemeni metne çevirir. Düğmeler paylaşım penceresini açar.',
+    copyText:'Metni kopyala', shareX:'X’te paylaş', shareBsky:'Bluesky’da paylaş', shareLine:'LINE ile gönder',
+    sharePrivacy:'Metin oyunun sitesine bir bağlantıyla biter. İçinde isim ya da cihazınla ilgili bilgi yoktur.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, bir idle oyun','Derinlik '+d+' m, '+s+' damarı','Toplam '+g+' kristal kazıldı']
+      .concat(c>0?[c+' çekirdek (gelir ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'YENİ DAMAR', newVeinSub:d=>'Yeni bir damara ulaştın<br>Derinlik '+d+' m',
+    backKicker:'TEKRAR HOŞ GELDİN', backTitle:'Tekrar hoş geldin', backSub:(t,v)=>'Sen yokken geçen '+t+' içinde<br>+'+v+' kristal',
+    hm:(h,m)=>h>0?h+' sa '+m+' dk':m+' dk',
+    codeLabel:'Kayıt kodu', textLabel:'Metin', pasteHere:'Kayıt kodunu buraya yapıştır',
+    bugTitle:'Sorun bildir veya bana yaz',
+    bugBody:'Çalışmayan bir şey ya da değişmesini istediğin bir şey varsa bana söyle. Aşağıdaki düğme bunun için sayfayı açar.',
+    bugEnv:'Sistem bilgisi',
+    bugOpen:'İletişim sayfasını aç', bugCopyEnv:'Sistem bilgisini kopyala',
+    bugEnvNote:'Bir şey bildirirken aşağıdaki sistem bilgisini de yapıştır. Kişisel bilgi içermez.',
+    msNext:n=>'ikiye katlanmaya '+n+' kaldı',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Hiç sesi olmayan, sakin bir idle oyun. Oynamak için üç şeyi bilmen yeter.',
+    welcomeLines:['Kristal kazanmak için ortadaki kristale dokun',
+      'Kristallerle bina al; binalar sen yokken de kazandırmaya devam eder',
+      'Parlayan bir küre geçerse kaybolmadan dokun ve bonusu al'],
+    welcomeStart:'Başla',
+    welcomeMore:'Tüm kurallar, yazı boyutu ve renkler her zaman Menü sekmesinde.',
+    reopenGuide:'Giriş rehberini tekrar göster',
+    rwTitle:'Bonuslar',
+    rwNote:'Bir bonus almak için kısa bir video izle. Oyun bonuslar olmadan da sonuna kadar oynanabilir.',
+    rwWatch:'Video izle', rwWait:s=>s+' kaldı', rwKicker:'BONUS',
+    rwFail:'Reklam yüklenemedi. Biraz sonra tekrar dene.',
+    rewards:{skip:['Zaman atlama','8 saatlik pasif geliri hemen al'],
+      boost:['Uzun rezonans','30 dakika boyunca tüm gelir ×2'],
+      orb:['Küre çağır','Hemen bir mini olay küresi çıkar'],
+      core:['Ek çekirdek','Sonraki yeniden doğuşta %25 daha fazla çekirdek']},
+    rwGot:{skip:v=>'+'+v+' kristal', boost:'30 dakika boyunca tüm gelir ×2',
+      orb:'Bir küre süzülüyor', core:'Sonraki yeniden doğuşta %25 daha fazla çekirdek'},
+    fsOn:'Tam ekran', fsOff:'Çık',
+    tabBonus:'Bonus', tabHowto:'Rehber',
+    rwLeft:'Bugün kalan', rwOf:(n,m)=>n+' / '+m,
+    rwResetNote:'Sayaç tarih değişince sıfırlanır.',
+    rwEmpty:'Bugünlük bitti', rwResetIn:t=>t+' sonra sıfırlanır',
+    notifyTitle:'Sen yokken gelen hatırlatma',
+    notifyBody:'Sen yokken biriken miktar sekiz saat sonra sınırına ulaşır. '
+      +'O anda yalnızca tek bir sessiz hatırlatma gelir, başka hiçbir şey gönderilmez.',
+    notifyBtn:'Hatırlatma ayarları',
+    privacyBtn:'Gizlilik ayarları',
+    legalTitle:'Koşullar ve gizlilik',
+    legalBody:'Bu uygulama Apple’ın standart lisans sözleşmesine tabidir. '
+      +'Bilgilerinin nasıl işlendiği gizlilik politikasında anlatılır.',
+    legalEula:'Lisans sözleşmesi (Apple)', legalPrivacy:'Gizlilik politikası',
+    legalBodyWeb:'Bilgilerinin nasıl işlendiği gizlilik politikasında anlatılır.'
+  },
+  vi:{
+    crystals:'Tinh thể', perSec:'mỗi giây', coreMult:'Lõi', resonance:'Cộng hưởng', remain:n=>'còn '+n+' giây',
+    stages:['Thạch anh','Thạch anh tím','Fluorit','Hoàng ngọc','Hồng ngọc','Hắc diện thạch','Lăng kính','Vực thạch','Lõi sao','Kính hư không','Đá bình minh','Omega'],
+    nextIs:(n,c)=>'Tiếp theo: '+n+' ('+c+')', deepest:'Mạch sâu nhất', depth:d=>'Độ sâu '+d+' m',
+    tapHint:'Chạm vào tinh thể để đào', tapAria:'Đào tinh thể',
+    pause:'Tạm dừng', resume:'Tiếp tục', pauseAria:'Tạm dừng hoặc tiếp tục',
+    veilTitle:'Đã tạm dừng', veilBody:'Việc đào và thu nhập đều đã dừng. Trong lúc tạm dừng, không có gì được tích lũy.',
+    tabMine:'Đào', tabCore:'Tái sinh', tabMenu:'Menu',
+    taps:{pick:['Mài cuốc chim','+1 tinh thể mỗi lần chạm'], glove:['Găng tay cộng hưởng','Mỗi lần chạm nhận thêm 3% thu nhập/giây']},
+    gens:{moss:['Rêu phát sáng','Rêu trên vách rơi ra bụi tinh thể'], drill:['Máy khoan nhỏ','Mũi khoan lên dây cót mài mòn vách đá'],
+      bat:['Dơi khuân vác','Mang tinh thể ra khỏi bóng tối'], vein:['Bơm địa mạch','Hút tinh thể lên cùng nước ngầm'],
+      golem:['Golem tinh thể','Đào mở mạch bằng thân đá'], forge:['Lò bụi sao','Biến mảnh sao rơi thành tinh thể'],
+      react:['Lò phản ứng địa tâm','Hút thẳng từ tâm hành tinh']},
+    mine:'Mỗi lần chạm', perSecShort:'/giây', pctOf:n=>'3% thu nhập ×'+n,
+    evKicker:'SỰ KIỆN NHỎ',
+    events:{lode:['Mạch dồi dào','Tinh thể tuôn ra từ khe nứt trên vách'],
+      echo:['Cộng hưởng tinh thể','Mọi thu nhập ×5 trong 30 giây'],
+      visitor:['Vị khách lạc đường','Đã để lại một món quà']},
+    gainLine:v=>'+'+v+' tinh thể',
+    rebirthTitle:'Tái sinh',
+    rebirthBody:'Nấu chảy toàn bộ tinh thể và công trình thành <em>lõi</em>. Mỗi lõi giúp lượng đào mỗi lần chạm và thu nhập tăng <em>+2%</em> từ đó về sau. Đào càng sâu, lõi còn lại càng nhiều.',
+    haveCores:'Lõi đang có', curMult:'Hệ số nhân hiện tại', gainCores:'Lõi nhận khi tái sinh',
+    doRebirth:n=>'Tái sinh để nhận '+n+' lõi', rebirthLocked:'Mở khi đạt tổng 1 triệu tinh thể',
+    rebirthKicker:'Tái sinh', rebirthDone:(n,m)=>'Nhận được '+n+' lõi<br>Thu nhập giờ là ×'+m,
+    recordsTitle:'Thống kê', recRun:'Lượt chơi này', recAll:'Tổng cộng', recClicks:'Số lần chạm',
+    recEvents:'Quả cầu đã bắt', recResets:'Số lần tái sinh', recStage:'Mạch sâu nhất', recLoops:'Mạch đã mở',
+    sealed:'Tái sinh để mở mạch tiếp theo', unlockSub:n=>'Đã mở mạch mới: '+n,
+    howtoTitle:'Cách chơi',
+    howto:[
+      ['Chạm vào tinh thể','Đó là thao tác cơ bản. Mỗi lần chạm, bạn sẽ nhận được tinh thể. Trên bàn phím, chọn bằng Tab rồi đào bằng phím cách.'],
+      ['Mua công trình để tự động hóa','Công trình trong thẻ Đào kiếm tinh thể mỗi giây, kể cả khi bạn không làm gì. Càng mua nhiều giá càng tăng, nhưng <b>cứ đủ 10 cái thì sản lượng của công trình đó tăng gấp đôi</b>. Nút ×10 và ×MAX giúp mua nhiều cùng lúc.'],
+      ['Đào sâu hơn',(o,t)=>'Khi tổng lượng đào tăng, mạch sẽ đổi, và tinh thể đổi màu, đổi hình. '
+        +'Lúc đầu mở sẵn '+o+' mạch, từ Thạch anh đến Lăng kính; mỗi lần tái sinh mở thêm một mạch sâu hơn, tổng cộng '+t+' mạch.'],
+      ['Bắt quả cầu phát sáng','Thỉnh thoảng một quả cầu phát sáng trôi ngang màn hình. Chạm vào trước khi nó biến mất để nhận thưởng. Có ba loại; tốt nhất là Cộng hưởng tinh thể, làm mọi thứ ×5 trong 30 giây.'],
+      ['Tái sinh để mạnh hơn','Mở khi đạt tổng một triệu tinh thể. Mọi thứ trở về ban đầu, nhưng bạn giữ lại lõi giúp nhân thu nhập mãi mãi. Trò chơi thật sự mở ra từ lượt thứ hai.'],
+      ['Tự động lưu','Tiến trình được tự động lưu trên thiết bị này. Dù đóng trang, bạn vẫn chơi tiếp được từ chỗ cũ. Khi bạn vắng mặt, thu nhập vẫn chạy với nửa tốc độ, tối đa 8 giờ.'],
+      ['Tạm dừng bất cứ lúc nào','Nút nằm ở góc trên bên phải. Khi đang tạm dừng, mọi con số đều đứng yên.']
+    ],
+    pauseSecTitle:'Tạm dừng khai thác',
+    pauseSecBody:'Nhấn Tạm dừng ở góc trên bên phải, thu nhập và lượt chạm sẽ dừng hẳn. Nhấn lần nữa để tiếp tục. Thời gian tạm dừng không bao giờ được tính.',
+    pauseSecBtn:'Tạm dừng', pauseSecBtnOn:'Tiếp tục',
+    sizeTitle:'Cỡ chữ', sizeBody:'Thay đổi cỡ của mọi chữ trên màn hình.',
+    sizes:['Nhỏ','Thường','Lớn','Lớn nhất'],
+    skinTitle:'Nền và màu sắc', skinBody:'Hãy chọn kiểu dễ đọc nhất. Hai kiểu cuối có độ tương phản cao nhất.',
+    skins:{cave:'Hang động',sea:'Biển sâu',dusk:'Hoàng hôn',moss:'Rêu',washi:'Giấy',ink:'Mực',hcd:'Tương phản cao (tối)',hcl:'Tương phản cao (sáng)'},
+    saveTitle:'Dữ liệu lưu',
+    saveBody1:'Trò chơi tự lưu nên thường bạn không cần làm gì. Chỉ sao chép mã bên dưới khi muốn <b>chuyển sang thiết bị khác</b> hoặc giữ bản sao lưu.',
+    saveBody2:'Để khôi phục, dán mã rồi nhấn Tải. Tiến trình hiện tại sẽ bị ghi đè.',
+    makeCode:'Tạo mã', copyCode:'Sao chép', loadCode:'Tải', wipe:'Chơi lại từ đầu', wipeArm:'Chắc chắn xóa? (nhấn lần nữa)',
+    codeMade:'Đã tạo mã', copied:n=>'Đã sao chép '+n.toLowerCase(), copyManual:'Đã chọn. Sao chép bằng Ctrl+C hoặc nhấn giữ.',
+    emptyCode:'Mã đang trống', badCode:'Không đọc được mã này',
+    loadKicker:'Tải', loadTitle:'Đã tải', loadSub:v=>'Tiếp tục từ tổng '+v+' tinh thể',
+    wipeDone:'Đã bắt đầu lại từ đầu',
+    shareTitle:'Chia sẻ tiến trình', shareBody:'Biến tiến trình hiện tại thành một đoạn văn. Các nút sẽ mở cửa sổ đăng bài.',
+    copyText:'Sao chép đoạn văn', shareX:'Đăng lên X', shareBsky:'Đăng lên Bluesky', shareLine:'Gửi qua LINE',
+    sharePrivacy:'Cuối đoạn văn có đường dẫn tới trang web của trò chơi. Không có tên hay thông tin thiết bị của bạn.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, một trò chơi idle','Độ sâu '+d+' m, mạch '+s,'Tổng cộng đã đào '+g+' tinh thể']
+      .concat(c>0?[c+' lõi (thu nhập ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'MẠCH MỚI', newVeinSub:d=>'Bạn đã tới một mạch mới<br>Độ sâu '+d+' m',
+    backKicker:'CHÀO MỪNG TRỞ LẠI', backTitle:'Chào mừng trở lại', backSub:(t,v)=>'Trong '+t+' bạn vắng mặt<br>+'+v+' tinh thể',
+    hm:(h,m)=>h>0?h+' giờ '+m+' phút':m+' phút',
+    codeLabel:'Mã lưu', textLabel:'Đoạn văn', pasteHere:'Dán mã lưu vào đây',
+    bugTitle:'Báo lỗi hoặc liên hệ',
+    bugBody:'Hãy cho tôi biết chỗ nào không hoạt động hoặc điều bạn muốn thay đổi. Nút bên dưới sẽ mở trang báo lỗi.',
+    bugEnv:'Thông tin hệ thống',
+    bugOpen:'Mở trang báo lỗi', bugCopyEnv:'Sao chép thông tin hệ thống',
+    bugEnvNote:'Khi báo lỗi, hãy dán kèm thông tin hệ thống bên dưới. Không có thông tin cá nhân nào trong đó.',
+    msNext:n=>'còn '+n+' cái nữa là gấp đôi',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Một trò chơi idle yên tĩnh, hoàn toàn không có âm thanh. Chỉ cần nhớ ba điều.',
+    welcomeLines:['Chạm vào tinh thể ở giữa để nhận tinh thể',
+      'Dùng tinh thể mua công trình để chúng tự kiếm thêm, kể cả khi bạn vắng mặt',
+      'Khi quả cầu phát sáng trôi qua, chạm vào trước khi nó biến mất để nhận thưởng'],
+    welcomeStart:'Bắt đầu',
+    welcomeMore:'Luật chơi đầy đủ, cỡ chữ và màu sắc luôn có trong thẻ Menu.',
+    reopenGuide:'Xem lại hướng dẫn ban đầu',
+    rwTitle:'Phần thưởng',
+    rwNote:'Xem một video ngắn để nhận. Không xem vẫn có thể chơi trọn vẹn.',
+    rwWatch:'Xem video', rwWait:s=>'còn '+s, rwKicker:'PHẦN THƯỞNG',
+    rwFail:'Không tải được quảng cáo. Vui lòng thử lại sau một lát.',
+    rewards:{skip:['Nhảy thời gian','Nhận ngay thu nhập của 8 giờ treo máy'],
+      boost:['Cộng hưởng kéo dài','Mọi thu nhập ×2 trong 30 phút'],
+      orb:['Gọi quả cầu','Cho quả cầu sự kiện xuất hiện ngay'],
+      core:['Thêm lõi','Thêm 25% lõi ở lần tái sinh tới']},
+    rwGot:{skip:v=>'+'+v+' tinh thể', boost:'Mọi thu nhập ×2 trong 30 phút',
+      orb:'Một quả cầu đang trôi tới', core:'Thêm 25% lõi ở lần tái sinh tới'},
+    fsOn:'Toàn màn hình', fsOff:'Thoát',
+    tabBonus:'Thưởng', tabHowto:'Hướng dẫn',
+    rwLeft:'Còn lại hôm nay', rwOf:(n,m)=>n+' / '+m,
+    rwResetNote:'Số lượt được đặt lại khi sang ngày mới.',
+    rwEmpty:'Hôm nay đã hết lượt', rwResetIn:t=>'Đặt lại sau '+t,
+    notifyTitle:'Nhắc nhở khi bạn vắng mặt',
+    notifyBody:'Phần tích lũy khi bạn vắng mặt sẽ chạm giới hạn sau tám giờ. '
+      +'Lúc đó chỉ có một lời nhắc không âm thanh, ngoài ra không gửi gì khác.',
+    notifyBtn:'Cài đặt nhắc nhở',
+    privacyBtn:'Cài đặt quyền riêng tư',
+    legalTitle:'Điều khoản và quyền riêng tư',
+    legalBody:'Ứng dụng này áp dụng thỏa thuận cấp phép tiêu chuẩn của Apple. '
+      +'Cách xử lý thông tin của bạn được nêu trong chính sách quyền riêng tư.',
+    legalEula:'Thỏa thuận cấp phép (Apple)', legalPrivacy:'Chính sách quyền riêng tư',
+    legalBodyWeb:'Cách xử lý thông tin của bạn được nêu trong chính sách quyền riêng tư.'
+  },
+  th:{
+    crystals:'คริสตัล', perSec:'ต่อวินาที', coreMult:'แกน', resonance:'การสั่นพ้อง', remain:n=>'เหลือ '+n+' วินาที',
+    stages:['ควอตซ์','อเมทิสต์','ฟลูออไรต์','บุษราคัม','ทับทิม','ออบซิเดียน','ปริซึม','ผลึกห้วงลึก','แกนดารา','แก้วสุญญตา','ศิลารุ่งอรุณ','โอเมกา'],
+    nextIs:(n,c)=>'ถัดไป: '+n+' ('+c+')', deepest:'สายแร่ที่ลึกที่สุด', depth:d=>'ความลึก '+d+' ม.',
+    tapHint:'แตะคริสตัลเพื่อขุด', tapAria:'ขุดคริสตัล',
+    pause:'หยุดชั่วคราว', resume:'เล่นต่อ', pauseAria:'หยุดชั่วคราวหรือเล่นต่อ',
+    veilTitle:'หยุดชั่วคราว', veilBody:'การขุดและรายได้หยุดทั้งหมด ระหว่างหยุดจะไม่มีอะไรสะสมเพิ่ม',
+    tabMine:'ขุด', tabCore:'เกิดใหม่', tabMenu:'เมนู',
+    taps:{pick:['ลับอีเต้อ','+1 คริสตัลต่อการแตะ'], glove:['ถุงมือสั่นพ้อง','ทุกการแตะได้เพิ่ม 3% ของรายได้ต่อวินาที']},
+    gens:{moss:['มอสเรืองแสง','มอสบนผนังโปรยผงคริสตัลลงมา'], drill:['สว่านจิ๋ว','หัวสว่านไขลานกัดผนังไม่หยุด'],
+      bat:['ค้างคาวขนของ','ขนคริสตัลออกจากความมืด'], vein:['ปั๊มสายพลังดิน','สูบคริสตัลขึ้นมาพร้อมน้ำใต้ดิน'],
+      golem:['โกเลมคริสตัล','ใช้ร่างหินขุดเปิดสายแร่'], forge:['เตาหลอมละอองดาว','เปลี่ยนเศษดาวที่ร่วงลงมาเป็นคริสตัล'],
+      react:['เตาปฏิกรณ์แกนโลก','ดึงตรงจากใจกลางดาวเคราะห์']},
+    mine:'ต่อการแตะ', perSecShort:'/วิ', pctOf:n=>'3% ของรายได้ ×'+n,
+    evKicker:'อีเวนต์เล็ก',
+    events:{lode:['สายแร่อุดม','คริสตัลไหลออกจากรอยแยกบนผนัง'],
+      echo:['การสั่นพ้องของคริสตัล','รายได้ทั้งหมด ×5 นาน 30 วินาที'],
+      visitor:['ผู้มาเยือนหลงทาง','ทิ้งของขวัญไว้ให้']},
+    gainLine:v=>'+'+v+' คริสตัล',
+    rebirthTitle:'เกิดใหม่',
+    rebirthBody:'หลอมคริสตัลและสิ่งก่อสร้างทั้งหมดให้เป็น<em>แกน</em> แต่ละแกนจะเพิ่มผลจากการแตะและรายได้ <em>+2%</em> นับจากนั้นเป็นต้นไป ยิ่งขุดลึก ยิ่งเหลือแกนมาก',
+    haveCores:'แกนที่มีอยู่', curMult:'ตัวคูณปัจจุบัน', gainCores:'แกนที่ได้จากการเกิดใหม่',
+    doRebirth:n=>'เกิดใหม่เพื่อรับ '+n+' แกน', rebirthLocked:'ปลดล็อกเมื่อสะสมครบ 1 ล้านคริสตัล',
+    rebirthKicker:'เกิดใหม่', rebirthDone:(n,m)=>'ได้รับ '+n+' แกน<br>รายได้ตอนนี้ ×'+m,
+    recordsTitle:'สถิติ', recRun:'ขุดได้รอบนี้', recAll:'ขุดได้ทั้งหมด', recClicks:'จำนวนครั้งที่แตะ',
+    recEvents:'ลูกแสงที่จับได้', recResets:'จำนวนครั้งที่เกิดใหม่', recStage:'สายแร่ที่ลึกที่สุด', recLoops:'สายแร่ที่เปิดแล้ว',
+    sealed:'เกิดใหม่เพื่อเปิดสายแร่ถัดไป', unlockSub:n=>'เปิดสายแร่ใหม่: '+n,
+    howtoTitle:'วิธีเล่น',
+    howto:[
+      ['แตะคริสตัล','นี่คือการเล่นพื้นฐาน แตะแต่ละครั้งจะได้คริสตัล ถ้าใช้คีย์บอร์ด ให้กด Tab เพื่อเลือก แล้วกด Space เพื่อขุด'],
+      ['ซื้อสิ่งก่อสร้างให้ทำงานอัตโนมัติ','สิ่งก่อสร้างในแท็บขุดจะหาคริสตัลให้ทุกวินาที แม้คุณไม่ได้ทำอะไร ยิ่งซื้อยิ่งแพง แต่<b>ทุก 10 ชิ้น ผลผลิตของสิ่งก่อสร้างนั้นจะเพิ่มเป็นสองเท่า</b> ปุ่ม ×10 และ ×MAX ใช้ซื้อทีละมาก ๆ'],
+      ['ขุดให้ลึกขึ้น',(o,t)=>'เมื่อยอดขุดสะสมเพิ่มขึ้น สายแร่จะเปลี่ยน และคริสตัลจะเปลี่ยนสีและรูปทรง '
+        +'ตอนเริ่มเปิดไว้ '+o+' สาย ตั้งแต่ควอตซ์ถึงปริซึม การเกิดใหม่แต่ละครั้งจะเปิดสายแร่ที่ลึกขึ้นอีกหนึ่งสาย รวมทั้งหมด '+t+' สาย'],
+      ['จับลูกแสง','บางครั้งจะมีลูกแสงลอยผ่านหน้าจอ แตะก่อนที่มันจะหายไปเพื่อรับโบนัส มีสามแบบ แบบที่ดีที่สุดคือการสั่นพ้องของคริสตัล ที่ทำให้ทุกอย่าง ×5 นาน 30 วินาที'],
+      ['เกิดใหม่เพื่อให้แข็งแกร่งขึ้น','ปลดล็อกเมื่อสะสมครบหนึ่งล้านคริสตัล ทุกอย่างจะเริ่มใหม่ แต่คุณจะเก็บแกนที่คูณรายได้ไว้ถาวร เกมจะสนุกจริง ๆ ตั้งแต่รอบที่สอง'],
+      ['บันทึกอัตโนมัติ','ความคืบหน้าจะถูกบันทึกในอุปกรณ์นี้โดยอัตโนมัติ ปิดแล้วกลับมาเล่นต่อได้ ระหว่างที่คุณไม่อยู่ จะยังสะสมต่อที่ความเร็วครึ่งหนึ่ง สูงสุด 8 ชั่วโมง'],
+      ['หยุดชั่วคราวได้ทุกเมื่อ','ปุ่มอยู่มุมขวาบน ระหว่างหยุดชั่วคราว ตัวเลขจะไม่ขยับเลย']
+    ],
+    pauseSecTitle:'หยุดการขุด',
+    pauseSecBody:'กดปุ่มหยุดชั่วคราวที่มุมขวาบน รายได้และการแตะจะหยุดทั้งหมด กดอีกครั้งเพื่อเล่นต่อ เวลาที่หยุดไว้จะไม่ถูกนับ',
+    pauseSecBtn:'หยุดชั่วคราว', pauseSecBtnOn:'เล่นต่อ',
+    sizeTitle:'ขนาดตัวอักษร', sizeBody:'ปรับขนาดตัวอักษรทั้งหมดบนหน้าจอ',
+    sizes:['เล็ก','ปกติ','ใหญ่','ใหญ่ที่สุด'],
+    skinTitle:'พื้นหลังและสี', skinBody:'เลือกแบบที่อ่านง่ายที่สุด สองแบบสุดท้ายเป็นแบบความเปรียบต่างสูงสุด',
+    skins:{cave:'ถ้ำ',sea:'ทะเลลึก',dusk:'สนธยา',moss:'มอส',washi:'กระดาษ',ink:'หมึก',hcd:'ความเปรียบต่างสูง (มืด)',hcl:'ความเปรียบต่างสูง (สว่าง)'},
+    saveTitle:'ข้อมูลเซฟ',
+    saveBody1:'เกมบันทึกเองอยู่แล้ว ปกติไม่ต้องทำอะไร คัดลอกรหัสด้านล่างเฉพาะเมื่อต้องการ<b>ย้ายไปอุปกรณ์อื่น</b>หรือเก็บสำรองไว้',
+    saveBody2:'ถ้าจะกู้คืน ให้วางรหัสแล้วกดโหลด ความคืบหน้าปัจจุบันจะถูกเขียนทับ',
+    makeCode:'สร้างรหัส', copyCode:'คัดลอก', loadCode:'โหลด', wipe:'เริ่มใหม่ตั้งแต่ต้น', wipeArm:'ต้องการลบจริงหรือไม่ (กดอีกครั้ง)',
+    codeMade:'สร้างรหัสแล้ว', copied:n=>'คัดลอก'+n+'แล้ว', copyManual:'เลือกแล้ว คัดลอกด้วย Ctrl+C หรือกดค้าง',
+    emptyCode:'รหัสว่างอยู่', badCode:'อ่านรหัสนี้ไม่ได้',
+    loadKicker:'โหลด', loadTitle:'โหลดแล้ว', loadSub:v=>'เล่นต่อจากยอดรวม '+v+' คริสตัล',
+    wipeDone:'เริ่มใหม่ตั้งแต่ต้นแล้ว',
+    shareTitle:'แชร์ความคืบหน้า', shareBody:'เปลี่ยนสถิติปัจจุบันเป็นข้อความ ปุ่มต่าง ๆ จะเปิดหน้าต่างโพสต์',
+    copyText:'คัดลอกข้อความ', shareX:'โพสต์ลง X', shareBsky:'โพสต์ลง Bluesky', shareLine:'ส่งทาง LINE',
+    sharePrivacy:'ท้ายข้อความจะมีลิงก์ไปยังเว็บไซต์ของเกม ไม่มีชื่อหรือข้อมูลอุปกรณ์ของคุณ',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern เกมแนว idle','ความลึก '+d+' ม. สายแร่'+s,'ขุดได้รวม '+g+' คริสตัล']
+      .concat(c>0?[c+' แกน (รายได้ ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'สายแร่ใหม่', newVeinSub:d=>'คุณมาถึงสายแร่ใหม่แล้ว<br>ความลึก '+d+' ม.',
+    backKicker:'ยินดีต้อนรับกลับ', backTitle:'ยินดีต้อนรับกลับ', backSub:(t,v)=>'ระหว่าง '+t+' ที่ไม่อยู่<br>+'+v+' คริสตัล',
+    hm:(h,m)=>h>0?h+' ชม. '+m+' นาที':m+' นาที',
+    codeLabel:'รหัสเซฟ', textLabel:'ข้อความ', pasteHere:'วางรหัสเซฟที่นี่',
+    bugTitle:'แจ้งปัญหาหรือติดต่อ',
+    bugBody:'หากมีส่วนไหนที่ใช้งานไม่ได้ หรือมีสิ่งที่อยากให้ปรับเปลี่ยน โปรดแจ้งให้ทราบ ปุ่มด้านล่างจะเปิดหน้าแจ้งปัญหา',
+    bugEnv:'ข้อมูลระบบ',
+    bugOpen:'เปิดหน้าแจ้งปัญหา', bugCopyEnv:'คัดลอกข้อมูลระบบ',
+    bugEnvNote:'เมื่อแจ้งปัญหา กรุณาวางข้อมูลระบบด้านล่างไปด้วย ไม่มีข้อมูลส่วนตัวอยู่ในนั้น',
+    msNext:n=>'อีก '+n+' ชิ้นจะเพิ่มเป็นสองเท่า',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'เกม idle เงียบสงบที่ไม่มีเสียงเลย จำแค่สามอย่างก็เล่นได้',
+    welcomeLines:['แตะคริสตัลตรงกลางเพื่อรับคริสตัล',
+      'ใช้คริสตัลซื้อสิ่งก่อสร้าง ซึ่งจะทำงานต่อแม้คุณไม่อยู่',
+      'เมื่อลูกแสงลอยผ่าน แตะก่อนมันหายไปเพื่อรับโบนัส'],
+    welcomeStart:'เริ่มเล่น',
+    welcomeMore:'กติกาทั้งหมด ขนาดตัวอักษร และสี ดูได้ทุกเมื่อในแท็บเมนู',
+    reopenGuide:'แสดงคำแนะนำตอนเริ่มอีกครั้ง',
+    rwTitle:'โบนัส',
+    rwNote:'ดูวิดีโอสั้น ๆ เพื่อรับโบนัส ไม่ดูก็เล่นได้จนจบ',
+    rwWatch:'ดูวิดีโอ', rwWait:s=>'เหลือ '+s, rwKicker:'โบนัส',
+    rwFail:'โหลดโฆษณาไม่ได้ โปรดลองใหม่อีกครั้งในอีกสักครู่',
+    rewards:{skip:['ข้ามเวลา','รับรายได้ระหว่างไม่อยู่ 8 ชั่วโมงทันที'],
+      boost:['ยืดการสั่นพ้อง','รายได้ทั้งหมด ×2 นาน 30 นาที'],
+      orb:['เรียกลูกแสง','ให้ลูกแสงอีเวนต์ปรากฏทันที'],
+      core:['แกนเพิ่ม','ได้แกนเพิ่ม 25% ในการเกิดใหม่ครั้งถัดไป']},
+    rwGot:{skip:v=>'+'+v+' คริสตัล', boost:'รายได้ทั้งหมด ×2 นาน 30 นาที',
+      orb:'ลูกแสงกำลังลอยมา', core:'ได้แกนเพิ่ม 25% ในการเกิดใหม่ครั้งถัดไป'},
+    fsOn:'เต็มจอ', fsOff:'ออก',
+    tabBonus:'โบนัส', tabHowto:'วิธีเล่น',
+    rwLeft:'เหลือวันนี้', rwOf:(n,m)=>n+' / '+m,
+    rwResetNote:'จำนวนครั้งจะรีเซ็ตเมื่อขึ้นวันใหม่',
+    rwEmpty:'วันนี้ใช้ครบแล้ว', rwResetIn:t=>'รีเซ็ตในอีก '+t,
+    notifyTitle:'แจ้งเตือนระหว่างที่คุณไม่อยู่',
+    notifyBody:'สิ่งที่สะสมระหว่างคุณไม่อยู่จะเต็มขีดจำกัดเมื่อครบแปดชั่วโมง '
+      +'ตอนนั้นจะมีการแจ้งเตือนแบบไม่มีเสียงเพียงครั้งเดียว และจะไม่ส่งอะไรอื่นอีก',
+    notifyBtn:'ตั้งค่าการแจ้งเตือน',
+    privacyBtn:'ตั้งค่าความเป็นส่วนตัว',
+    legalTitle:'ข้อกำหนดและความเป็นส่วนตัว',
+    legalBody:'แอปนี้อยู่ภายใต้ข้อตกลงสิทธิ์การใช้งานมาตรฐานของ Apple '
+      +'วิธีจัดการข้อมูลของคุณอธิบายไว้ในนโยบายความเป็นส่วนตัว',
+    legalEula:'ข้อตกลงสิทธิ์การใช้งาน (Apple)', legalPrivacy:'นโยบายความเป็นส่วนตัว',
+    legalBodyWeb:'วิธีจัดการข้อมูลของคุณอธิบายไว้ในนโยบายความเป็นส่วนตัว'
+  },
+  id:{
+    crystals:'Kristal', perSec:'per detik', coreMult:'Inti', resonance:'Resonansi', remain:n=>'sisa '+n+' dtk',
+    stages:['Kuarsa','Kecubung','Fluorit','Topas','Rubi','Obsidian','Prisma','Abisit','Inti bintang','Kaca hampa','Batu fajar','Omega'],
+    nextIs:(n,c)=>'Berikutnya: '+n+' ('+c+')', deepest:'Urat terdalam', depth:d=>'Kedalaman '+d+' m',
+    tapHint:'Ketuk kristal untuk menggali', tapAria:'Gali kristal',
+    pause:'Jeda', resume:'Lanjut', pauseAria:'Jeda atau lanjutkan',
+    veilTitle:'Dijeda', veilBody:'Penggalian dan pendapatan berhenti. Selama jeda, tidak ada yang bertambah.',
+    tabMine:'Gali', tabCore:'Inti', tabMenu:'Menu',
+    taps:{pick:['Asah beliung','+1 kristal per ketukan'], glove:['Sarung tangan resonansi','Setiap ketukan juga memberi tambahan 3% dari pendapatan per detik']},
+    gens:{moss:['Lumut bercahaya','Lumut di dinding meluruhkan debu kristal'], drill:['Bor kecil','Mata bor berpegas terus mengikis dinding'],
+      bat:['Kelelawar pengangkut','Membawa kristal keluar dari kegelapan'], vein:['Pompa perut bumi','Menyedot kristal bersama air tanah'],
+      golem:['Golem kristal','Membuka urat dengan tubuh batunya'], forge:['Tungku debu bintang','Mengubah pecahan bintang jatuh menjadi kristal'],
+      react:['Reaktor inti bumi','Menyedot langsung dari jantung planet']},
+    mine:'Per ketukan', perSecShort:'/dtk', pctOf:n=>'3% pendapatan ×'+n,
+    evKicker:'PERISTIWA MINI',
+    events:{lode:['Urat kaya','Kristal berhamburan dari celah di dinding'],
+      echo:['Resonansi kristal','Semua pendapatan ×5 selama 30 detik'],
+      visitor:['Tamu tersesat','Meninggalkan hadiah']},
+    gainLine:v=>'+'+v+' kristal',
+    rebirthTitle:'Lahir ulang',
+    rebirthBody:'Semua kristal dan bangunan dilebur menjadi <em>inti</em>. Setiap inti menambah <em>+2%</em> pada hasil ketukan dan pendapatan mulai saat itu. Makin dalam kamu menggali, makin banyak inti yang tersisa.',
+    haveCores:'Inti yang dimiliki', curMult:'Pengali saat ini', gainCores:'Inti dari lahir ulang',
+    doRebirth:n=>'Lahir ulang, dapat '+n+' inti', rebirthLocked:'Terbuka saat total 1 juta kristal',
+    rebirthKicker:'Lahir ulang', rebirthDone:(n,m)=>'Mendapat '+n+' inti<br>Pendapatan kini ×'+m,
+    recordsTitle:'Statistik', recRun:'Putaran ini', recAll:'Sepanjang waktu', recClicks:'Ketukan',
+    recEvents:'Bola tertangkap', recResets:'Lahir ulang', recStage:'Urat terdalam', recLoops:'Urat terbuka',
+    sealed:'Lahir ulang untuk membuka urat berikutnya', unlockSub:n=>'Urat baru terbuka: '+n,
+    howtoTitle:'Cara bermain',
+    howto:[
+      ['Ketuk kristal','Itulah gerakan dasarnya. Setiap ketukan memberi kristal. Dengan papan ketik, pilih dengan tombol Tab lalu gali dengan Spasi.'],
+      ['Beli bangunan agar otomatis','Bangunan di tab Gali menghasilkan kristal tiap detik, bahkan saat kamu diam saja. Tiap unit berikutnya makin mahal, tapi <b>setiap 10 unit, produksi bangunan itu berlipat dua</b>. Tombol ×10 dan ×MAX untuk membeli banyak sekaligus.'],
+      ['Gali lebih dalam',(o,t)=>'Saat total sepanjang waktu bertambah, urat berganti, dan kristal berubah warna dan bentuk. '
+        +'Sejak awal ada '+o+' urat yang terbuka, dari Kuarsa sampai Prisma; setiap lahir ulang membuka satu urat lagi yang lebih dalam, hingga total '+t+' urat.'],
+      ['Tangkap bola bercahaya','Sesekali bola bercahaya melayang melintasi layar. Ketuk sebelum menghilang untuk mendapat bonus. Ada tiga jenis; yang terbaik adalah Resonansi kristal, yang membuat semuanya ×5 selama 30 detik.'],
+      ['Lahir ulang agar makin kuat','Terbuka saat total satu juta kristal. Semuanya kembali ke awal, tapi kamu menyimpan inti yang melipatgandakan pendapatan selamanya. Permainan yang sesungguhnya dimulai di putaran kedua.'],
+      ['Tersimpan otomatis','Kemajuan tersimpan otomatis di perangkat ini. Tutup kapan saja, lalu lanjutkan dari posisi terakhir. Saat kamu pergi, pendapatan terus berjalan dengan setengah kecepatan, hingga maksimal 8 jam.'],
+      ['Jeda kapan saja','Tombolnya di kanan atas. Selama jeda aktif, tidak ada yang bergerak sama sekali.']
+    ],
+    pauseSecTitle:'Menghentikan penggalian',
+    pauseSecBody:'Tekan Jeda di kanan atas, maka pendapatan dan ketukan berhenti sepenuhnya. Tekan lagi untuk melanjutkan. Waktu jeda tidak pernah dihitung.',
+    pauseSecBtn:'Jeda', pauseSecBtnOn:'Lanjut',
+    sizeTitle:'Ukuran teks', sizeBody:'Memperbesar semua teks di layar.',
+    sizes:['Kecil','Normal','Besar','Terbesar'],
+    skinTitle:'Latar dan warna', skinBody:'Pilih yang paling mudah dibaca. Dua terakhir punya kontras tertinggi.',
+    skins:{cave:'Gua',sea:'Laut dalam',dusk:'Senja',moss:'Lumut',washi:'Kertas',ink:'Tinta',hcd:'Kontras tinggi (gelap)',hcl:'Kontras tinggi (terang)'},
+    saveTitle:'Data simpanan',
+    saveBody1:'Permainan menyimpan sendiri, jadi biasanya tidak perlu melakukan apa pun. Salin kode di bawah hanya jika ingin <b>pindah ke perangkat lain</b> atau menyimpan cadangan.',
+    saveBody2:'Untuk memulihkan, tempel kode lalu tekan Muat. Kemajuan saat ini akan ditimpa.',
+    makeCode:'Buat kode', copyCode:'Salin', loadCode:'Muat', wipe:'Mulai dari awal', wipeArm:'Yakin hapus? (tekan lagi)',
+    codeMade:'Kode dibuat', copied:n=>n+' disalin', copyManual:'Sudah dipilih. Salin dengan Ctrl+C atau tekan lama.',
+    emptyCode:'Kodenya kosong', badCode:'Kode ini tidak bisa dibaca',
+    loadKicker:'Muat', loadTitle:'Berhasil dimuat', loadSub:v=>'Lanjut dari total '+v+' kristal',
+    wipeDone:'Kembali ke awal',
+    shareTitle:'Bagikan kemajuan', shareBody:'Mengubah kemajuanmu saat ini menjadi teks. Tombol akan membuka jendela posting.',
+    copyText:'Salin teks', shareX:'Posting di X', shareBsky:'Posting di Bluesky', shareLine:'Kirim lewat LINE',
+    sharePrivacy:'Teks diakhiri tautan ke situs permainan. Di dalamnya tidak ada nama atau informasi tentang perangkatmu.',
+    shareLines:(d,s,g,c,m)=>['Crystal Cavern, gim idle','Kedalaman '+d+' m, urat '+s,'Total '+g+' kristal tergali']
+      .concat(c>0?[c+' inti (pendapatan ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+    newVeinKicker:'URAT BARU', newVeinSub:d=>'Kamu mencapai urat baru<br>Kedalaman '+d+' m',
+    backKicker:'SELAMAT DATANG KEMBALI', backTitle:'Selamat datang kembali', backSub:(t,v)=>'Selama '+t+' kamu pergi<br>+'+v+' kristal',
+    hm:(h,m)=>h>0?h+' jam '+m+' mnt':m+' mnt',
+    codeLabel:'Kode simpanan', textLabel:'Teks', pasteHere:'Tempel kode simpanan di sini',
+    bugTitle:'Laporkan masalah atau hubungi saya',
+    bugBody:'Beri tahu saya apa yang tidak berfungsi atau apa yang ingin kamu ubah. Tombol di bawah membuka halamannya.',
+    bugEnv:'Info sistem',
+    bugOpen:'Buka halaman kontak', bugCopyEnv:'Salin info sistem',
+    bugEnvNote:'Saat melapor, tempel juga info sistem di bawah ini. Tidak ada informasi pribadi di dalamnya.',
+    msNext:n=>n+' lagi untuk berlipat dua',
+    welcomeTitle:'Crystal Cavern',
+    welcomeLead:'Gim idle yang tenang tanpa suara sama sekali. Cukup ingat tiga hal untuk bermain.',
+    welcomeLines:['Ketuk kristal di tengah untuk mendapat kristal',
+      'Belanjakan kristal untuk bangunan, yang terus menghasilkan saat kamu pergi',
+      'Saat bola bercahaya lewat, ketuk sebelum menghilang untuk mendapat bonus'],
+    welcomeStart:'Mulai',
+    welcomeMore:'Aturan lengkap, ukuran teks, dan warna selalu ada di tab Menu.',
+    reopenGuide:'Tampilkan lagi panduan awal',
+    rwTitle:'Bonus',
+    rwNote:'Tonton video singkat untuk mengambil bonus. Permainan tetap bisa dimainkan sampai akhir tanpa menonton video.',
+    rwWatch:'Tonton video', rwWait:s=>'sisa '+s, rwKicker:'BONUS',
+    rwFail:'Iklan tidak bisa dimuat. Tunggu sebentar, lalu coba lagi.',
+    rewards:{skip:['Lompat waktu','Ambil pendapatan pasif 8 jam sekarang juga'],
+      boost:['Resonansi panjang','Semua pendapatan ×2 selama 30 menit'],
+      orb:['Panggil bola','Munculkan bola peristiwa mini sekarang juga'],
+      core:['Inti tambahan','Inti 25% lebih banyak saat lahir ulang berikutnya']},
+    rwGot:{skip:v=>'+'+v+' kristal', boost:'Semua pendapatan ×2 selama 30 menit',
+      orb:'Sebuah bola melayang datang', core:'Inti 25% lebih banyak saat lahir ulang berikutnya'},
+    fsOn:'Layar penuh', fsOff:'Keluar',
+    tabBonus:'Bonus', tabHowto:'Panduan',
+    rwLeft:'Sisa hari ini', rwOf:(n,m)=>n+' dari '+m,
+    rwResetNote:'Hitungan diatur ulang saat tanggal berganti.',
+    rwEmpty:'Habis untuk hari ini', rwResetIn:t=>'Diatur ulang dalam '+t,
+    notifyTitle:'Pengingat saat kamu pergi',
+    notifyBody:'Yang terkumpul saat kamu pergi mencapai batas setelah delapan jam. '
+      +'Saat itu hanya satu pengingat tanpa suara yang dikirim, tidak ada yang lain.',
+    notifyBtn:'Pengaturan pengingat',
+    privacyBtn:'Pengaturan privasi',
+    legalTitle:'Ketentuan dan privasi',
+    legalBody:'Aplikasi ini mengikuti perjanjian lisensi standar Apple. '
+      +'Cara informasimu ditangani dijelaskan dalam kebijakan privasi.',
+    legalEula:'Perjanjian lisensi (Apple)', legalPrivacy:'Kebijakan privasi',
+    legalBodyWeb:'Cara informasimu ditangani dijelaskan dalam kebijakan privasi.'
+  }
+  };
 
   let langId = 'ja';
   let L = T.ja;
@@ -1411,6 +2618,8 @@
     if(!(n > 0)) return '0';
     return num(n);
   }
+  /* the core multiplier, 2 decimals, in the reader's own decimal style (1.06 / 1,06) */
+  const fmtMult = () => coreMult().toLocaleString(loc(), {minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : num(n);
 
   /* ================================================================
@@ -1938,7 +3147,7 @@
   }
 
   function applyStaticText(){
-    document.documentElement.lang = langId;
+    document.documentElement.lang = langDef().html;
     $('lblCrystals').textContent = L.crystals;
     $('tab-mine').textContent = L.tabMine;
     $('tabCoreLabel').textContent = L.tabCore;
@@ -1948,30 +3157,11 @@
     $('hint').textContent = L.tapHint;
     $('tap').setAttribute('aria-label', L.tapAria);
     $('pauseBtn').setAttribute('aria-label', L.pauseAria);
-    $('langBtn').setAttribute('aria-label', L.langTitle);
-    $('langCode').textContent = langDef().code;
     if(!$('fsBtn').hidden) paintFs();
     $('veilTitle').textContent = L.veilTitle;
     $('veilBody').textContent = L.veilBody;
     $('resumeBtn').textContent = L.resume;
     $('meter').setAttribute('aria-label', L.rebirthTitle === '' ? '' : L.deepest);
-  }
-
-  function setLang(id){
-    if(id === 'auto'){
-      try{ localStorage.removeItem('cc-lang'); }catch(e){}
-      id = deviceLang();
-    }else{
-      if(!T[id]) return;
-      try{ localStorage.setItem('cc-lang', id); }catch(e){}
-    }
-    langId = id; L = T[id];
-    applyStaticText();
-    buildAll();
-    setPaused(S.paused);
-    lastStage = stageIndex();
-    refresh(); refreshShare();
-    selectTab(currentTab);
   }
 
   /* ---------- first-run guide ---------- */
@@ -2011,57 +3201,6 @@
     if(which === 'menu') refreshShare();
   }
   for(const k in tabs) tabs[k].addEventListener('click', () => selectTab(k));
-  /* ---------- language picker on the stage chip ---------- */
-  const langBtn = $('langBtn'), langPop = $('langPop');
-  langBtn.setAttribute('aria-haspopup','menu');
-  langBtn.setAttribute('aria-expanded','false');
-
-  function buildLangPop(){
-    langPop.innerHTML = '';
-    const auto = langIsAuto();
-    /* first row: follow the device. Its code shows what that is now. */
-    const a = document.createElement('button');
-    a.type = 'button'; a.className = 'auto';
-    a.setAttribute('role','menuitemradio');
-    a.setAttribute('aria-pressed', String(auto));
-    a.setAttribute('aria-checked', String(auto));
-    const dl = LANGS.find(l => l.id === deviceLang()) || LANGS[1];
-    a.innerHTML = '<span class="lc">'+dl.code+'</span><span>'+L.langAuto+'</span>';
-    a.addEventListener('click', () => { closeLangPop(); setLang('auto'); });
-    langPop.appendChild(a);
-    LANGS.forEach(l => {
-      const b = document.createElement('button');
-      const on = !auto && l.id === langId;
-      b.type = 'button';
-      b.setAttribute('role','menuitemradio');
-      b.setAttribute('aria-pressed', String(on));
-      b.setAttribute('aria-checked', String(on));
-      b.innerHTML = '<span class="lc">'+l.code+'</span><span>'+l.label+'</span>';
-      b.addEventListener('click', () => { closeLangPop(); setLang(l.id); });
-      langPop.appendChild(b);
-    });
-  }
-  function openLangPop(){
-    buildLangPop();
-    langPop.hidden = false;
-    langBtn.setAttribute('aria-expanded','true');
-    const cur = langPop.querySelector('[aria-pressed="true"]') || langPop.firstElementChild;
-    if(cur) cur.focus();
-  }
-  function closeLangPop(){
-    langPop.hidden = true;
-    langBtn.setAttribute('aria-expanded','false');
-  }
-  langBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    if(langPop.hidden) openLangPop(); else closeLangPop();
-  });
-  langPop.addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('click', () => { if(!langPop.hidden) closeLangPop(); });
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && !langPop.hidden){ closeLangPop(); langBtn.focus(); }
-  });
-
   /* ================================================================
      actions
      ================================================================ */
@@ -2125,7 +3264,7 @@
     GENS.forEach(g => S.gens[g.id] = 0);
     boost = {mult:1, until:0};
     save();
-    let sub = L.rebirthDone(gain, coreMult().toFixed(2));
+    let sub = L.rebirthDone(gain, fmtMult());
     if(opened) sub += '<br>' + L.unlockSub(L.stages[seamsOpen()-1]);
     Native.haptic('rebirth');
     lastStage = stageIndex();         // don't also fire the new-seam popup
@@ -2400,7 +3539,7 @@
      — and links on to the App Store for iPhone. */
   function shareUrl(){ return SITE_ROOT + (langId === 'ja' ? '' : 'en/'); }
   function shareString(){
-    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, coreMult().toFixed(2))
+    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, fmtMult())
       + '\n' + shareUrl();
   }
   function refreshShare(){
@@ -2430,8 +3569,9 @@
     cEl.classList.toggle('long',  cTxt.length > 11 && cTxt.length <= 16);
     cEl.classList.toggle('xlong', cTxt.length > 16);
     const v = fmtRate(r);
-    let html = (langId==='en'||langId==='es') ? v+' '+L.perSec : L.perSec+' '+v;
-    if(S.cores) html += '<span class="sep">|</span>'+L.coreMult+' ×'+coreMult().toFixed(2);
+    /* 毎秒 12 in Japanese, Chinese and Korean; 12 per sec elsewhere */
+    let html = langDef().rateFirst ? L.perSec+' '+v : v+' '+L.perSec;
+    if(S.cores) html += '<span class="sep">|</span>'+L.coreMult+' ×'+fmtMult();
     if(b > 1){
       const ms = boost.until - Date.now();
       html += '<span class="sep">|</span><span class="boost">'+L.resonance+' ×'+b+' '+
@@ -2505,7 +3645,7 @@
     const gain = coresOnReset();
     const set = (id,v) => { const el = $(id); if(el) el.textContent = v; };
     set('st-cores', S.cores);
-    set('st-mult', '×'+coreMult().toFixed(2));
+    set('st-mult', '×'+fmtMult());
     set('st-gain', gain);
     set('st-total', fmt(S.total));
     set('st-grand', fmt(S.grand));
@@ -2541,39 +3681,45 @@
     requestAnimationFrame(frame);
   }
 
-  /* The language of the device. Inside the iOS app the app hands it over
-     (window.CC_DEVICE_LANG) — that is the language iOS chose for this app,
-     including the per-app setting under Settings › Crystal Cavern ›
-     Language. In a browser it is the browser's first language. */
+  /* The language comes from the device and nowhere else; the game has no
+     language switch of its own.
+
+     In the iOS app, the app hands over the language iOS picked for it
+     (window.CC_DEVICE_LANG). iOS makes that choice from the person's own
+     list of preferred languages, including Settings › Crystal Cavern ›
+     Language, so a French iPhone gets French and a Taiwanese iPhone gets
+     Traditional Chinese.
+     In a browser, the browser's list of languages is walked in order and
+     the first one this game has is used.
+     A language the game does not have falls back to English. */
+  function tagToLang(tag){
+    const t = String(tag || '').toLowerCase().replace('_', '-');
+    if(!t) return null;
+    if(t.startsWith('zh')){
+      return /hant|-tw|-hk|-mo/.test(t) ? 'zht' : 'zh';
+    }
+    const base = t.split('-')[0];
+    const alias = {'in':'id', 'nb':null};
+    const b = (base in alias) ? alias[base] : base;
+    return (b && T[b] && b !== 'zht') ? b : null;
+  }
   function deviceLang(){
-    let nav = '';
-    try{ nav = window.CC_DEVICE_LANG || ''; }catch(e){}
-    if(!nav) nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    const low = String(nav).toLowerCase();
-    if(low.startsWith('ja')) return 'ja';
-    if(low.startsWith('zh')) return 'zh';
-    if(low.startsWith('ko')) return 'ko';
-    if(low.startsWith('es')) return 'es';
+    const tags = [];
+    try{ if(window.CC_DEVICE_LANG) tags.push(window.CC_DEVICE_LANG); }catch(e){}
+    try{ (navigator.languages || []).forEach(t => tags.push(t)); }catch(e){}
+    try{ if(navigator.language) tags.push(navigator.language); }catch(e){}
+    for(const t of tags){
+      const id = tagToLang(t);
+      if(id) return id;
+    }
     return 'en';
   }
-
-  /* A language chosen by hand is kept; otherwise the game follows the
-     device. Before automatic mode existed, any tap on a language was
-     remembered for good, so a device set to English could stay in
-     Japanese forever after one look. That old choice is let go once. */
   function detectLang(){
-    try{
-      if(localStorage.getItem('cc-lang-v') !== '2'){
-        localStorage.removeItem('cc-lang');
-        localStorage.setItem('cc-lang-v', '2');
-      }
-      const stored = localStorage.getItem('cc-lang');
-      if(stored && T[stored]) return stored;
-    }catch(e){}
+    /* 1.0 remembered a hand-picked language here. There is no picker any
+       more, so the old choice is cleared rather than left to override
+       the device for good. */
+    try{ localStorage.removeItem('cc-lang'); localStorage.removeItem('cc-lang-v'); }catch(e){}
     return deviceLang();
-  }
-  function langIsAuto(){
-    try{ return !localStorage.getItem('cc-lang'); }catch(e){ return true; }
   }
 
   function start(hot){

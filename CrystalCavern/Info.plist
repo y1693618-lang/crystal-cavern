@@ -34,7 +34,9 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
 
-    <!-- 対応している言語。CrystalCavern/*.lproj と対になっています。 -->
+    <!-- 対応している言語（17）。CrystalCavern/*.lproj と対になっています。
+         ゲームの文章（www/game.html の T）も同じ17言語です。
+         この一覧にない言語の人には英語が出ます。 -->
     <key>CFBundleLocalizations</key>
     <array>
         <string>en</string>
@@ -42,6 +44,18 @@
         <string>zh-Hans</string>
         <string>ko</string>
         <string>es</string>
+        <string>zh-Hant</string>
+        <string>fr</string>
+        <string>de</string>
+        <string>it</string>
+        <string>pt</string>
+        <string>nl</string>
+        <string>pl</string>
+        <string>ru</string>
+        <string>tr</string>
+        <string>vi</string>
+        <string>th</string>
+        <string>id</string>
     </array>
 
     <!-- 暗号化の申告。false にしておくと、アップロードのたびに

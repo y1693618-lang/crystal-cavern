@@ -1,0 +1,3 @@
+/* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
+"notify.title" = "Jaskinia jest pełna";
+"notify.body" = "To, co zebrało się pod twoją nieobecność, osiągnęło limit. Wróć, aby to odebrać.";

@@ -1,0 +1,6 @@
+/* ホーム画面のアイコンの下に出る名前 */
+"CFBundleDisplayName" = "Crystal Cavern";
+"CFBundleName" = "Crystal Cavern";
+
+/* 「トラッキングを許可しますか」の画面に出る説明文 */
+"NSUserTrackingUsageDescription" = "Służy do lepszego dopasowania wyświetlanych reklam. Jeśli odmówisz, w grze nic się nie zmieni.";

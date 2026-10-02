@@ -68,13 +68,11 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     private func add(seconds: Int) {
-        let ja = Locale.preferredLanguages.first?.hasPrefix("ja") ?? false
-
+        // 文面は各言語の Localizable.strings にあります（17言語）。
+        // iOS がゲームと同じ言語を選ぶので、通知とゲームの言語がそろいます。
         let content = UNMutableNotificationContent()
-        content.title = ja ? "洞窟がいっぱいです" : "The cave is full"
-        content.body = ja
-            ? "留守のあいだに貯まる分が上限に達しました。受け取りに来てください。"
-            : "What accumulates while you are away has reached its limit. Come and collect it."
+        content.title = NSLocalizedString("notify.title", comment: "通知の見出し")
+        content.body = NSLocalizedString("notify.body", comment: "通知の本文")
         // 音は鳴らしません。このゲームは最初から音を使わない作りです。
         content.sound = nil
 

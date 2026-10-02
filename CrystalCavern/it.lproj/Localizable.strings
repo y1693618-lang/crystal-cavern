@@ -1,0 +1,3 @@
+/* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
+"notify.title" = "La grotta è piena";
+"notify.body" = "Ciò che si è accumulato in tua assenza ha raggiunto il limite. Vieni a raccoglierlo.";
