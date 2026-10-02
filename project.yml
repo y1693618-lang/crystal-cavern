@@ -24,6 +24,15 @@ packages:
     url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
     exactVersion: 13.10.0
 
+  # 同意画面（EU・イギリス・スイス向け）を出す部品。
+  # AdMob の部品にくっついて入ってくることもありますが、それに頼ると
+  # 入っていないときに誰も気づけません。名前を書いて入れておけば、
+  # 万一入らなかったときはビルドが失敗するので、すぐに分かります。
+  # 3.x の中でだけ上がるようにしてあります（4 になると名前が変わり得るため）。
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+    majorVersion: 3.1.0
+
 targets:
   CrystalCavern:
     type: application
@@ -46,6 +55,8 @@ targets:
     dependencies:
       - package: GoogleMobileAds
         product: GoogleMobileAds
+      - package: GoogleUserMessagingPlatform
+        product: GoogleUserMessagingPlatform
 
     settings:
       base:
@@ -54,7 +65,7 @@ targets:
         # ▲▲▲ codemagic.yaml の bundle_identifier も同じ値に ▲▲▲
 
         PRODUCT_NAME: CrystalCavern
-        MARKETING_VERSION: "1.0"
+        MARKETING_VERSION: "1.1"
         CURRENT_PROJECT_VERSION: "1"      # Codemagic が毎回書き換えます
         VERSIONING_SYSTEM: apple-generic
 

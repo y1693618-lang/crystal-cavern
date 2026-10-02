@@ -21,6 +21,19 @@ struct GameScreen: UIViewRepresentable {
         content.add(context.coordinator, name: "ccAds")     // リワード広告
         content.add(context.coordinator, name: "ccIdle")    // 通知の予約
         content.add(context.coordinator, name: "ccNotify")  // 通知の許可（メニューから）
+        content.add(context.coordinator, name: "ccPrivacy") // 広告の同意を変える（EU など）
+
+        // ゲームに「この端末の言語」を渡す。iOS がこのアプリ用に選んだ言語で、
+        // 設定 → 結晶洞窟 → 言語 でアプリだけ別の言語にしている場合もそれに従う。
+        // ページが読み込まれる前に置いておくので、最初の表示から正しい言語で出る。
+        let lang = Bundle.main.preferredLocalizations.first
+            ?? Locale.preferredLanguages.first ?? "en"
+        let safeLang = String(lang.filter { $0.isLetter || $0 == "-" || $0 == "_" }.prefix(20))
+        content.addUserScript(WKUserScript(
+            source: "window.CC_DEVICE_LANG = '\(safeLang)';",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true))
+
         config.userContentController = content
 
         // 動画広告を全画面で出すので、勝手に再生されないようにはしない

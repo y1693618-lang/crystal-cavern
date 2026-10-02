@@ -85,6 +85,12 @@ final class AdsManager: NSObject {
         //   「拒否」扱いなので、ここは素通りして広告の開始へ進みます）
         guard ATTrackingManager.trackingAuthorizationStatus != .notDetermined else { return }
 
+        // 同意の確認がまだ済んでいない（通信できなかった、EU の人が画面を
+        // 閉じられなかった など）ときは、広告を始めずに次の機会を待ちます。
+        // Google は、この状態で広告を読み込まないよう求めています。
+        // 日本の人は、Google から返事が来た時点でここを通れます。
+        guard ConsentManager.shared.canRequestAds else { return }
+
         prepared = true
         start()
     }
@@ -100,7 +106,8 @@ final class AdsManager: NSObject {
     // MARK: - 読み込み
 
     func preload() {
-        guard started, rewarded == nil, !isLoading else { return }
+        guard started, ConsentManager.shared.canRequestAds,
+              rewarded == nil, !isLoading else { return }
         isLoading = true
 
         Task {

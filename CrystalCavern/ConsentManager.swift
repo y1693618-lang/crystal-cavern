@@ -1,31 +1,23 @@
 //
 //  ConsentManager.swift
 //
-//  EU・イギリスの人に広告を出すとき、Google の規約では「同意の確認画面」を
-//  出すことが必須です。その画面は AdMob の管理画面で作り、ここから呼び出します。
+//  EU・イギリス・スイスの人に広告を出すとき、Google の規約では「同意の確認画面」を
+//  出すことが必須です。その画面は AdMob の管理画面（プライバシーとメッセージ →
+//  欧州の規制）で作ってあり、ここから呼び出します。
 //
-//  ──────────────────────────────────────────────────────────────
-//  ⚠ このファイルだけは、ビルドが通らない可能性が少し高めです。
+//  日本など対象外の地域の人には、何も表示されません。
 //
-//    UserMessagingPlatform は、バージョン3で Swift 側の名前が変わりました。
-//    手元で試せないので、新しいほうの名前で書いてあります。
-//
-//    もしエラーが出たら、次のどちらかをしてください。
-//
-//    (A) README の「名前の対応表」を見て、古い名前に直す
-//    (B) このファイルを消して、CrystalCavernApp.swift の
-//        「await ConsentManager.shared.gather()」の1行も消す
-//
-//    (B) でもアプリは動きます。ただし EU 向けに配信するまでに
-//    戻す必要があります。まず1回ビルドを通したいときは (B) が早いです。
-//  ──────────────────────────────────────────────────────────────
+//  1.1 で変えたこと
+//  ・部品（UserMessagingPlatform）を project.yml で名前を書いて入れるようにし、
+//    「見つかったときだけ動く」という書き方をやめました。
+//    見つからなければ黙って飛ばす作りだったので、本当に入っているかを
+//    誰も確かめられなかったためです。いまは入っていなければビルドが止まります。
+//  ・同意をあとから変えるための入口（プライバシー設定）を足しました。
+//    必要な地域の人にだけ、ゲームのメニューにボタンが出ます。
 //
 
 import UIKit
-
-#if canImport(UserMessagingPlatform)
 import UserMessagingPlatform
-#endif
 
 /// 状態をふたつ覚えておくだけの入れ物です。
 /// ・resumed … 待っている処理を再開したか（二度目を防ぐ。二度 resume すると落ちます）
@@ -44,7 +36,6 @@ final class ConsentManager {
     /// 同意が必要な地域の人にだけ、確認画面を出します。
     /// 日本から遊んでいる人には何も起きません。
     func gather() async {
-        #if canImport(UserMessagingPlatform)
         await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
 
             let gate = ConsentGate()
@@ -70,17 +61,41 @@ final class ConsentManager {
                 Task { @MainActor in
                     gate.replied = true
                     // 取得に失敗しても、そこで止めません。
-                    // 同意が要らない地域と同じ扱いにして先へ進みます。
+                    // 前回までに分かっている状態のまま先へ進みます。
                     guard error == nil,
                           let root = AdsManager.topViewController() else {
                         resumeOnce(); return
                     }
                     ConsentForm.loadAndPresentIfRequired(from: root) { _ in
-                        resumeOnce()
+                        Task { @MainActor in
+                            GameBridge.current?.sendPrivacyStatus()
+                            resumeOnce()
+                        }
                     }
                 }
             }
         }
-        #endif
+    }
+
+    /// 広告を読み込んでよい状態か。
+    /// 日本など対象外の地域では、返事が来ていれば true です。
+    /// EU などで、まだ同意画面に答えていない間は false になります。
+    var canRequestAds: Bool {
+        ConsentInformation.shared.canRequestAds
+    }
+
+    /// 同意をあとから変える入口を見せる必要がある人か。
+    /// EU・イギリス・スイスの人で true になります。日本の人は false です。
+    var privacyOptionsRequired: Bool {
+        ConsentInformation.shared.privacyOptionsRequirementStatus == .required
+    }
+
+    /// 同意の内容を変える画面を出します（ゲームのメニューから呼ばれます）。
+    func presentPrivacyOptions() {
+        guard let root = AdsManager.topViewController() else { return }
+        ConsentForm.presentPrivacyOptionsForm(from: root) { _ in
+            // 変えた結果、広告を読み込めるようになった場合に備える
+            Task { @MainActor in AdsManager.shared.preload() }
+        }
     }
 }

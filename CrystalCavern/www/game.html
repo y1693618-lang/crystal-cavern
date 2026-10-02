@@ -1,8 +1,26 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#0B0C0F}img{max-width:100%}[hidden]{display:none!important}</style><meta charset="utf-8">
 <title>結晶洞窟</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chivo+Mono:wght@400;600&display=swap">
+<script>
+/* Web fonts — on the website only.
+   Inside the iOS app this page is read from the app itself and must not
+   reach out to anyone on launch, so the fonts are simply not asked for;
+   the system fonts named after them in --font-* take their place.
+   The app is recognised by the message handlers it installs before the
+   page loads. */
+(function(){
+  try{ if(window.webkit && window.webkit.messageHandlers) return; }catch(e){}
+  var h = document.head;
+  function add(rel, href, cors){
+    var l = document.createElement('link');
+    l.rel = rel; l.href = href;
+    if(cors) l.crossOrigin = '';
+    h.appendChild(l);
+  }
+  add('preconnect', 'https://fonts.googleapis.com');
+  add('preconnect', 'https://fonts.gstatic.com', true);
+  add('stylesheet', 'https://fonts.googleapis.com/css2?family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Chivo+Mono:wght@400;600&display=swap');
+})();
+</script>
 <style>
   :root{
     /* palette — replaced at runtime by the chosen skin */
@@ -131,6 +149,7 @@
   .langpop button:focus-visible{outline:3px solid var(--cyan);outline-offset:-2px}
   .langpop .lc{font-family:var(--font-num);font-size:var(--t-11);color:var(--ink-faint);width:26px;flex:0 0 auto;font-weight:600}
   .langpop button[aria-pressed="true"] .lc{color:var(--cyan)}
+  .langpop button.auto{border-bottom:1px solid var(--line-soft);margin-bottom:4px}
 
   .paused-veil{
     position:absolute;inset:0;z-index:2;display:grid;place-content:center;gap:12px;justify-items:center;
@@ -234,7 +253,11 @@
     font-family:var(--font-num);font-size:var(--t-13);font-weight:600;transition:all .15s ease;
   }
   .qty:hover{color:var(--ink-dim)}
-  .qty[aria-pressed="true"]{background:var(--panel-2);border-color:var(--cyan);color:var(--cyan)}
+  /* The chosen amount must read without colour: a doubled frame and the
+     same thick bar along the bottom that marks the open tab. Checked in
+     greyscale, where colour alone left all three looking alike. */
+  .qty[aria-pressed="true"]{background:var(--panel-2);border-color:var(--cyan);color:var(--ink);
+    font-weight:800;box-shadow:inset 0 0 0 1px var(--cyan),inset 0 -4px 0 var(--cyan)}
   .qty:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
 
   /* milestone: every 10 copies doubles a building's output */
@@ -468,7 +491,11 @@
 <script>
 (function(){
   "use strict";
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Follows the system setting live, so turning Reduce Motion on while the
+     game is open takes effect at once rather than on the next launch. */
+  const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reduce = reduceMQ.matches;
+  try{ reduceMQ.addEventListener('change', e => { reduce = e.matches; }); }catch(e){}
   const $ = id => document.getElementById(id);
 
   /* placeholder until the real inbox is decided — example.com is reserved
@@ -598,6 +625,10 @@
        sheet on top of the ad. A permission is asked for when the player
        reaches for it, or not at all. */
     notify(){ this.post('ccNotify', {}); },
+    /* Ad consent for players in the EEA, the UK and Switzerland. The app
+       says whether this player needs a way back to their choice; only then
+       does the button appear. {open:true} shows Google's form again. */
+    privacy(open){ this.post('ccPrivacy', open ? {open:true} : {}); },
     /* Hand the app enough to schedule "the cave is full" for later. */
     idle(){
       this.post('ccIdle', {
@@ -605,6 +636,18 @@
         paused: !!S.paused,
         fullAfterSeconds: 8*3600
       });
+    }
+  };
+
+  /* Whether this player should see "Privacy settings" in the menu.
+     The app answers once the page has loaded, and again after Google's
+     consent check has run, which can finish a moment later. */
+  let privacyNeeded = false;
+  window.CCPrivacy = {
+    set(v){
+      privacyNeeded = !!v;
+      const b = document.getElementById('btnPrivacy');
+      if(b) b.hidden = !privacyNeeded;
     }
   };
 
@@ -670,7 +713,7 @@
     pauseSecTitle:'採掘を止める',
     pauseSecBody:'画面右上の「一時停止」を押すと、自動収入もタップも完全に止まります。もう一度押せば再開します。止めている間の時間は加算されません。',
     pauseSecBtn:'一時停止する', pauseSecBtnOn:'再開する',
-    langTitle:'言語', langBody:'表示する言語を選んでください。この端末に記憶されます。',
+    langAuto:'自動（端末の言語）', langTitle:'言語', langBody:'表示する言語を選んでください。この端末に記憶されます。',
     sizeTitle:'文字の大きさ', sizeBody:'画面全体の文字が大きくなります。',
     sizes:['小','標準','大','特大'],
     skinTitle:'背景と配色', skinBody:'読みやすい配色を選んでください。下の2つはコントラストを最大にしたユニバーサル配色です。',
@@ -685,7 +728,7 @@
     wipeDone:'最初からになりました',
     shareTitle:'成果を共有する', shareBody:'いまの記録を文章にします。ボタンを押すと投稿画面が開きます。',
     copyText:'文章をコピー', shareX:'Xで投稿', shareBsky:'Blueskyで投稿', shareLine:'LINEで送る',
-    sharePrivacy:'このゲームのページは非公開です。リンクは文章に含めていません。他の人にも開いてほしいときは、画面右上の共有メニューから公開設定を変えてください。',
+    sharePrivacy:'文章の最後に、このゲームのサイトへのリンクが入ります。名前や端末の情報は入りません。',
     shareLines:(d,s,g,c,m)=>['放置ゲーム「結晶洞窟」','深度 '+d+'m・'+s+'の鉱脈','累計 '+g+' 結晶を掘りました']
       .concat(c>0?['核 '+c+' 個（収入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
     newVeinKicker:'新しい鉱脈', newVeinSub:d=>'新しい鉱脈に到達しました<br>深度 '+d+'m',
@@ -732,6 +775,7 @@
     notifyBody:'留守のあいだに貯まる分は8時間で上限に達します。そのときに一度だけお知らせします。'
       +'音は鳴りません。送るのはこれ1種類だけで、ほかに何かを送ることはありません。',
     notifyBtn:'お知らせの設定',
+    privacyBtn:'プライバシー設定',
     legalTitle:'規約とプライバシー',
     legalBody:'このアプリの利用規約は、Apple の標準の使用許諾契約です。'
       +'個人情報の扱いはプライバシーポリシーに書いてあります。',
@@ -780,7 +824,7 @@
     pauseSecTitle:'Stopping the mine',
     pauseSecBody:'Press Pause at the top right and both income and tapping stop completely. Press it again to resume. Time spent paused is never counted.',
     pauseSecBtn:'Pause', pauseSecBtnOn:'Resume',
-    langTitle:'Language', langBody:'Choose the language you want. It is remembered on this device.',
+    langAuto:'Automatic (device language)', langTitle:'Language', langBody:'Choose the language you want. It is remembered on this device.',
     sizeTitle:'Text size', sizeBody:'Scales every piece of text on the page.',
     sizes:['Small','Normal','Large','Largest'],
     skinTitle:'Background and colours', skinBody:'Pick whichever is easiest to read. The last two are maximum-contrast schemes.',
@@ -795,7 +839,7 @@
     wipeDone:'Reset to the beginning',
     shareTitle:'Share your progress', shareBody:'Turns your current record into text. The buttons open a post window.',
     copyText:'Copy the text', shareX:'Post on X', shareBsky:'Post on Bluesky', shareLine:'Send on LINE',
-    sharePrivacy:'This game page is private, so no link is included in the text. To let other people open it, change the sharing setting from the share menu at the top right.',
+    sharePrivacy:'The text ends with a link to the game\u2019s website. It contains no name and nothing about your device.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, an idle game','Depth '+d+'m, the '+s+' seam',g+' crystals mined all time']
       .concat(c>0?[c+' cores (income ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NEW SEAM', newVeinSub:d=>'You reached a new seam<br>Depth '+d+'m',
@@ -842,6 +886,7 @@
     notifyBody:'What builds up while you are away reaches its limit after eight hours. '
       +'A single silent reminder is sent at that moment, and nothing else is ever sent.',
     notifyBtn:'Reminder settings',
+    privacyBtn:'Privacy settings',
     legalTitle:'Terms and privacy',
     legalBody:'This app is covered by Apple\u2019s standard licence agreement. '
       +'How your information is handled is set out in the privacy policy.',
@@ -889,7 +934,7 @@
     pauseSecTitle:'停止挖掘',
     pauseSecBody:'按下画面右上角的「暂停」，自动收入与点击都会完全停止。再按一次即可继续。暂停期间的时间不会被计入。',
     pauseSecBtn:'暂停', pauseSecBtnOn:'继续',
-    langTitle:'语言', langBody:'请选择显示语言。选择会记忆在这台设备上。',
+    langAuto:'自动（设备语言）', langTitle:'语言', langBody:'请选择显示语言。选择会记忆在这台设备上。',
     sizeTitle:'文字大小', sizeBody:'整个画面的文字都会放大。',
     sizes:['小','标准','大','特大'],
     skinTitle:'背景与配色', skinBody:'请选择看得最清楚的配色。最后两种是对比度最高的无障碍配色。',
@@ -904,7 +949,7 @@
     wipeDone:'已回到最初',
     shareTitle:'分享成果', shareBody:'把现在的记录变成一段文字。按下按钮会打开发布画面。',
     copyText:'复制文字', shareX:'发到 X', shareBsky:'发到 Bluesky', shareLine:'用 LINE 发送',
-    sharePrivacy:'这个游戏页面尚未公开，因此文字中没有包含链接。想让别人也能打开时，请从画面右上角的分享菜单更改公开设置。',
+    sharePrivacy:'文字末尾附有本游戏网站的链接。不包含姓名或设备信息。',
     shareLines:(d,s,g,c,m)=>['放置游戏《结晶洞窟》','深度 '+d+'m・'+s+'矿脉','累计挖掘了 '+g+' 结晶']
       .concat(c>0?['核 '+c+' 个（收入 ×'+m+'）']:[]).concat(['#结晶洞窟']).join('\n'),
     newVeinKicker:'新矿脉', newVeinSub:d=>'到达了新的矿脉<br>深度 '+d+'m',
@@ -951,6 +996,7 @@
     notifyBody:'离开期间累积的部分会在8小时后达到上限，届时只提醒一次。'
       +'不会发出声音，也不会发送其他任何通知。',
     notifyBtn:'提醒设置',
+    privacyBtn:'隐私设置',
     legalTitle:'条款与隐私',
     legalBody:'本应用适用 Apple 的标准使用许可协议。'
       +'个人信息的处理方式请见隐私政策。',
@@ -999,7 +1045,7 @@
     pauseSecTitle:'채굴 멈추기',
     pauseSecBody:'화면 오른쪽 위의 「일시정지」를 누르면 자동 수입과 터치가 완전히 멈춥니다. 한 번 더 누르면 재개됩니다. 멈춘 동안의 시간은 더해지지 않습니다.',
     pauseSecBtn:'일시정지', pauseSecBtnOn:'재개하기',
-    langTitle:'언어', langBody:'표시할 언어를 선택하세요. 이 기기에 기억됩니다.',
+    langAuto:'자동 (기기 언어)', langTitle:'언어', langBody:'표시할 언어를 선택하세요. 이 기기에 기억됩니다.',
     sizeTitle:'글자 크기', sizeBody:'화면 전체의 글자가 커집니다.',
     sizes:['작게','기본','크게','아주 크게'],
     skinTitle:'배경과 배색', skinBody:'읽기 쉬운 배색을 선택하세요. 아래 두 가지는 명암비를 최대로 한 배색입니다.',
@@ -1014,7 +1060,7 @@
     wipeDone:'처음으로 돌아갔습니다',
     shareTitle:'성과 공유하기', shareBody:'지금의 기록을 문장으로 만듭니다. 버튼을 누르면 게시 화면이 열립니다.',
     copyText:'문장 복사', shareX:'X에 올리기', shareBsky:'Bluesky에 올리기', shareLine:'LINE으로 보내기',
-    sharePrivacy:'이 게임 페이지는 비공개이므로 문장에 링크를 넣지 않았습니다. 다른 사람도 열 수 있게 하려면 화면 오른쪽 위 공유 메뉴에서 공개 설정을 바꿔 주세요.',
+    sharePrivacy:'문장 끝에 이 게임 사이트 링크가 들어갑니다. 이름이나 기기 정보는 들어가지 않습니다.',
     shareLines:(d,s,g,c,m)=>['방치형 게임 「결정 동굴」','깊이 '+d+'m・'+s+' 광맥','누적 '+g+' 결정을 캤습니다']
       .concat(c>0?['핵 '+c+'개(수입 ×'+m+')']:[]).concat(['#결정동굴']).join('\n'),
     newVeinKicker:'새 광맥', newVeinSub:d=>'새로운 광맥에 도달했습니다<br>깊이 '+d+'m',
@@ -1061,6 +1107,7 @@
     notifyBody:'자리를 비운 동안 쌓이는 양은 8시간이면 상한에 이릅니다. 그때 한 번만 알립니다. '
       +'소리는 나지 않으며, 이 밖의 알림은 보내지 않습니다.',
     notifyBtn:'알림 설정',
+    privacyBtn:'개인정보 설정',
     legalTitle:'약관과 개인정보',
     legalBody:'이 앱에는 Apple의 표준 사용권 계약이 적용됩니다. '
       +'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.',
@@ -1109,7 +1156,7 @@
     pauseSecTitle:'Detener la mina',
     pauseSecBody:'Pulsa Pausa arriba a la derecha y se detienen por completo los ingresos y los toques. Púlsalo otra vez para continuar. El tiempo en pausa nunca se cuenta.',
     pauseSecBtn:'Pausar', pauseSecBtnOn:'Continuar',
-    langTitle:'Idioma', langBody:'Elige el idioma que prefieras. Se recuerda en este dispositivo.',
+    langAuto:'Automático (idioma del dispositivo)', langTitle:'Idioma', langBody:'Elige el idioma que prefieras. Se recuerda en este dispositivo.',
     sizeTitle:'Tamaño del texto', sizeBody:'Amplía todo el texto de la página.',
     sizes:['Pequeño','Normal','Grande','Muy grande'],
     skinTitle:'Fondo y colores', skinBody:'Elige la combinación que te resulte más legible. Las dos últimas tienen el contraste máximo.',
@@ -1124,7 +1171,7 @@
     wipeDone:'Vuelta al principio',
     shareTitle:'Comparte tu avance', shareBody:'Convierte tu registro actual en un texto. Los botones abren la ventana de publicación.',
     copyText:'Copiar el texto', shareX:'Publicar en X', shareBsky:'Publicar en Bluesky', shareLine:'Enviar por LINE',
-    sharePrivacy:'Esta página es privada, así que el texto no incluye ningún enlace. Para que otras personas puedan abrirla, cambia la configuración en el menú de compartir de arriba a la derecha.',
+    sharePrivacy:'El texto termina con un enlace al sitio del juego. No incluye tu nombre ni datos de tu dispositivo.',
     shareLines:(d,s,g,c,m)=>['«Caverna de Cristal», un juego idle','Profundidad '+d+' m, veta de '+s,g+' cristales excavados en total']
       .concat(c>0?[c+' núcleos (ingresos ×'+m+')']:[]).concat(['#CavernaDeCristal']).join('\n'),
     newVeinKicker:'NUEVA VETA', newVeinSub:d=>'Has llegado a una veta nueva<br>Profundidad '+d+' m',
@@ -1171,6 +1218,7 @@
     notifyBody:'Lo que se acumula mientras no est\u00e1s llega a su l\u00edmite a las ocho horas. '
       +'En ese momento se env\u00eda un \u00fanico aviso, sin sonido, y nunca se env\u00eda nada m\u00e1s.',
     notifyBtn:'Ajustes de avisos',
+    privacyBtn:'Ajustes de privacidad',
     legalTitle:'Condiciones y privacidad',
     legalBody:'Esta aplicaci\u00f3n se rige por el contrato de licencia est\u00e1ndar de Apple. '
       +'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
@@ -1474,7 +1522,7 @@
 
     const frozen = S.paused;
     const breathe = (reduce||frozen)?0:Math.sin(tick*1.4)*0.012;
-    const pop = frozen ? 0 : pulse*(reduce ? 0.10 : 0.18);
+    const pop = frozen ? 0 : pulse*(reduce ? 0.05 : 0.18);
     const scale = 1+breathe+pop;
 
     ctx.globalAlpha = frozen ? 0.4 : 1;
@@ -1553,7 +1601,10 @@
     o.life -= dt;
     if(o.life <= 0){ orb = null; orbTimer = nextOrbGap(); return; }
     o.x += o.vx*dt;
-    o.y = o.baseY + Math.sin(tick*1.6+o.phase)*18;
+    /* With reduced motion the orb crosses in a straight line. Bobbing on top
+       of the sideways drift is motion on two axes at once — the kind the
+       setting exists to spare people. */
+    o.y = reduce ? o.baseY : o.baseY + Math.sin(tick*1.6+o.phase)*18;
     if(o.x < -60 || o.x > W+60){ orb = null; orbTimer = nextOrbGap(); return; }
     const fade = Math.min(1,o.life/1.2);
     const r = o.r*(reduce?1:(1+Math.sin(tick*5)*0.07));
@@ -1859,6 +1910,11 @@
         '<div class="btn-row">'+
           (Native.on ? '<a class="mini" href="'+EULA_URL+'" target="_blank" rel="noopener">'+
             L.legalEula+'</a>' : '')+
+          /* Shown only to players for whom Google asks for a way to revisit
+             their ad consent (the EEA, the UK, Switzerland). Elsewhere it
+             stays hidden, so nobody meets a setting that does nothing. */
+          (Native.on ? '<button class="mini" id="btnPrivacy"'+(privacyNeeded ? '' : ' hidden')+'>'+
+            L.privacyBtn+'</button>' : '')+
           '<a class="mini" href="'+docs('privacy')+'" target="_blank" rel="noopener">'+
             L.legalPrivacy+'</a>'+
         '</div>'+
@@ -1874,6 +1930,8 @@
       b.addEventListener('click', () => setAdMode(b.dataset.ads)));
     const bn = $('btnNotify');
     if(bn) bn.addEventListener('click', () => Native.notify());
+    const bp = $('btnPrivacy');
+    if(bp) bp.addEventListener('click', () => Native.privacy(true));
     wireBugButtons();
     wireSaveButtons();
     wireShareButtons();
@@ -1900,9 +1958,14 @@
   }
 
   function setLang(id){
-    if(!T[id]) return;
+    if(id === 'auto'){
+      try{ localStorage.removeItem('cc-lang'); }catch(e){}
+      id = deviceLang();
+    }else{
+      if(!T[id]) return;
+      try{ localStorage.setItem('cc-lang', id); }catch(e){}
+    }
     langId = id; L = T[id];
-    try{ localStorage.setItem('cc-lang', id); }catch(e){}
     applyStaticText();
     buildAll();
     setPaused(S.paused);
@@ -1955,12 +2018,24 @@
 
   function buildLangPop(){
     langPop.innerHTML = '';
+    const auto = langIsAuto();
+    /* first row: follow the device. Its code shows what that is now. */
+    const a = document.createElement('button');
+    a.type = 'button'; a.className = 'auto';
+    a.setAttribute('role','menuitemradio');
+    a.setAttribute('aria-pressed', String(auto));
+    a.setAttribute('aria-checked', String(auto));
+    const dl = LANGS.find(l => l.id === deviceLang()) || LANGS[1];
+    a.innerHTML = '<span class="lc">'+dl.code+'</span><span>'+L.langAuto+'</span>';
+    a.addEventListener('click', () => { closeLangPop(); setLang('auto'); });
+    langPop.appendChild(a);
     LANGS.forEach(l => {
       const b = document.createElement('button');
+      const on = !auto && l.id === langId;
       b.type = 'button';
       b.setAttribute('role','menuitemradio');
-      b.setAttribute('aria-pressed', String(l.id === langId));
-      b.setAttribute('aria-checked', String(l.id === langId));
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-checked', String(on));
       b.innerHTML = '<span class="lc">'+l.code+'</span><span>'+l.label+'</span>';
       b.addEventListener('click', () => { closeLangPop(); setLang(l.id); });
       langPop.appendChild(b);
@@ -2320,8 +2395,13 @@
   }
 
   /* ---------- share ---------- */
+  /* Every share carries the website, not the App Store: whoever opens it
+     may be on a computer or an Android phone, and the site serves them all
+     — and links on to the App Store for iPhone. */
+  function shareUrl(){ return SITE_ROOT + (langId === 'ja' ? '' : 'en/'); }
   function shareString(){
-    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, coreMult().toFixed(2));
+    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, coreMult().toFixed(2))
+      + '\n' + shareUrl();
   }
   function refreshShare(){
     const ta = $('shareText');
@@ -2461,18 +2541,39 @@
     requestAnimationFrame(frame);
   }
 
-  function detectLang(){
-    try{
-      const stored = localStorage.getItem('cc-lang');
-      if(stored && T[stored]) return stored;
-    }catch(e){}
-    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'ja';
-    const low = nav.toLowerCase();
+  /* The language of the device. Inside the iOS app the app hands it over
+     (window.CC_DEVICE_LANG) — that is the language iOS chose for this app,
+     including the per-app setting under Settings › Crystal Cavern ›
+     Language. In a browser it is the browser's first language. */
+  function deviceLang(){
+    let nav = '';
+    try{ nav = window.CC_DEVICE_LANG || ''; }catch(e){}
+    if(!nav) nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    const low = String(nav).toLowerCase();
     if(low.startsWith('ja')) return 'ja';
     if(low.startsWith('zh')) return 'zh';
     if(low.startsWith('ko')) return 'ko';
     if(low.startsWith('es')) return 'es';
     return 'en';
+  }
+
+  /* A language chosen by hand is kept; otherwise the game follows the
+     device. Before automatic mode existed, any tap on a language was
+     remembered for good, so a device set to English could stay in
+     Japanese forever after one look. That old choice is let go once. */
+  function detectLang(){
+    try{
+      if(localStorage.getItem('cc-lang-v') !== '2'){
+        localStorage.removeItem('cc-lang');
+        localStorage.setItem('cc-lang-v', '2');
+      }
+      const stored = localStorage.getItem('cc-lang');
+      if(stored && T[stored]) return stored;
+    }catch(e){}
+    return deviceLang();
+  }
+  function langIsAuto(){
+    try{ return !localStorage.getItem('cc-lang'); }catch(e){ return true; }
   }
 
   function start(hot){
@@ -2511,6 +2612,7 @@
     let seen = true;
     try{ seen = !!localStorage.getItem('cc-seen'); }catch(e){}
     if(!seen && S.grand === 0) showWelcome();
+    if(Native.on) Native.privacy(false);
     requestAnimationFrame(frame);
     try{ window.claude && window.claude.hot && window.claude.hot.snapshot(() => ({state:S})); }catch(e){}
   }

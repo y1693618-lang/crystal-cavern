@@ -10,8 +10,8 @@ GitHub Pages にそのまま置けるよう、1ファイルで完結させてい
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UPDATED_JA = "2026年9月25日"
-UPDATED_EN = "25 September 2026"
+UPDATED_JA = "2026年10月2日"
+UPDATED_EN = "2 October 2026"
 EMAIL = "r451mjkl@icloud.com"          # ← 本当のアドレスが決まったらここだけ直す
 APP_NAME_JA = "結晶洞窟"
 APP_NAME_EN = "Crystal Cavern"
@@ -145,7 +145,7 @@ PRIVACY_JA = f"""
 <h2>トラッキングの許可について</h2>
 <p>初回の起動から少し経つと、iOS の「トラッキングを許可しますか」という確認が出ます。確認の画面の中に、何のために使うのかの説明が書かれています。</p>
 <p><strong>許可しなくても、ゲームの内容は何ひとつ変わりません。</strong>広告があなたの興味に合わせたものではなくなるだけです。あとから <code>設定 → プライバシーとセキュリティ → トラッキング</code> で変更できます。</p>
-<p>EU・イギリスなど、同意の取得が必要な地域では、広告の同意確認画面が別に表示されます。</p>
+<p>EU・イギリス・スイスでは、広告についての同意を確認する画面が別に表示されます。答えはあとから、ゲームのメニュー（「規約とプライバシー」）にある<strong>「プライバシー設定」</strong>で変えられます。このボタンは、これらの地域の方にだけ表示されます。</p>
 
 <h2>通知について</h2>
 <p>留守のあいだに貯まる分は8時間で上限に達します。そこで一度だけ「洞窟がいっぱいです」とお知らせします。通知は<strong>音を鳴らしません。</strong></p>
@@ -224,7 +224,7 @@ PRIVACY_EN = f"""
 <h2>Tracking permission</h2>
 <p>Shortly after first launch, iOS asks whether you allow tracking. The request itself explains what it is used for.</p>
 <p><strong>Declining changes nothing about the game.</strong> It only makes the adverts less relevant. You can change your mind later under <code>Settings → Privacy &amp; Security → Tracking</code>.</p>
-<p>In the EU, the UK and other regions where consent is required, a separate advertising consent screen is shown.</p>
+<p>In the EEA, the UK and Switzerland, a separate screen asks for your consent to advertising. You can change your answer later with <strong>Privacy settings</strong>, in the “Terms and privacy” card of the game&#39;s Menu. The button appears only for players in those regions.</p>
 
 <h2>Notifications</h2>
 <p>What accumulates while you are away reaches its limit after eight hours. The app tells you once, at that point. The notification is <strong>silent</strong>.</p>

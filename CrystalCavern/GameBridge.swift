@@ -8,8 +8,11 @@
 //    ccAds     { reward: "skip" | "boost" | "orb" | "core" }
 //    ccIdle    { rate: Int, paused: Bool, fullAfterSeconds: Int }
 //    ccNotify  {}   メニューの「お知らせの設定」が押された
+//    ccPrivacy {}             同意を変える入口を見せるべきか教えてほしい
+//    ccPrivacy { open: true } メニューの「プライバシー設定」が押された
 //
-//  返事は window.CCAds.grant(id) / window.CCAds.fail(id) で返します。
+//  広告の返事は window.CCAds.grant(id) / window.CCAds.fail(id) で、
+//  プライバシー設定のボタンを出すかどうかは window.CCPrivacy.set(真偽) で返します。
 //
 
 import UIKit
@@ -18,6 +21,15 @@ import WebKit
 final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
     weak var webView: WKWebView?
+
+    /// いま画面に出ているゲームとの窓口。
+    /// 同意の確認が終わったときに、アプリ側からゲームへ知らせるために使います。
+    static weak var current: GameBridge?
+
+    override init() {
+        super.init()
+        GameBridge.current = self
+    }
 
     /// 広告を出している最中かどうか。
     /// 全画面の広告が出ると WebView は「隠れた」と判断して ccIdle を送ってきますが、
@@ -51,6 +63,13 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         case "ccNotify":
             NotificationManager.shared.promptOrOpenSettings()
 
+        case "ccPrivacy":
+            if body["open"] as? Bool == true {
+                ConsentManager.shared.presentPrivacyOptions()
+            } else {
+                sendPrivacyStatus()
+            }
+
         default:
             break
         }
@@ -77,6 +96,16 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         DispatchQueue.main.async {
             self.webView?.evaluateJavaScript(js, completionHandler: nil)
         }
+    }
+
+    // MARK: - プライバシー設定
+
+    /// メニューに「プライバシー設定」のボタンを出すかどうかをゲームへ伝えます。
+    /// EU・イギリス・スイスの人にだけ出ます。
+    func sendPrivacyStatus() {
+        let on = ConsentManager.shared.privacyOptionsRequired ? "true" : "false"
+        let js = "window.CCPrivacy && window.CCPrivacy.set(\(on));"
+        webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
     // MARK: - 画面遷移の制御
