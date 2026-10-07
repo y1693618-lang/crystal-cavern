@@ -89,7 +89,7 @@
     font-family:var(--font-num);font-weight:600;
     font-size:calc(clamp(25px,6.2vw,40px) * var(--fs));
     line-height:1.08;font-variant-numeric:tabular-nums;
-    overflow-wrap:anywhere;max-width:100%;
+    white-space:nowrap;max-width:100%;
   }
   .count.long{font-size:calc(clamp(19px,4.6vw,30px) * var(--fs))}
   .count.xlong{font-size:calc(clamp(15px,3.6vw,23px) * var(--fs))}
@@ -525,7 +525,7 @@
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
   const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-  const VERSION = '1.1';
+  const VERSION = '1.2';
 
   /* ================================================================
      Rewarded ads — one seam, four back ends
@@ -751,7 +751,7 @@
     copyText:'文章をコピー', shareX:'Xで投稿', shareBsky:'Blueskyで投稿', shareLine:'LINEで送る',
     sharePrivacy:'文章の最後に、このゲームのサイトへのリンクが入ります。名前や端末の情報は入りません。',
     shareLines:(d,s,g,c,m)=>['放置ゲーム「結晶洞窟」','深度 '+d+'m・'+s+'の鉱脈','累計 '+g+' 結晶を掘りました']
-      .concat(c>0?['核 '+c+' 個（収入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
+      .concat(c?['核 '+c+' 個（収入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
     newVeinKicker:'新しい鉱脈', newVeinSub:d=>'新しい鉱脈に到達しました<br>深度 '+d+'m',
     backKicker:'おかえり', backTitle:'おかえり', backSub:(t,v)=>'留守の '+t+' で<br>結晶 +'+v,
     hm:(h,m)=>h>0?h+'時間'+m+'分':m+'分',
@@ -854,7 +854,7 @@
     copyText:'Copy the text', shareX:'Post on X', shareBsky:'Post on Bluesky', shareLine:'Send on LINE',
     sharePrivacy:'The text ends with a link to the game\u2019s website. It contains no name and nothing about your device.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, an idle game','Depth '+d+'m, the '+s+' seam',g+' crystals mined all time']
-      .concat(c>0?[c+' cores (income ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?[c+' cores (income ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NEW SEAM', newVeinSub:d=>'You reached a new seam<br>Depth '+d+'m',
     backKicker:'WELCOME BACK', backTitle:'Welcome back', backSub:(t,v)=>'While you were away for '+t+'<br>+'+v+' crystals',
     hm:(h,m)=>h>0?h+'h '+m+'m':m+' min',
@@ -956,7 +956,7 @@
     copyText:'复制文字', shareX:'发到 X', shareBsky:'发到 Bluesky', shareLine:'用 LINE 发送',
     sharePrivacy:'文字末尾附有本游戏网站的链接。不包含姓名或设备信息。',
     shareLines:(d,s,g,c,m)=>['放置游戏《结晶洞窟》','深度 '+d+'m・'+s+'矿脉','累计挖掘了 '+g+' 结晶']
-      .concat(c>0?['核 '+c+' 个（收入 ×'+m+'）']:[]).concat(['#结晶洞窟']).join('\n'),
+      .concat(c?['核 '+c+' 个（收入 ×'+m+'）']:[]).concat(['#结晶洞窟']).join('\n'),
     newVeinKicker:'新矿脉', newVeinSub:d=>'到达了新的矿脉<br>深度 '+d+'m',
     backKicker:'欢迎回来', backTitle:'欢迎回来', backSub:(t,v)=>'离开的 '+t+'里<br>结晶 +'+v,
     hm:(h,m)=>h>0?h+'小时'+m+'分':m+'分',
@@ -1059,7 +1059,7 @@
     copyText:'문장 복사', shareX:'X에 올리기', shareBsky:'Bluesky에 올리기', shareLine:'LINE으로 보내기',
     sharePrivacy:'문장 끝에 이 게임 사이트 링크가 들어갑니다. 이름이나 기기 정보는 들어가지 않습니다.',
     shareLines:(d,s,g,c,m)=>['방치형 게임 「결정 동굴」','깊이 '+d+'m・'+s+' 광맥','누적 '+g+' 결정을 캤습니다']
-      .concat(c>0?['핵 '+c+'개(수입 ×'+m+')']:[]).concat(['#결정동굴']).join('\n'),
+      .concat(c?['핵 '+c+'개(수입 ×'+m+')']:[]).concat(['#결정동굴']).join('\n'),
     newVeinKicker:'새 광맥', newVeinSub:d=>'새로운 광맥에 도달했습니다<br>깊이 '+d+'m',
     backKicker:'환영합니다', backTitle:'다시 오셨네요', backSub:(t,v)=>'자리를 비운 '+t+' 동안<br>결정 +'+v,
     hm:(h,m)=>h>0?h+'시간 '+m+'분':m+'분',
@@ -1162,7 +1162,7 @@
     copyText:'Copiar el texto', shareX:'Publicar en X', shareBsky:'Publicar en Bluesky', shareLine:'Enviar por LINE',
     sharePrivacy:'El texto termina con un enlace al sitio del juego. No incluye tu nombre ni datos de tu dispositivo.',
     shareLines:(d,s,g,c,m)=>['«Caverna de Cristal», un juego idle','Profundidad '+d+' m, veta de '+s,g+' cristales excavados en total']
-      .concat(c>0?[c+' núcleos (ingresos ×'+m+')']:[]).concat(['#CavernaDeCristal']).join('\n'),
+      .concat(c?[c+' núcleos (ingresos ×'+m+')']:[]).concat(['#CavernaDeCristal']).join('\n'),
     newVeinKicker:'NUEVA VETA', newVeinSub:d=>'Has llegado a una veta nueva<br>Profundidad '+d+' m',
     backKicker:'BIENVENIDO', backTitle:'Bienvenido de vuelta', backSub:(t,v)=>'Mientras estabas fuera '+t+'<br>+'+v+' cristales',
     hm:(h,m)=>h>0?h+' h '+m+' min':m+' min',
@@ -1264,7 +1264,7 @@
     copyText:'複製文字', shareX:'發到 X', shareBsky:'發到 Bluesky', shareLine:'用 LINE 傳送',
     sharePrivacy:'文字最後附有本遊戲網站的連結。不包含姓名或裝置資訊。',
     shareLines:(d,s,g,c,m)=>['放置遊戲《結晶洞窟》','深度 '+d+'m，'+s+'礦脈','累計挖掘了 '+g+' 個結晶']
-      .concat(c>0?['核 '+c+' 個（收入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
+      .concat(c?['核 '+c+' 個（收入 ×'+m+'）']:[]).concat(['#結晶洞窟']).join('\n'),
     newVeinKicker:'新礦脈', newVeinSub:d=>'到達了新的礦脈<br>深度 '+d+'m',
     backKicker:'歡迎回來', backTitle:'歡迎回來', backSub:(t,v)=>'離開的 '+t+'裡<br>結晶 +'+v,
     hm:(h,m)=>h>0?h+'小時'+m+'分鐘':m+'分鐘',
@@ -1366,7 +1366,7 @@
     copyText:'Copier le texte', shareX:'Publier sur X', shareBsky:'Publier sur Bluesky', shareLine:'Envoyer sur LINE',
     sharePrivacy:'Le texte se termine par un lien vers le site du jeu. Il ne contient ni nom ni information sur votre appareil.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, un jeu idle','Profondeur '+d+'\u00a0m, filon '+s,'Cristaux extraits au total\u00a0: '+g]
-      .concat(c>0?['Noyaux\u00a0: '+c+' (revenus ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Noyaux\u00a0: '+c+' (revenus ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NOUVEAU FILON', newVeinSub:d=>'Vous avez atteint un nouveau filon<br>Profondeur '+d+'\u00a0m',
     backKicker:'BON RETOUR', backTitle:'Bon retour', backSub:(t,v)=>'Pendant votre absence ('+t+')<br>Cristaux\u00a0: +'+v,
     hm:(h,m)=>h>0?h+'\u00a0h\u00a0'+m+'\u00a0min':m+'\u00a0min',
@@ -1468,7 +1468,7 @@
     copyText:'Text kopieren', shareX:'Auf X posten', shareBsky:'Auf Bluesky posten', shareLine:'Per LINE senden',
     sharePrivacy:'Der Text endet mit einem Link zur Website des Spiels. Er enthält keinen Namen und nichts über dein Gerät.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, ein Idle-Spiel','Tiefe '+d+'\u00a0m, Ader '+s,'Kristalle insgesamt abgebaut: '+g]
-      .concat(c>0?['Kerne: '+c+' (Einnahmen ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Kerne: '+c+' (Einnahmen ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NEUE ADER', newVeinSub:d=>'Du hast eine neue Ader erreicht<br>Tiefe '+d+'\u00a0m',
     backKicker:'WILLKOMMEN ZURÜCK', backTitle:'Willkommen zurück', backSub:(t,v)=>'Während deiner Abwesenheit ('+t+')<br>Kristalle: +'+v,
     hm:(h,m)=>h>0?h+'\u00a0Std. '+m+'\u00a0Min.':m+'\u00a0Min.',
@@ -1570,7 +1570,7 @@
     copyText:'Copia il testo', shareX:'Pubblica su X', shareBsky:'Pubblica su Bluesky', shareLine:'Invia su LINE',
     sharePrivacy:'Il testo termina con un link al sito del gioco. Non contiene nomi né informazioni sul tuo dispositivo.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, un gioco idle','Profondità '+d+'\u00a0m, vena di '+s,'Cristalli estratti in totale: '+g]
-      .concat(c>0?['Nuclei: '+c+' (guadagni ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Nuclei: '+c+' (guadagni ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NUOVA VENA', newVeinSub:d=>'Hai raggiunto una nuova vena<br>Profondità '+d+'\u00a0m',
     backKicker:'RIECCOTI', backTitle:'Rieccoti', backSub:(t,v)=>'Durante la tua assenza ('+t+')<br>Cristalli: +'+v,
     hm:(h,m)=>h>0?h+'\u00a0h '+m+'\u00a0min':m+'\u00a0min',
@@ -1672,7 +1672,7 @@
     copyText:'Copiar o texto', shareX:'Publicar no X', shareBsky:'Publicar no Bluesky', shareLine:'Enviar pelo LINE',
     sharePrivacy:'O texto termina com um link para o site do jogo. Não inclui nome nem informações do seu aparelho.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, um jogo idle','Profundidade '+d+' m, veio de '+s,'Cristais minerados no total: '+g]
-      .concat(c>0?['Núcleos: '+c+' (renda ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Núcleos: '+c+' (renda ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NOVO VEIO', newVeinSub:d=>'Você chegou a um novo veio<br>Profundidade '+d+' m',
     backKicker:'BOAS-VINDAS DE VOLTA', backTitle:'Que bom ver você de novo', backSub:(t,v)=>'Você esteve fora por '+t+'<br>Cristais: +'+v,
     hm:(h,m)=>h>0?h+' h '+m+' min':m+' min',
@@ -1774,7 +1774,7 @@
     copyText:'Tekst kopiëren', shareX:'Posten op X', shareBsky:'Posten op Bluesky', shareLine:'Versturen via LINE',
     sharePrivacy:'De tekst eindigt met een link naar de website van het spel. Er staat geen naam in en niets over je apparaat.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, een idle game','Diepte '+d+' m, ader '+s,'Kristallen gedolven in totaal: '+g]
-      .concat(c>0?['Kernen: '+c+' (inkomsten ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Kernen: '+c+' (inkomsten ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NIEUWE ADER', newVeinSub:d=>'Je hebt een nieuwe ader bereikt<br>Diepte '+d+' m',
     backKicker:'WELKOM TERUG', backTitle:'Welkom terug', backSub:(t,v)=>'Je was '+t+' weg<br>Kristallen: +'+v,
     hm:(h,m)=>h>0?h+' u '+m+' min':m+' min',
@@ -1876,7 +1876,7 @@
     copyText:'Kopiuj tekst', shareX:'Opublikuj na X', shareBsky:'Opublikuj na Bluesky', shareLine:'Wyślij przez LINE',
     sharePrivacy:'Tekst kończy się linkiem do strony gry. Nie zawiera imienia ani informacji o twoim urządzeniu.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, gra idle','Głębokość '+d+' m, żyła: '+s,'Kryształy wydobyte łącznie: '+g]
-      .concat(c>0?['Rdzenie: '+c+' (dochód ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Rdzenie: '+c+' (dochód ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'NOWA ŻYŁA', newVeinSub:d=>'Osiągnięto nową żyłę<br>Głębokość '+d+' m',
     backKicker:'WITAJ Z POWROTEM', backTitle:'Witaj z powrotem', backSub:(t,v)=>'Podczas nieobecności ('+t+')<br>Kryształy: +'+v,
     hm:(h,m)=>h>0?h+' godz. '+m+' min':m+' min',
@@ -1978,7 +1978,7 @@
     copyText:'Копировать текст', shareX:'Опубликовать в X', shareBsky:'Опубликовать в Bluesky', shareLine:'Отправить в LINE',
     sharePrivacy:'В конце текста — ссылка на сайт игры. В тексте нет ни имени, ни сведений о вашем устройстве.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, idle-игра','Глубина '+d+' м, жила: '+s,'Всего добыто кристаллов: '+g]
-      .concat(c>0?['Ядра: '+c+' (доход ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?['Ядра: '+c+' (доход ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'НОВАЯ ЖИЛА', newVeinSub:d=>'Вы добрались до новой жилы<br>Глубина '+d+' м',
     backKicker:'С ВОЗВРАЩЕНИЕМ', backTitle:'С возвращением', backSub:(t,v)=>'Пока вас не было ('+t+'):<br>кристаллы +'+v,
     hm:(h,m)=>h>0?h+' ч '+m+' мин':m+' мин',
@@ -2080,7 +2080,7 @@
     copyText:'Metni kopyala', shareX:'X’te paylaş', shareBsky:'Bluesky’da paylaş', shareLine:'LINE ile gönder',
     sharePrivacy:'Metin oyunun sitesine bir bağlantıyla biter. İçinde isim ya da cihazınla ilgili bilgi yoktur.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, bir idle oyun','Derinlik '+d+' m, '+s+' damarı','Toplam '+g+' kristal kazıldı']
-      .concat(c>0?[c+' çekirdek (gelir ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?[c+' çekirdek (gelir ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'YENİ DAMAR', newVeinSub:d=>'Yeni bir damara ulaştın<br>Derinlik '+d+' m',
     backKicker:'TEKRAR HOŞ GELDİN', backTitle:'Tekrar hoş geldin', backSub:(t,v)=>'Sen yokken geçen '+t+' içinde<br>+'+v+' kristal',
     hm:(h,m)=>h>0?h+' sa '+m+' dk':m+' dk',
@@ -2182,7 +2182,7 @@
     copyText:'Sao chép đoạn văn', shareX:'Đăng lên X', shareBsky:'Đăng lên Bluesky', shareLine:'Gửi qua LINE',
     sharePrivacy:'Cuối đoạn văn có đường dẫn tới trang web của trò chơi. Không có tên hay thông tin thiết bị của bạn.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, một trò chơi idle','Độ sâu '+d+' m, mạch '+s,'Tổng cộng đã đào '+g+' tinh thể']
-      .concat(c>0?[c+' lõi (thu nhập ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?[c+' lõi (thu nhập ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'MẠCH MỚI', newVeinSub:d=>'Bạn đã tới một mạch mới<br>Độ sâu '+d+' m',
     backKicker:'CHÀO MỪNG TRỞ LẠI', backTitle:'Chào mừng trở lại', backSub:(t,v)=>'Trong '+t+' bạn vắng mặt<br>+'+v+' tinh thể',
     hm:(h,m)=>h>0?h+' giờ '+m+' phút':m+' phút',
@@ -2284,7 +2284,7 @@
     copyText:'คัดลอกข้อความ', shareX:'โพสต์ลง X', shareBsky:'โพสต์ลง Bluesky', shareLine:'ส่งทาง LINE',
     sharePrivacy:'ท้ายข้อความจะมีลิงก์ไปยังเว็บไซต์ของเกม ไม่มีชื่อหรือข้อมูลอุปกรณ์ของคุณ',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern เกมแนว idle','ความลึก '+d+' ม. สายแร่'+s,'ขุดได้รวม '+g+' คริสตัล']
-      .concat(c>0?[c+' แกน (รายได้ ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?[c+' แกน (รายได้ ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'สายแร่ใหม่', newVeinSub:d=>'คุณมาถึงสายแร่ใหม่แล้ว<br>ความลึก '+d+' ม.',
     backKicker:'ยินดีต้อนรับกลับ', backTitle:'ยินดีต้อนรับกลับ', backSub:(t,v)=>'ระหว่าง '+t+' ที่ไม่อยู่<br>+'+v+' คริสตัล',
     hm:(h,m)=>h>0?h+' ชม. '+m+' นาที':m+' นาที',
@@ -2386,7 +2386,7 @@
     copyText:'Salin teks', shareX:'Posting di X', shareBsky:'Posting di Bluesky', shareLine:'Kirim lewat LINE',
     sharePrivacy:'Teks diakhiri tautan ke situs permainan. Di dalamnya tidak ada nama atau informasi tentang perangkatmu.',
     shareLines:(d,s,g,c,m)=>['Crystal Cavern, gim idle','Kedalaman '+d+' m, urat '+s,'Total '+g+' kristal tergali']
-      .concat(c>0?[c+' inti (pendapatan ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
+      .concat(c?[c+' inti (pendapatan ×'+m+')']:[]).concat(['#CrystalCavern']).join('\n'),
     newVeinKicker:'URAT BARU', newVeinSub:d=>'Kamu mencapai urat baru<br>Kedalaman '+d+' m',
     backKicker:'SELAMAT DATANG KEMBALI', backTitle:'Selamat datang kembali', backSub:(t,v)=>'Selama '+t+' kamu pergi<br>+'+v+' kristal',
     hm:(h,m)=>h>0?h+' jam '+m+' mnt':m+' mnt',
@@ -2614,13 +2614,31 @@
      are shorter, but each one asks the reader to know a convention that
      differs by language — and a mis-read number in a game about numbers
      is a real cost. Digits are the same idea in every language. */
+  /* From one trillion up, all the digits no longer fit on one line (a
+     42-digit total took several lines and pushed the buttons down), so
+     the number switches to the way it is written at school in every
+     language: 1.23 × 10⁴¹. The decimal mark follows the reader (1,23 in
+     French or German). The spaces around × never break. */
+  const BIG = 1e12, SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  function sci(n){
+    if(!isFinite(n)) return '∞';
+    let e = Math.floor(Math.log10(n)), m = Math.round(n / Math.pow(10, e) * 100) / 100;
+    if(m >= 10){ m /= 10; e++; }
+    return m.toLocaleString(loc(), {minimumFractionDigits:2, maximumFractionDigits:2}) +
+      '\u00A0×\u00A010' + String(e).split('').map(d => SUP[d]).join('');
+  }
   function fmt(n){
     if(!(n > 0)) return '0';
-    return num(n);
+    return n >= BIG ? sci(n) : num(n);
   }
-  /* the core multiplier, 2 decimals, in the reader's own decimal style (1.06 / 1,06) */
-  const fmtMult = () => coreMult().toLocaleString(loc(), {minimumFractionDigits:2, maximumFractionDigits:2});
-  const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : num(n);
+  /* the core multiplier, in the reader's own decimal style (1.06 / 1,06);
+     no decimals once it is in the thousands, and 1.23 × 10¹⁵ beyond that */
+  const fmtMult = () => {
+    const m = coreMult();
+    if(m >= BIG) return sci(m);
+    return m.toLocaleString(loc(), m < 1000 ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0});
+  };
+  const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : fmt(n);
 
   /* ================================================================
      canvas
@@ -3264,7 +3282,7 @@
     GENS.forEach(g => S.gens[g.id] = 0);
     boost = {mult:1, until:0};
     save();
-    let sub = L.rebirthDone(gain, fmtMult());
+    let sub = L.rebirthDone(fmt(gain), fmtMult());
     if(opened) sub += '<br>' + L.unlockSub(L.stages[seamsOpen()-1]);
     Native.haptic('rebirth');
     lastStage = stageIndex();         // don't also fire the new-seam popup
@@ -3539,7 +3557,7 @@
      — and links on to the App Store for iPhone. */
   function shareUrl(){ return SITE_ROOT + (langId === 'ja' ? '' : 'en/'); }
   function shareString(){
-    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores, fmtMult())
+    return L.shareLines(num(depthNow()), L.stages[stageIndex()], fmt(S.grand), S.cores > 0 ? fmt(S.cores) : 0, fmtMult())
       + '\n' + shareUrl();
   }
   function refreshShare(){
@@ -3559,6 +3577,22 @@
      refresh
      ================================================================ */
 
+  /* The headline count always stays on one line: if it is still wider
+     than its space (a narrow phone at the largest text size), shrink just
+     this number until it fits. Measured only when the text length, the
+     window width or the text size changes. */
+  let fitKey = '';
+  function fitCount(el, txt){
+    const key = txt.length+'|'+innerWidth+'|'+getComputedStyle(document.documentElement).getPropertyValue('--fs')+'|'+el.className;
+    if(key === fitKey) return;
+    fitKey = key;
+    el.style.fontSize = '';
+    if(el.scrollWidth > el.clientWidth + 1){
+      const size = parseFloat(getComputedStyle(el).fontSize) * el.clientWidth / el.scrollWidth * 0.97;
+      el.style.fontSize = Math.max(12, Math.floor(size)) + 'px';
+    }
+  }
+
   let lastStage = -1;
   function refresh(){
     const r = rate(), b = boostMult();
@@ -3568,6 +3602,7 @@
     /* step the headline down as the digits pile up, so it never runs off */
     cEl.classList.toggle('long',  cTxt.length > 11 && cTxt.length <= 16);
     cEl.classList.toggle('xlong', cTxt.length > 16);
+    fitCount(cEl, cTxt);
     const v = fmtRate(r);
     /* 毎秒 12 in Japanese, Chinese and Korean; 12 per sec elsewhere */
     let html = langDef().rateFirst ? L.perSec+' '+v : v+' '+L.perSec;
@@ -3644,9 +3679,9 @@
 
     const gain = coresOnReset();
     const set = (id,v) => { const el = $(id); if(el) el.textContent = v; };
-    set('st-cores', S.cores);
+    set('st-cores', fmt(S.cores));
     set('st-mult', '×'+fmtMult());
-    set('st-gain', gain);
+    set('st-gain', fmt(gain));
     set('st-total', fmt(S.total));
     set('st-grand', fmt(S.grand));
     set('st-clicks', num(S.clicks));
@@ -3657,7 +3692,7 @@
     const rb = $('btnReset');
     if(rb){
       rb.disabled = gain <= 0;
-      rb.textContent = gain > 0 ? L.doRebirth(gain) : L.rebirthLocked;
+      rb.textContent = gain > 0 ? L.doRebirth(fmt(gain)) : L.rebirthLocked;
     }
     tabs.core.classList.toggle('ready', gain > 0);
   }
