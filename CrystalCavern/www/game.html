@@ -93,6 +93,10 @@
   }
   .count.long{font-size:calc(clamp(19px,4.6vw,30px) * var(--fs))}
   .count.xlong{font-size:calc(clamp(15px,3.6vw,23px) * var(--fs))}
+  /* the exponent in 1.23 × 10⁴¹: in a monospace font each superscript digit
+     sits in a full-width cell and reads as "10 4 1", so set it in the
+     proportional system face, tight */
+  .exp{font-family:-apple-system,system-ui,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:0;font-variant-numeric:normal}
   .count .unit{font-size:.48em;color:var(--ink-dim);margin-left:.34em;letter-spacing:.04em;font-family:var(--font-body);font-weight:500}
   .rate{font-family:var(--font-num);font-size:var(--t-13);color:var(--cyan);
     font-variant-numeric:tabular-nums;font-weight:600;overflow-wrap:anywhere;max-width:100%}
@@ -2620,6 +2624,8 @@
      language: 1.23 × 10⁴¹. The decimal mark follows the reader (1,23 in
      French or German). The spaces around × never break. */
   const BIG = 1e12, SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  /* wrap the exponent so it can be set in a tighter face (see .exp) */
+  const supWrap = s => String(s).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m => '<span class="exp">'+m+'</span>');
   function sci(n){
     if(!isFinite(n)) return '∞';
     let e = Math.floor(Math.log10(n)), m = Math.round(n / Math.pow(10, e) * 100) / 100;
@@ -2910,7 +2916,7 @@
   function showBig(kicker,title,sub,color){
     $('bpKicker').textContent = kicker;
     $('bpTitle').textContent = title;
-    $('bpSub').innerHTML = sub || '';
+    $('bpSub').innerHTML = supWrap(sub || '');
     bigpop.style.setProperty('--pop', color || 'var(--gold)');
     bigpop.classList.add('show');
     clearTimeout(bigTimer);
@@ -3598,7 +3604,7 @@
     const r = rate(), b = boostMult();
     const cTxt = fmt(S.c);
     const cEl = $('count');
-    cEl.textContent = cTxt;
+    cEl.innerHTML = supWrap(cTxt);
     /* step the headline down as the digits pile up, so it never runs off */
     cEl.classList.toggle('long',  cTxt.length > 11 && cTxt.length <= 16);
     cEl.classList.toggle('xlong', cTxt.length > 16);
@@ -3612,7 +3618,7 @@
       html += '<span class="sep">|</span><span class="boost">'+L.resonance+' ×'+b+' '+
         (ms > 60000 ? L.rwWait(mmss(ms)) : L.remain(Math.ceil(ms/1000)))+'</span>';
     }
-    $('rate').innerHTML = html;
+    $('rate').innerHTML = supWrap(html);
 
     const si = stageIndex(), st = STAGES[si], col = stageColor(si,tick);
     $('badge').style.setProperty('--stage-color',
@@ -3647,7 +3653,7 @@
       row.el.disabled = !can;
       row.el.classList.toggle('afford', can);
       row.own.textContent = owned ? '×'+owned : '';
-      row.price.textContent = (k > 1 ? '×'+k+'  ' : '') + fmt(cost);
+      row.price.innerHTML = supWrap((k > 1 ? '×'+k+'  ' : '') + fmt(cost));
 
       if(row.kind === 'gen'){
         const m = msMult(owned);
@@ -3656,10 +3662,10 @@
         const into = owned % MS_STEP;
         row.bar.style.width = (owned === 0 ? 0 : (into/MS_STEP)*100)+'%';
         row.ms.textContent = L.msNext(MS_STEP - into);
-        row.yld.textContent = '+'+fmtRate((owned ? genOutput(d) : d.rate)*coreMult()*b)+L.perSecShort;
+        row.yld.innerHTML = supWrap('+'+fmtRate((owned ? genOutput(d) : d.rate)*coreMult()*b)+L.perSecShort);
       }else{
-        row.yld.textContent = d.id === 'pick'
-          ? L.mine+' '+fmtRate(tapPower()) : L.pctOf(S.taps.glove+1);
+        row.yld.innerHTML = supWrap(d.id === 'pick'
+          ? L.mine+' '+fmtRate(tapPower()) : L.pctOf(S.taps.glove+1));
       }
     }
 
@@ -3678,7 +3684,7 @@
     }
 
     const gain = coresOnReset();
-    const set = (id,v) => { const el = $(id); if(el) el.textContent = v; };
+    const set = (id,v) => { const el = $(id); if(el) el.innerHTML = supWrap(v); };
     set('st-cores', fmt(S.cores));
     set('st-mult', '×'+fmtMult());
     set('st-gain', fmt(gain));
@@ -3692,7 +3698,7 @@
     const rb = $('btnReset');
     if(rb){
       rb.disabled = gain <= 0;
-      rb.textContent = gain > 0 ? L.doRebirth(fmt(gain)) : L.rebirthLocked;
+      rb.innerHTML = supWrap(gain > 0 ? L.doRebirth(fmt(gain)) : L.rebirthLocked);
     }
     tabs.core.classList.toggle('ready', gain > 0);
   }
