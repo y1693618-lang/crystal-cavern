@@ -8,7 +8,9 @@
 //  ・通知は「一度だけ」「8時間後」。それ以上は送りません。
 //  ・毎秒の収入がない人には送りません（知らせる中身がないため）。
 //  ・一時停止中の人にも送りません。
-//  ・許可はメニューの「お知らせの設定」を押したときにだけ尋ねます。
+//  ・許可を尋ねるのは、本人が押したときだけです。
+//      メニューの「お知らせの設定」
+//      2回目に開いたときに一度だけ出る案内のカードの「受け取る」（1.3）
 //
 //  以前はアプリを離れたときに自動で尋ねていました。ところが全画面の広告が
 //  出ると WebView は「隠れた」と判断し、そこでも尋ねてしまい、広告の上に
@@ -58,6 +60,33 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             } else {
                 DispatchQueue.main.async { Self.openAppSettings() }
             }
+        }
+    }
+
+    /// 案内のカードから。まだ答えていない人にだけ許可を尋ねます。
+    /// すでに答えた人には何もしません。終わったら done を呼びます。
+    func requestIfUndetermined(_ done: @escaping () -> Void) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .notDetermined else {
+                DispatchQueue.main.async(execute: done); return
+            }
+            center.requestAuthorization(options: [.alert, .badge]) { _, _ in
+                DispatchQueue.main.async(execute: done)
+            }
+        }
+    }
+
+    /// いまの許可の状態を、ゲームに渡す短い言葉で返します（メインスレッドで）。
+    func status(_ done: @escaping (String) -> Void) {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let state: String
+            switch settings.authorizationStatus {
+            case .notDetermined:                     state = "notDetermined"
+            case .authorized, .provisional, .ephemeral: state = "authorized"
+            default:                                 state = "denied"
+            }
+            DispatchQueue.main.async { done(state) }
         }
     }
 

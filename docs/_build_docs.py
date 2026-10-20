@@ -10,8 +10,8 @@ GitHub Pages にそのまま置けるよう、1ファイルで完結させてい
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UPDATED_JA = "2026年10月2日"
-UPDATED_EN = "2 October 2026"
+UPDATED_JA = "2026年10月20日"
+UPDATED_EN = "20 October 2026"
 EMAIL = "r451mjkl@icloud.com"          # ← 本当のアドレスが決まったらここだけ直す
 APP_NAME_JA = "結晶洞窟"
 APP_NAME_EN = "Crystal Cavern"
@@ -149,7 +149,8 @@ PRIVACY_JA = f"""
 
 <h2>通知について</h2>
 <p>留守のあいだに貯まる分は8時間で上限に達します。そこで一度だけ「洞窟がいっぱいです」とお知らせします。通知は<strong>音を鳴らしません。</strong></p>
-<p>許可は初回だけお尋ねし、断られた場合は二度と尋ねません。<code>設定 → 通知</code> からいつでも切れます。</p>
+<p>許可は、2回目にゲームを開いたときに一度だけ、ゲームの中の案内でお尋ねします。iOS の許可の確認が出るのは、案内で「お知らせを受け取る」を選んだときだけです。「今はしない」を選んだ場合や案内を閉じた場合は、二度と尋ねません。あとからゲームのメニューの「お知らせの設定」で変えられ、<code>設定 → 通知</code> からもいつでも切れます。</p>
+<p>通知は iPhone の中だけで予約しています。通知のために情報を外部へ送ることはありません。</p>
 
 <h2>お子様の利用について</h2>
 <p>このアプリは全年齢を対象としています。個人情報を集める機能がないため、お子様が遊んだ場合も情報が集まることはありません。</p>
@@ -228,7 +229,8 @@ PRIVACY_EN = f"""
 
 <h2>Notifications</h2>
 <p>What accumulates while you are away reaches its limit after eight hours. The app tells you once, at that point. The notification is <strong>silent</strong>.</p>
-<p>Permission is requested once only, and never again if you decline. You can turn it off at any time under <code>Settings → Notifications</code>.</p>
+<p>We ask once, with a short note inside the game the second time you open it. The iPhone’s own permission prompt appears only if you choose “Yes, remind me”. If you choose “Not now” or close the note, we never ask again. You can change this later under “Reminder settings” in the game’s menu, and turn it off at any time under <code>Settings → Notifications</code>.</p>
+<p>The notification is scheduled on your iPhone itself. Nothing is sent anywhere to make it work.</p>
 
 <h2>Children</h2>
 <p>The app is suitable for all ages. Because it has no way of collecting personal information, nothing is collected when a child plays it.</p>

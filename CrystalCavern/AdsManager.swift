@@ -27,7 +27,14 @@ final class AdsManager: NSObject {
 
     // MARK: - 中身
 
-    private var rewarded: RewardedAd?
+    private var rewarded: RewardedAd? {
+        // 読み込めた・使い切った、をそのたびにゲームへ伝える（1.3）。
+        // ゲームは「動画を見て2倍」のボタンを、広告が用意できているときだけ押せるようにする。
+        didSet { GameBridge.current?.sendAdState(ready: rewarded != nil) }
+    }
+
+    /// いま見せられる広告があるかどうか（ゲームから尋ねられたとき用）
+    var isReady: Bool { rewarded != nil }
     private var isLoading = false
     private var completion: ((Bool) -> Void)?
     private var earned = false
@@ -145,6 +152,9 @@ final class AdsManager: NSObject {
         completion = done
         earned = false
         rewarded = nil         // 一度見せた広告は使い回せない
+        // 画面に出たことをゲームへ。ここから先は必ず結果を返すので、
+        // 長い動画でもゲーム側が途中で諦めないようにする（1.3）。
+        GameBridge.current?.sendAdShown()
 
         ad.present(from: root) { [weak self] in
             // 報酬の条件を満たした（最後まで見た）

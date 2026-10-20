@@ -308,6 +308,26 @@
   }
   .welcome-card .more{margin:18px 0 0;font-size:var(--t-12);color:var(--ink-faint);line-height:1.7}
 
+  /* cards that wait for an answer: welcome back, the daily gift, the reminder invite */
+  .gf-kicker{margin:0 0 6px;font-size:var(--t-12);letter-spacing:.2em;color:var(--cyan);font-weight:700;text-transform:uppercase}
+  .gf-kicker:empty{display:none}
+  .gf-body{font-size:var(--t-14);color:var(--ink-dim);line-height:1.8;overflow-wrap:anywhere}
+  .gf-body p{margin:0 0 10px}
+  .gf-body p:last-child{margin-bottom:0}
+  .gf-body b{color:var(--ink)}
+  .gf-actions{display:flex;flex-direction:column;margin-top:8px}
+  .big-btn.quiet{background:transparent;border-color:var(--line);color:var(--ink)}
+  .welcome-card ol.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:14px 0 6px;padding:0;list-style:none}
+  .welcome-card .cal li{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    min-height:calc(50px * var(--fs));border-radius:9px;border:1px solid var(--line-soft);background:var(--panel-2);
+    font-family:var(--font-num);font-size:var(--t-12);color:var(--ink-faint);line-height:1}
+  .welcome-card .cal li .mk{font-size:var(--t-14);font-weight:700;color:var(--ink-faint)}
+  .welcome-card .cal li.done{color:var(--ink-dim)}
+  .welcome-card .cal li.done .mk{color:var(--cyan)}
+  .welcome-card .cal li.today{border:2px solid var(--gold);color:var(--ink);background:color-mix(in srgb,var(--gold) 16%,var(--panel-2))}
+  .welcome-card .cal li.today .mk{color:var(--gold)}
+  .gf-today{color:var(--ink)}
+
   .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:15px 16px;font-size:var(--t-13);color:var(--ink-dim);line-height:1.8}
   .card h3{margin:0 0 10px;font-family:var(--font-display);font-size:var(--t-17);color:var(--ink);letter-spacing:.04em;font-weight:400}
   .card p{margin:0 0 10px}
@@ -414,7 +434,7 @@
     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 20px;
     font-size:var(--t-13);color:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.55);font-weight:500;
     opacity:0;pointer-events:none;transition:opacity .4s ease, transform .4s ease;
-    z-index:21;max-width:calc(100% - 32px);text-align:center;line-height:1.6;
+    z-index:40;max-width:calc(100% - 32px);text-align:center;line-height:1.6;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
 
@@ -496,6 +516,19 @@
   </div>
 </div>
 
+<div class="welcome" id="gift" hidden>
+  <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="gfTitle" aria-describedby="gfBody">
+    <p class="gf-kicker" id="gfKicker"></p>
+    <h2 id="gfTitle"></h2>
+    <div class="gf-body" id="gfBody"></div>
+    <div class="gf-actions">
+      <button class="big-btn" id="gfMain"></button>
+      <button class="big-btn quiet" id="gfAlt"></button>
+    </div>
+    <p class="more" id="gfNote"></p>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -529,7 +562,7 @@
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
   const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-  const VERSION = '1.2';
+  const VERSION = '1.3';
 
   /* ================================================================
      Rewarded ads — one seam, four back ends
@@ -549,6 +582,10 @@
 
   const Ads = {
     mode:'off', busy:false, _pending:null,
+    /* native only: whether the app has a video loaded right now. The app
+       says so whenever that changes; the other back ends are always ready */
+    ready:false,
+    isReady(){ return this.mode === 'native' ? this.ready : (this.mode === 'test' || this.mode === 'h5'); },
 
     init(){
       let m = '';
@@ -569,16 +606,27 @@
       if(this.mode === 'native'){
         window.CCAds = {
           grant: id => this._settle(id, true),
-          fail:  id => this._settle(id, false)
+          fail:  id => this._settle(id, false),
+          ready: v  => { this.ready = !!v; adStateChanged(); },
+          /* the video is on screen: from here the app always answers */
+          shown: () => { if(this._pending){ this._pending.shown = true; this._pending.shownAt = Date.now(); } }
         };
+        try{ window.webkit.messageHandlers.ccAds.postMessage({query:true}); }catch(e){}
       }
       return this.mode;
     },
 
+    /* an answer for anything other than the request in flight is ignored */
     _settle(id, ok){
       const p = this._pending;
+      if(!p || p.id !== id) return;
+      this._done(p, ok);
+    },
+    _done(p, ok){
+      if(this._pending !== p) return;
       this._pending = null; this.busy = false;
-      if(p && p.id === id) (ok ? p.ok : p.no)();
+      afterAd();
+      (ok ? p.ok : p.no)();
     },
 
     show(id, ok, no){
@@ -590,23 +638,36 @@
         return;
       }
       if(this.mode === 'native'){
-        this._pending = {id, ok, no};
+        const p = {id, ok, no, shown:false, at:Date.now()};
+        this._pending = p;
         try{ window.webkit.messageHandlers.ccAds.postMessage({reward:id}); }
-        catch(e){ this._settle(id, false); return; }
-        setTimeout(() => { if(this._pending && this._pending.id === id) this._settle(id, false); }, 45000);
+        catch(e){ this._done(p, false); return; }
+        /* give up only if the video never appeared. Once it is on screen
+           the app always answers, however long the video runs */
+        const watch = () => {
+          if(this._pending !== p) return;
+          const limit = p.shown ? 600000 : 45000;     // 10 minutes once it is on screen
+          const from = p.shown ? p.shownAt : p.at;
+          if(!document.hidden && Date.now() - from > limit){ this._done(p, false); return; }
+          setTimeout(watch, 5000);
+        };
+        setTimeout(watch, 5000);
         return;
       }
       // h5 — Google's Ad Placement API
-      let viewed = false;
+      let viewed = false, over = false;
+      const end = v => { if(over) return; over = true; this.busy = false; afterAd(); (v ? ok : no)(); };
+      /* if the ad script never loaded (a blocker), adBreakDone never comes */
+      setTimeout(() => end(false), 90000);
       try{
         window.adBreak({
           type:'reward', name:id,
           beforeReward: showAd => showAd(),
           adViewed: () => { viewed = true; },
           adDismissed: () => {},
-          adBreakDone: () => { this.busy = false; (viewed ? ok : no)(); }
+          adBreakDone: () => end(viewed)
         });
-      }catch(e){ this.busy = false; no(); }
+      }catch(e){ end(false); }
     }
   };
 
@@ -635,6 +696,13 @@
        sheet on top of the ad. A permission is asked for when the player
        reaches for it, or not at all. */
     notify(){ this.post('ccNotify', {}); },
+    /* The one exception, added in 1.3: a card that explains the reminder
+       and asks once, on the second visit. The app is asked first whether
+       the question is still open ({query:true}); only then does the card
+       appear, and the system's own sheet follows only if the player says
+       yes ({ask:true}). Saying no, or closing the card, asks nothing. */
+    notifyQuery(){ this.post('ccNotify', {query:true}); },
+    notifyAsk(){ this.post('ccNotify', {ask:true}); },
     /* Ad consent for players in the EEA, the UK and Switzerland. The app
        says whether this player needs a way back to their choice; only then
        does the button appear. {open:true} shows Google's form again. */
@@ -793,6 +861,15 @@
     notifyBody:'留守のあいだに貯まる分は8時間で上限に達します。そのときに一度だけお知らせします。'
       +'音は鳴りません。送るのはこれ1種類だけで、ほかに何かを送ることはありません。',
     notifyBtn:'お知らせの設定',
+    dblBtn:'動画を見て2倍にする', takeBtn:'受け取る',
+    visitKicker:'通いボーナス', visitTitle:n=>n+'日目',
+    visitLead:'1日1回、開くと贈り物が届きます。7日目は大きな贈り物です。休んでも、続きから進みます。',
+    visitToday:g=>'今日の贈り物：'+g, visitNow:'今日', visitDone:'受け取り済み', visitNext:'これから',
+    dur:m=>m>=60?(m/60)+'時間':m+'分',
+    gifts:{cr:d=>'結晶（'+d+'ぶん）', orb:'光る球をすぐに呼ぶ', orb2:'光る球を2つ呼ぶ', boost:d=>'収入2倍（'+d+'）'},
+    askBody:'留守のあいだに貯まる結晶は、8時間でいっぱいになります。いっぱいになったとき、一度だけお知らせしましょうか？',
+    askYes:'お知らせを受け取る', askNo:'今はしない',
+    askNote:b=>'音は鳴りません。あとからメニューの「'+b+'」でいつでも変えられます。',
     privacyBtn:'プライバシー設定',
     legalTitle:'規約とプライバシー',
     legalBody:'このアプリの利用規約は、Apple の標準の使用許諾契約です。'
@@ -896,6 +973,15 @@
     notifyBody:'What builds up while you are away reaches its limit after eight hours. '
       +'A single silent reminder is sent at that moment, and nothing else is ever sent.',
     notifyBtn:'Reminder settings',
+    dblBtn:'Watch a video to double it', takeBtn:'Collect',
+    visitKicker:'Daily gift', visitTitle:n=>'Day '+n,
+    visitLead:'Open the game once a day and a gift is waiting. Day 7 brings a bigger one. Miss a day and you simply carry on where you left off.',
+    visitToday:g=>"Today's gift: "+g, visitNow:'today', visitDone:'collected', visitNext:'still to come',
+    dur:m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' minutes',
+    gifts:{cr:d=>'Crystals ('+d+' of mining)', orb:'An orb, right now', orb2:'Two orbs', boost:d=>'Double income ('+d+')'},
+    askBody:'What builds up while you are away is full after 8 hours. Shall we let you know, just once, when it is full?',
+    askYes:'Yes, remind me', askNo:'Not now',
+    askNote:b=>'No sound. You can change this any time under “'+b+'” in the menu.',
     privacyBtn:'Privacy settings',
     legalTitle:'Terms and privacy',
     legalBody:'This app is covered by Apple\u2019s standard licence agreement. '
@@ -998,6 +1084,15 @@
     notifyBody:'离开期间累积的部分会在8小时后达到上限，届时只提醒一次。'
       +'不会发出声音，也不会发送其他任何通知。',
     notifyBtn:'提醒设置',
+    dblBtn:'看视频领取双倍', takeBtn:'领取',
+    visitKicker:'每日礼物', visitTitle:n=>'第'+n+'天',
+    visitLead:'每天打开一次游戏，就能收到一份礼物。第7天会有一份大礼。中间漏掉几天也没关系，天数会接着上次继续，不会从头算起。',
+    visitToday:g=>'今天的礼物：'+g, visitNow:'今天', visitDone:'已领取', visitNext:'未到',
+    dur:m=>m>=60?(m/60)+'小时':m+'分钟',
+    gifts:{cr:d=>'结晶（'+d+'的挖掘量）', orb:'立即召唤光球', orb2:'召唤两个光球', boost:d=>d+'内所有收入×2'},
+    askBody:'离开期间累积的结晶，8小时后就会存满。需要在存满时提醒一次吗？',
+    askYes:'接收提醒', askNo:'暂不需要',
+    askNote:b=>'不会发出声音。之后随时可以在菜单的「'+b+'」中更改。',
     privacyBtn:'隐私设置',
     legalTitle:'条款与隐私',
     legalBody:'本应用适用 Apple 的标准使用许可协议。'
@@ -1101,6 +1196,15 @@
     notifyBody:'자리를 비운 동안 쌓이는 양은 8시간이면 상한에 이릅니다. 그때 한 번만 알립니다. '
       +'소리는 나지 않으며, 이 밖의 알림은 보내지 않습니다.',
     notifyBtn:'알림 설정',
+    dblBtn:'영상 보고 2배 받기', takeBtn:'받기',
+    visitKicker:'출석 선물', visitTitle:n=>n+'일차',
+    visitLead:'하루에 한 번 게임을 열면 선물이 도착합니다. 7일차에는 큰 선물이 기다립니다. 며칠 쉬어도 처음으로 돌아가지 않고 이어서 진행됩니다.',
+    visitToday:g=>'오늘의 선물: '+g, visitNow:'오늘', visitDone:'받음', visitNext:'예정',
+    dur:m=>m>=60?(m/60)+'시간':m+'분',
+    gifts:{cr:d=>'결정('+d+' 채굴량)', orb:'빛의 구슬 바로 부르기', orb2:'빛의 구슬 2개 부르기', boost:d=>d+' 동안 모든 수입 2배'},
+    askBody:'자리를 비운 동안 쌓이는 결정은 8시간이면 가득 찹니다. 가득 찼을 때 한 번만 알려 드릴까요?',
+    askYes:'알림 받기', askNo:'나중에',
+    askNote:b=>'소리는 나지 않습니다. 언제든지 메뉴의 「'+b+'」에서 바꿀 수 있습니다.',
     privacyBtn:'개인정보 설정',
     legalTitle:'약관과 개인정보',
     legalBody:'이 앱에는 Apple의 표준 사용권 계약이 적용됩니다. '
@@ -1204,6 +1308,15 @@
     notifyBody:'Lo que se acumula mientras no est\u00e1s llega a su l\u00edmite a las ocho horas. '
       +'En ese momento se env\u00eda un \u00fanico aviso, sin sonido, y nunca se env\u00eda nada m\u00e1s.',
     notifyBtn:'Ajustes de avisos',
+    dblBtn:'Ver un vídeo para duplicar', takeBtn:'Recoger',
+    visitKicker:'Regalo diario', visitTitle:n=>'Día '+n,
+    visitLead:'Abre el juego una vez al día y te espera un regalo. El día 7 trae uno más grande. Si un día no entras, no pierdes nada: sigues por donde ibas.',
+    visitToday:g=>'Regalo de hoy: '+g, visitNow:'hoy', visitDone:'recogido', visitNext:'por llegar',
+    dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
+    gifts:{cr:d=>'Cristales ('+d+' de excavación)', orb:'Un orbe al instante', orb2:'Dos orbes', boost:d=>'Ingresos ×2 durante '+d},
+    askBody:'Lo que se acumula mientras no estás llega a su límite a las 8 horas. ¿Quieres recibir un único aviso cuando eso pase?',
+    askYes:'Recibir el aviso', askNo:'Ahora no',
+    askNote:b=>'Sin sonido. Puedes cambiarlo cuando quieras en «'+b+'», dentro del menú.',
     privacyBtn:'Ajustes de privacidad',
     legalTitle:'Condiciones y privacidad',
     legalBody:'Esta aplicaci\u00f3n se rige por el contrato de licencia est\u00e1ndar de Apple. '
@@ -1306,6 +1419,15 @@
     notifyBody:'離開期間累積的部分會在8小時後達到上限，屆時只提醒一次。'
       +'不會發出聲音，也不會傳送其他任何通知。',
     notifyBtn:'提醒設定',
+    dblBtn:'看影片領取雙倍', takeBtn:'領取',
+    visitKicker:'每日禮物', visitTitle:n=>'第'+n+'天',
+    visitLead:'每天開啟一次遊戲，就能收到一份禮物。第7天會有一份大禮。中間漏掉幾天也沒關係，天數會接著上次繼續，不會從頭算起。',
+    visitToday:g=>'今天的禮物：'+g, visitNow:'今天', visitDone:'已領取', visitNext:'未到',
+    dur:m=>m>=60?(m/60)+'小時':m+'分鐘',
+    gifts:{cr:d=>'結晶（'+d+'的挖掘量）', orb:'立即召喚光球', orb2:'召喚兩個光球', boost:d=>d+'內所有收入×2'},
+    askBody:'離開期間累積的結晶，8小時後就會存滿。需要在存滿時提醒一次嗎？',
+    askYes:'接收提醒', askNo:'暫時不用',
+    askNote:b=>'不會發出聲音。之後隨時可以在選單的「'+b+'」中更改。',
     privacyBtn:'隱私權設定',
     legalTitle:'條款與隱私權',
     legalBody:'本 App 適用 Apple 的標準使用授權合約。'
@@ -1408,6 +1530,15 @@
     notifyBody:'Ce qui s’accumule pendant votre absence atteint sa limite au bout de huit heures. '
       +'Un seul rappel silencieux est envoyé à ce moment-là, et rien d’autre.',
     notifyBtn:'Réglages des rappels',
+    dblBtn:'Doubler avec une vidéo', takeBtn:'Récupérer',
+    visitKicker:'Cadeau du jour', visitTitle:n=>'Jour '+n,
+    visitLead:'Ouvrez le jeu une fois par jour : un cadeau vous attend. Le jour 7, il est plus généreux. Si vous manquez un jour, rien n’est perdu : vous reprenez là où vous en étiez.',
+    visitToday:g=>'Cadeau d’aujourd’hui : '+g, visitNow:'aujourd’hui', visitDone:'récupéré', visitNext:'à venir',
+    dur:m=>m>=60?(m/60)+(m===60?' heure':' heures'):m+' minutes',
+    gifts:{cr:d=>'Cristaux ('+d+' d’extraction)', orb:'Un orbe, tout de suite', orb2:'Deux orbes', boost:d=>'Revenus ×2 pendant '+d},
+    askBody:'Ce qui s’accumule pendant votre absence atteint sa limite au bout de 8 heures. Souhaitez-vous recevoir un seul rappel à ce moment-là ?',
+    askYes:'Recevoir le rappel', askNo:'Pas maintenant',
+    askNote:b=>'Aucun son. Vous pouvez changer cela à tout moment dans « '+b+' », depuis le menu.',
     privacyBtn:'Réglages de confidentialité',
     legalTitle:'Conditions et confidentialité',
     legalBody:'Cette app est couverte par le contrat de licence standard d’Apple. '
@@ -1510,6 +1641,15 @@
     notifyBody:'Was sich während deiner Abwesenheit ansammelt, erreicht nach acht Stunden seine Grenze. '
       +'Genau dann kommt eine einzige lautlose Erinnerung, sonst nichts.',
     notifyBtn:'Erinnerungseinstellungen',
+    dblBtn:'Video ansehen und verdoppeln', takeBtn:'Einsammeln',
+    visitKicker:'TÄGLICHES GESCHENK', visitTitle:n=>'Tag '+n,
+    visitLead:'Öffne das Spiel einmal am Tag, dann wartet ein Geschenk auf dich. Am 7. Tag gibt es ein größeres. Lässt du einen Tag aus, geht nichts verloren – du machst einfach dort weiter, wo du warst.',
+    visitToday:g=>'Heutiges Geschenk: '+g, visitNow:'heute', visitDone:'eingesammelt', visitNext:'kommt noch',
+    dur:m=>m>=60?(m/60)+(m===60?' Stunde':' Stunden'):m+' Minuten',
+    gifts:{cr:d=>'Kristalle ('+d+' Abbau)', orb:'Sofort eine Kugel herbeirufen', orb2:'Zwei Kugeln herbeirufen', boost:d=>'Alle Einnahmen '+d+' lang ×2'},
+    askBody:'Was sich während deiner Abwesenheit ansammelt, ist nach 8 Stunden voll. Soll dir das Spiel einmal Bescheid geben, sobald es so weit ist?',
+    askYes:'Ja, erinnere mich', askNo:'Jetzt nicht',
+    askNote:b=>'Ganz ohne Ton. Du kannst das jederzeit im Menü unter „'+b+'“ ändern.',
     privacyBtn:'Datenschutzeinstellungen',
     legalTitle:'Bedingungen und Datenschutz',
     legalBody:'Für diese App gilt die Standard-Lizenzvereinbarung von Apple. '
@@ -1612,6 +1752,15 @@
     notifyBody:'Ciò che si accumula mentre sei via raggiunge il limite dopo otto ore. '
       +'In quel momento arriva un solo promemoria silenzioso, e nient’altro.',
     notifyBtn:'Impostazioni promemoria',
+    dblBtn:'Raddoppia con un video', takeBtn:'Ritira',
+    visitKicker:'Regalo del giorno', visitTitle:n=>'Giorno '+n,
+    visitLead:'Apri il gioco una volta al giorno e trovi un regalo ad aspettarti. Il giorno 7 il regalo è più grande. Se salti un giorno non perdi nulla: riprendi da dove avevi lasciato.',
+    visitToday:g=>'Regalo di oggi: '+g, visitNow:'oggi', visitDone:'ritirato', visitNext:'da raggiungere',
+    dur:m=>m>=60?(m/60)+(m===60?' ora':' ore'):m+' minuti',
+    gifts:{cr:d=>'Cristalli ('+d+' di scavo)', orb:'Una sfera, subito', orb2:'Due sfere', boost:d=>'Guadagni ×2 per '+d},
+    askBody:'Ciò che si accumula mentre sei via raggiunge il limite dopo 8 ore. Vuoi ricevere un solo promemoria quando succede?',
+    askYes:'Ricevi il promemoria', askNo:'Non ora',
+    askNote:b=>'Nessun suono. Puoi cambiarlo quando vuoi da «'+b+'» nel menu.',
     privacyBtn:'Impostazioni privacy',
     legalTitle:'Termini e privacy',
     legalBody:'Questa app è coperta dal contratto di licenza standard di Apple. '
@@ -1714,6 +1863,15 @@
     notifyBody:'O que se acumula enquanto você está fora chega ao limite depois de oito horas. '
       +'Nesse momento chega um único aviso silencioso, e nada mais.',
     notifyBtn:'Ajustes do aviso',
+    dblBtn:'Ver um vídeo para dobrar', takeBtn:'Receber',
+    visitKicker:'Presente diário', visitTitle:n=>'Dia '+n,
+    visitLead:'Abra o jogo uma vez por dia e um presente estará esperando por você. O dia 7 traz um presente maior. Se faltar um dia, nada se perde: você continua de onde parou.',
+    visitToday:g=>'Presente de hoje: '+g, visitNow:'hoje', visitDone:'recebido', visitNext:'ainda por vir',
+    dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
+    gifts:{cr:d=>'Cristais ('+d+' de mineração)', orb:'Um orbe agora mesmo', orb2:'Dois orbes', boost:d=>'Renda ×2 por '+d},
+    askBody:'O que se acumula enquanto você está fora chega ao limite depois de 8 horas. Quer receber um único aviso quando isso acontecer?',
+    askYes:'Receber o aviso', askNo:'Agora não',
+    askNote:b=>'Sem som. Você pode mudar isso quando quiser em “'+b+'”, no menu.',
     privacyBtn:'Ajustes de privacidade',
     legalTitle:'Termos e privacidade',
     legalBody:'Este app segue o contrato de licença padrão da Apple. '
@@ -1816,6 +1974,15 @@
     notifyBody:'Wat zich ophoopt terwijl je weg bent, bereikt na acht uur zijn grens. '
       +'Op dat moment komt er één stille melding, en verder niets.',
     notifyBtn:'Meldingsinstellingen',
+    dblBtn:'Video bekijken en verdubbelen', takeBtn:'Ophalen',
+    visitKicker:'DAGELIJKS CADEAU', visitTitle:n=>'Dag '+n,
+    visitLead:'Open het spel één keer per dag en er ligt een cadeau voor je klaar. Op dag 7 is het cadeau groter. Sla je een dag over, dan verlies je niets: je gaat gewoon verder waar je was.',
+    visitToday:g=>'Cadeau van vandaag: '+g, visitNow:'vandaag', visitDone:'opgehaald', visitNext:'komt nog',
+    dur:m=>m>=60?(m/60)+' uur':m+' minuten',
+    gifts:{cr:d=>'Kristallen ('+d+' aan opbrengst)', orb:'Meteen een bol oproepen', orb2:'Twee bollen oproepen', boost:d=>'Alle inkomsten '+d+' ×2'},
+    askBody:'Wat zich ophoopt terwijl je weg bent, is na 8 uur vol. Wil je één keer een melding krijgen zodra het vol is?',
+    askYes:'Ja, laat het me weten', askNo:'Nu niet',
+    askNote:b=>'De melding maakt geen geluid. Je kunt dit altijd aanpassen via ‘'+b+'’ in het menu.',
     privacyBtn:'Privacy-instellingen',
     legalTitle:'Voorwaarden en privacy',
     legalBody:'Voor deze app geldt de standaard licentieovereenkomst van Apple. '
@@ -1918,6 +2085,15 @@
     notifyBody:'To, co zbiera się pod twoją nieobecność, osiąga limit po ośmiu godzinach. '
       +'Wtedy przychodzi jedno ciche przypomnienie i nic więcej.',
     notifyBtn:'Ustawienia przypomnień',
+    dblBtn:'Obejrzyj film, aby podwoić', takeBtn:'Odbierz',
+    visitKicker:'CODZIENNY PREZENT', visitTitle:n=>'Dzień '+n,
+    visitLead:'Otwórz grę raz dziennie, a będzie na ciebie czekać prezent. Siódmego dnia prezent jest większy. Jeśli opuścisz jakiś dzień, nic nie przepada – po prostu kontynuujesz od tego samego miejsca.',
+    visitToday:g=>'Dzisiejszy prezent: '+g, visitNow:'dziś', visitDone:'odebrano', visitNext:'jeszcze przed tobą',
+    dur:m=>{const p=(n,a,b,c)=>n+' '+(n===1?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'godzina','godziny','godzin'):p(m,'minuta','minuty','minut')},
+    gifts:{cr:d=>'Kryształy ('+d+' wydobycia)', orb:'Kula, od razu', orb2:'Dwie kule', boost:d=>'Cały dochód ×2 ('+d+')'},
+    askBody:'To, co zbiera się pod twoją nieobecność, osiąga limit po 8 godzinach. Czy wysłać ci wtedy jedno przypomnienie?',
+    askYes:'Tak, przypomnij mi', askNo:'Nie teraz',
+    askNote:b=>'Przypomnienie nie wydaje dźwięku. W każdej chwili możesz to zmienić w menu, w sekcji „'+b+'”.',
     privacyBtn:'Ustawienia prywatności',
     legalTitle:'Warunki i prywatność',
     legalBody:'Tę aplikację obejmuje standardowa umowa licencyjna Apple. '
@@ -2020,6 +2196,15 @@
     notifyBody:'То, что копится в ваше отсутствие, достигает предела через восемь часов. '
       +'В этот момент приходит одно беззвучное напоминание. Больше ничего не присылается.',
     notifyBtn:'Настройки напоминаний',
+    dblBtn:'Посмотреть видео и удвоить', takeBtn:'Забрать',
+    visitKicker:'ЕЖЕДНЕВНЫЙ ПОДАРОК', visitTitle:n=>'День '+n,
+    visitLead:'Заходите в игру раз в день — и вас будет ждать подарок. На 7-й день он больше обычного. Если пропустить день, ничего не теряется: вы просто продолжите с того же места.',
+    visitToday:g=>'Подарок на сегодня: '+g, visitNow:'сегодня', visitDone:'получено', visitNext:'впереди',
+    dur:m=>{const p=(n,a,b,c)=>n+' '+(n%10===1&&n%100!==11?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'час','часа','часов'):p(m,'минута','минуты','минут')},
+    gifts:{cr:d=>'Кристаллы ('+d+' добычи)', orb:'Сфера прямо сейчас', orb2:'Две сферы', boost:d=>'Весь доход ×2 на '+d},
+    askBody:'То, что копится в ваше отсутствие, достигает предела через 8 часов. Прислать вам одно напоминание, когда это произойдёт?',
+    askYes:'Да, напомните мне', askNo:'Не сейчас',
+    askNote:b=>'Без звука. Изменить это можно в любой момент в меню, в разделе «'+b+'».',
     privacyBtn:'Настройки конфиденциальности',
     legalTitle:'Условия и конфиденциальность',
     legalBody:'На это приложение распространяется стандартное лицензионное соглашение Apple. '
@@ -2122,6 +2307,15 @@
     notifyBody:'Sen yokken biriken miktar sekiz saat sonra sınırına ulaşır. '
       +'O anda yalnızca tek bir sessiz hatırlatma gelir, başka hiçbir şey gönderilmez.',
     notifyBtn:'Hatırlatma ayarları',
+    dblBtn:'Video izle, ikiye katla', takeBtn:'Al',
+    visitKicker:'GÜNLÜK HEDİYE', visitTitle:n=>n+'. gün',
+    visitLead:'Oyunu günde bir kez açtığında seni bir hediye bekler. 7. günün hediyesi daha büyüktür. Bir gün kaçırırsan hiçbir şey kaybetmezsin; kaldığın yerden devam edersin.',
+    visitToday:g=>'Bugünün hediyesi: '+g, visitNow:'bugün', visitDone:'alındı', visitNext:'henüz gelmedi',
+    dur:m=>m>=60?(m/60)+' saat':m+' dakika',
+    gifts:{cr:d=>'Kristal ('+d+(/saat$/.test(d)?'lik':'lık')+' kazı)', orb:'Hemen bir küre', orb2:'İki küre', boost:d=>d+' boyunca tüm gelir ×2'},
+    askBody:'Sen yokken biriken miktar 8 saat sonra dolar. Dolduğunda bir kez hatırlatma almak ister misin?',
+    askYes:'Evet, hatırlat', askNo:'Şimdi değil',
+    askNote:b=>'Ses çıkmaz. Bunu istediğin zaman menüdeki “'+b+'” bölümünden değiştirebilirsin.',
     privacyBtn:'Gizlilik ayarları',
     legalTitle:'Koşullar ve gizlilik',
     legalBody:'Bu uygulama Apple’ın standart lisans sözleşmesine tabidir. '
@@ -2224,6 +2418,15 @@
     notifyBody:'Phần tích lũy khi bạn vắng mặt sẽ chạm giới hạn sau tám giờ. '
       +'Lúc đó chỉ có một lời nhắc không âm thanh, ngoài ra không gửi gì khác.',
     notifyBtn:'Cài đặt nhắc nhở',
+    dblBtn:'Xem video để nhận gấp đôi', takeBtn:'Nhận',
+    visitKicker:'QUÀ MỖI NGÀY', visitTitle:n=>'Ngày '+n,
+    visitLead:'Mỗi ngày mở trò chơi một lần, bạn sẽ nhận được một món quà. Ngày 7 là món quà lớn hơn. Lỡ vài ngày cũng không sao: bạn sẽ đi tiếp từ ngày đang dở, không phải bắt đầu lại.',
+    visitToday:g=>'Quà hôm nay: '+g, visitNow:'hôm nay', visitDone:'đã nhận', visitNext:'chưa tới',
+    dur:m=>m>=60?(m/60)+' giờ':m+' phút',
+    gifts:{cr:d=>'Tinh thể (tương đương '+d+' đào)', orb:'Gọi ngay một quả cầu', orb2:'Gọi hai quả cầu', boost:d=>'Mọi thu nhập ×2 trong '+d},
+    askBody:'Phần tích lũy khi bạn vắng mặt sẽ đầy sau 8 giờ. Bạn có muốn nhận một lời nhắc duy nhất khi đã đầy không?',
+    askYes:'Nhận lời nhắc', askNo:'Để sau',
+    askNote:b=>'Không có âm thanh. Bạn có thể đổi bất cứ lúc nào ở mục “'+b+'” trong Menu.',
     privacyBtn:'Cài đặt quyền riêng tư',
     legalTitle:'Điều khoản và quyền riêng tư',
     legalBody:'Ứng dụng này áp dụng thỏa thuận cấp phép tiêu chuẩn của Apple. '
@@ -2326,6 +2529,15 @@
     notifyBody:'สิ่งที่สะสมระหว่างคุณไม่อยู่จะเต็มขีดจำกัดเมื่อครบแปดชั่วโมง '
       +'ตอนนั้นจะมีการแจ้งเตือนแบบไม่มีเสียงเพียงครั้งเดียว และจะไม่ส่งอะไรอื่นอีก',
     notifyBtn:'ตั้งค่าการแจ้งเตือน',
+    dblBtn:'ดูวิดีโอเพื่อรับสองเท่า', takeBtn:'รับ',
+    visitKicker:'ของขวัญรายวัน', visitTitle:n=>'วันที่ '+n,
+    visitLead:'เปิดเกมวันละครั้ง จะมีของขวัญรออยู่ วันที่ 7 เป็นของขวัญชิ้นใหญ่ ถ้าเว้นไปบางวันก็ไม่เป็นไร จะนับต่อจากวันเดิม ไม่เริ่มใหม่',
+    visitToday:g=>'ของขวัญวันนี้: '+g, visitNow:'วันนี้', visitDone:'รับแล้ว', visitNext:'ยังไม่ถึง',
+    dur:m=>m>=60?(m/60)+' ชั่วโมง':m+' นาที',
+    gifts:{cr:d=>'คริสตัล (เท่ากับขุด '+d+')', orb:'เรียกลูกแสงทันที', orb2:'เรียกลูกแสง 2 ลูก', boost:d=>'รายได้ทั้งหมด ×2 นาน '+d},
+    askBody:'คริสตัลที่สะสมระหว่างคุณไม่อยู่จะเต็มเมื่อครบ 8 ชั่วโมง ต้องการให้แจ้งเตือนเพียงครั้งเดียวตอนที่เต็มหรือไม่',
+    askYes:'รับการแจ้งเตือน', askNo:'ไว้ทีหลัง',
+    askNote:b=>'ไม่มีเสียง เปลี่ยนได้ทุกเมื่อที่ “'+b+'” ในเมนู',
     privacyBtn:'ตั้งค่าความเป็นส่วนตัว',
     legalTitle:'ข้อกำหนดและความเป็นส่วนตัว',
     legalBody:'แอปนี้อยู่ภายใต้ข้อตกลงสิทธิ์การใช้งานมาตรฐานของ Apple '
@@ -2428,6 +2640,15 @@
     notifyBody:'Yang terkumpul saat kamu pergi mencapai batas setelah delapan jam. '
       +'Saat itu hanya satu pengingat tanpa suara yang dikirim, tidak ada yang lain.',
     notifyBtn:'Pengaturan pengingat',
+    dblBtn:'Gandakan lewat video', takeBtn:'Ambil',
+    visitKicker:'Hadiah harian', visitTitle:n=>'Hari ke-'+n,
+    visitLead:'Buka permainan sekali sehari, dan sebuah hadiah sudah menunggu. Hadiah hari ke-7 lebih besar. Kalau ada hari yang terlewat, tidak ada yang hilang: kamu tinggal lanjut dari hari terakhir.',
+    visitToday:g=>'Hadiah hari ini: '+g, visitNow:'hari ini', visitDone:'sudah diambil', visitNext:'belum tiba',
+    dur:m=>m>=60?(m/60)+' jam':m+' menit',
+    gifts:{cr:d=>'Kristal (senilai '+d+' penggalian)', orb:'Satu bola, sekarang juga', orb2:'Dua bola', boost:d=>'Pendapatan ×2 selama '+d},
+    askBody:'Yang terkumpul saat kamu pergi akan penuh setelah 8 jam. Mau diberi tahu sekali saja saat sudah penuh?',
+    askYes:'Terima pengingat', askNo:'Nanti saja',
+    askNote:b=>'Tanpa suara. Bisa diubah kapan saja lewat “'+b+'” di menu.',
     privacyBtn:'Pengaturan privasi',
     legalTitle:'Ketentuan dan privasi',
     legalBody:'Aplikasi ini mengikuti perjanjian lisensi standar Apple. '
@@ -2437,6 +2658,8 @@
   }
   };
 
+  /* any line a language does not have yet is shown in English */
+  for(const k in T) for(const key in T.en) if(!(key in T[k])) T[k][key] = T.en[key];
   let langId = 'ja';
   let L = T.ja;
   const langDef = () => LANGS.find(l => l.id === langId) || LANGS[0];
@@ -2533,10 +2756,15 @@
   const EVENT_IDS = ['lode','echo','visitor'];
   const EVENT_COLOR = {lode:'#F2C673', echo:'#C29CF2', visitor:'#7FE6E0'};
 
-  const S = {c:0,total:0,grand:0,cores:0,loops:0,taps:{pick:0,glove:0},gens:{},clicks:0,resets:0,events:0,paused:false,coreBonus:0,adcd:{},adDay:'',adUsed:0,t:Date.now()};
+  const S = {c:0,total:0,grand:0,cores:0,loops:0,taps:{pick:0,glove:0},gens:{},clicks:0,resets:0,events:0,paused:false,coreBonus:0,adcd:{},adDay:'',adUsed:0,
+             dbl:0, visit:{n:0,day:''}, sessions:0, askedNotify:false, t:Date.now()};
   GENS.forEach(g => S.gens[g.id] = 0);
   const SAVE_KEY = 'crystal-cave-v1';
-  let boost = {mult:1, until:0};
+  /* Two separate timers, so one never cuts the other short.
+     echoUntil  the ×5 from an Echo orb, 30 seconds, not saved
+     S.dbl      ×2 income from a bonus or a daily gift, saved, and kept
+                through a rebirth. Echo wins while both run. */
+  let echoUntil = 0;
 
   function save(){ try{ S.t = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
   function applyData(d){
@@ -2545,6 +2773,10 @@
     S.cores=+d.cores||0; S.loops=+d.loops||0; S.clicks=+d.clicks||0; S.resets=+d.resets||0; S.events=+d.events||0;
     S.coreBonus=+d.coreBonus||0; S.adcd = (d.adcd && typeof d.adcd === 'object') ? d.adcd : {};
     S.adDay = d.adDay || ''; S.adUsed = +d.adUsed||0;
+    S.dbl = +d.dbl||0;
+    const v = (d.visit && typeof d.visit === 'object') ? d.visit : {};
+    S.visit = {n: Math.max(0, Math.min(6, Math.floor(+v.n||0))), day: String(v.day||'')};
+    S.sessions = +d.sessions||0; S.askedNotify = !!d.askedNotify;
     S.paused = !!d.paused;
     TAPS.forEach(t => S.taps[t.id] = (d.taps ? +d.taps[t.id] : 0) || 0);
     GENS.forEach(g => S.gens[g.id] = (d.gens ? +d.gens[g.id] : 0) || 0);
@@ -2558,7 +2790,8 @@
   }
 
   const coreMult = () => 1 + S.cores*0.02;
-  const boostMult = () => (Date.now() < boost.until ? boost.mult : 1);
+  const boostMult = () => { const n = Date.now(); return n < echoUntil ? 5 : (n < S.dbl ? 2 : 1); };
+  const boostEnds = () => { const n = Date.now(); return n < echoUntil ? echoUntil : S.dbl; };
   const costOf = (d,o) => Math.ceil(d.base * Math.pow(d.grow||1.15, o));
   /* buying k copies at once: a geometric series, so no loop is needed */
   function costN(d, o, k){
@@ -2723,6 +2956,9 @@
                            // kept separate from ORB_LIFE so drift stays gentle
         ECHO_MS = 30000;   // how long the ×5 resonance lasts
   const nextOrbGap = () => ORB_GAP;
+  /* a daily gift of "two orbs" sends the second one shortly after the first */
+  let extraOrbs = 0;
+  const afterOrbGap = () => { if(extraOrbs > 0){ extraOrbs--; return 20; } return nextOrbGap(); };
 
   let pulse=0, tick=0, orb=null, orbTimer = ORB_FIRST;
 
@@ -2832,13 +3068,13 @@
   function drawOrb(dt){
     const o = orb;
     o.life -= dt;
-    if(o.life <= 0){ orb = null; orbTimer = nextOrbGap(); return; }
+    if(o.life <= 0){ orb = null; orbTimer = afterOrbGap(); return; }
     o.x += o.vx*dt;
     /* With reduced motion the orb crosses in a straight line. Bobbing on top
        of the sideways drift is motion on two axes at once — the kind the
        setting exists to spare people. */
     o.y = reduce ? o.baseY : o.baseY + Math.sin(tick*1.6+o.phase)*18;
-    if(o.x < -60 || o.x > W+60){ orb = null; orbTimer = nextOrbGap(); return; }
+    if(o.x < -60 || o.x > W+60){ orb = null; orbTimer = afterOrbGap(); return; }
     const fade = Math.min(1,o.life/1.2);
     const r = o.r*(reduce?1:(1+Math.sin(tick*5)*0.07));
     ctx.save();
@@ -2897,7 +3133,7 @@
     let sub = t[1];
     S.events++;
     if(id === 'echo'){
-      boost = {mult:5, until:Date.now()+ECHO_MS};
+      echoUntil = Date.now()+ECHO_MS;
     }else{
       const gain = Math.max(tapPower()*(id==='lode'?60:120), baseRate()*(id==='lode'?90:190), 100);
       S.c += gain; S.total += gain; S.grand += gain;
@@ -2907,7 +3143,7 @@
     burst(x,y,9e9,color);
     pops.push({x, y:y-10, life:1.3, txt:'!', c:color});
     showBig(L.evKicker, t[0], sub, color);
-    orb = null; orbTimer = nextOrbGap();
+    orb = null; orbTimer = afterOrbGap();
     refresh(); save();
   }
 
@@ -3203,12 +3439,215 @@
     $('welcome').hidden = true;
     try{ localStorage.setItem('cc-seen','1'); }catch(e){}
     $('tap').focus();
+    setTimeout(nextCard, 400);
   }
   $('wcStart').addEventListener('click', hideWelcome);
   $('welcome').addEventListener('click', e => { if(e.target === $('welcome')) hideWelcome(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape' && !$('welcome').hidden) hideWelcome();
+    else if(e.key === 'Escape' && card && !card.busy) closeCard('dismiss');
   });
+
+  /* ================================================================
+     cards that wait for an answer  (added in 1.3)
+     ----------------------------------------------------------------
+     welcome back  after 30 minutes or more away, the crystals that
+                   built up can be doubled by a short video
+     daily gift    one gift a day for opening the game; the seventh
+                   is bigger. Days count up, they are never lost, so
+                   missing a day costs nothing
+     reminder      once, on the second visit, inside the app only:
+                   would the player like the one "cave is full"
+                   notification? Nothing is asked unless they say yes
+     Videos here are always optional and do not count towards the ten
+     a day in the Bonus tab. Cards come one at a time.
+     ================================================================ */
+  const cardQ = [];
+  let card = null;
+  function queueCard(fn){ cardQ.push(fn); setTimeout(nextCard, 0); }
+  function nextCard(){
+    if(card || !$('welcome').hidden) return;
+    /* let a message that is still on screen finish first */
+    if(cardQ.length && bigpop.classList.contains('show')){ setTimeout(nextCard, 400); return; }
+    const f = cardQ.shift(); if(f) f();
+  }
+  function openCard(o){
+    card = o;
+    $('gfKicker').textContent = o.kicker || '';
+    $('gfTitle').textContent = o.title;
+    $('gfBody').innerHTML = o.body;
+    const m = $('gfMain'), a = $('gfAlt'), n = $('gfNote');
+    m.textContent = o.main;
+    /* a video button waits until a video is actually loaded */
+    m.disabled = !!o.ad && !Ads.isReady();
+    a.textContent = o.alt || ''; a.hidden = !o.alt; a.disabled = false;
+    n.textContent = o.note || ''; n.hidden = !o.note;
+    $('gift').hidden = false;
+    const app = document.querySelector('.app'); if(app) app.inert = true;
+    const box = $('gift').querySelector('.welcome-card');
+    box.scrollTop = 0;
+    /* focus the plain choice, so a key press never starts a video */
+    (o.alt ? a : m).focus({preventScroll:true});
+  }
+  function adStateChanged(){
+    if(card && card.ad && !card.busy && !card.failed) $('gfMain').disabled = !Ads.isReady();
+  }
+  function closeCard(how){
+    const o = card; if(!o) return;
+    $('gift').hidden = true; card = null;
+    const app = document.querySelector('.app'); if(app) app.inert = false;
+    try{ if(o.done) o.done(how); }catch(e){}
+    $('tap').focus();
+    setTimeout(nextCard, 450);
+  }
+  /* the gold button on a card with a video: play it, and double on success.
+     If no video can be shown, the plain amount is still given. */
+  function cardVideo(){
+    const o = card; if(!o || o.busy) return;
+    o.busy = true; $('gfMain').disabled = true; $('gfAlt').disabled = true;
+    Ads.show(o.ad, () => { o.busy = false; o.doubled = true; if(card === o) closeCard('main'); },
+                   () => {
+                     /* no video: the card stays, with the plain choice */
+                     o.busy = false; o.failed = true;
+                     if(card !== o) return;
+                     $('gfMain').disabled = true; $('gfAlt').disabled = false;
+                     $('gfAlt').focus({preventScroll:true});
+                     toast(L.rwFail);
+                   });
+  }
+  $('gfMain').addEventListener('click', () => { if(card) (card.ad ? cardVideo() : closeCard('main')); });
+  $('gfAlt').addEventListener('click', () => { if(card && !card.busy) closeCard('alt'); });
+  $('gift').addEventListener('click', e => { if(e.target === $('gift') && card && !card.busy) closeCard('dismiss'); });
+  const videoOK = () => Ads.mode !== 'off';
+
+  function addCrystals(v){ S.c += v; S.total += v; S.grand += v; }
+  function addDouble(min){ S.dbl = Math.max(S.dbl, Date.now()) + min*60*1000; }
+
+  /* ---- welcome back ---- */
+  const BACK_CARD = 30*60;          // seconds away before the card is offered
+  function creditAway(away){
+    if(S.paused) return;
+    away = Math.min(away, 8*3600);
+    const r = baseRate();
+    if(!(away > 60 && r > 0)) return;
+    const earned = r*away*0.5;      // half speed while away, as always
+    addCrystals(earned);
+    const mins = Math.floor(away/60);
+    const t = L.hm(Math.floor(mins/60), mins%60);
+    if(away >= BACK_CARD && videoOK()){
+      queueCard(() => openCard({
+        title:L.backTitle, body:'<p>'+supWrap(L.backSub(t, fmt(earned)))+'</p>',
+        main:L.dblBtn, alt:L.takeBtn, ad:'back',
+        done(){
+          if(this.doubled){
+            addCrystals(earned); save(); refresh();
+            showBig(L.backKicker, L.backTitle, L.rwGot.skip(fmt(earned*2)), '#7FE6E0');
+          }
+        }}));
+    }else{
+      /* queued like a card, so a card behind it waits for it to finish */
+      queueCard(() => { showBig(L.backKicker, L.backTitle, L.backSub(t, fmt(earned)), '#7FE6E0'); setTimeout(nextCard, 400); });
+    }
+  }
+
+  /* ---- daily gift ---- */
+  const VISIT = [{cr:15},{orb:1},{cr:30},{boost:15},{cr:60},{boost:30},{cr:120, boost:60}];
+  let visitQueued = false;
+  function giftText(g, x){
+    const p = [];
+    if(g.cr) p.push(L.gifts.cr(L.dur(g.cr*x)));
+    if(g.orb) p.push(x > 1 ? L.gifts.orb2 : L.gifts.orb);
+    if(g.boost) p.push(L.gifts.boost(L.dur(g.boost*x)));
+    return p.join(' + ');
+  }
+  function giveGift(g, x){
+    if(g.cr) addCrystals(baseRate()*g.cr*60*x);
+    if(g.orb){
+      if(!orb && W > 80){ spawnOrb(); orbTimer = nextOrbGap(); } else extraOrbs++;
+      if(x > 1) extraOrbs++;
+    }
+    if(g.boost) addDouble(g.boost*x);
+  }
+  function checkVisit(){
+    if(visitQueued || S.paused || baseRate() <= 0) return;
+    if(S.visit.day === todayKey()) return;
+    visitQueued = true;
+    queueCard(showVisit);
+  }
+  function showVisit(){
+    const n = S.visit.n, g = VISIT[n], day = todayKey();
+    let cal = '';
+    for(let i = 0; i < 7; i++){
+      const cls = i < n ? 'done' : (i === n ? 'today' : '');
+      const mk = i < n ? '✓' : (i === n ? '◆' : (i === 6 ? '★' : '·'));
+      const st = i < n ? L.visitDone : (i === n ? L.visitNow : L.visitNext);
+      cal += '<li class="'+cls+'"'+(i === n ? ' aria-current="date"' : '')+' aria-label="'+L.visitTitle(i+1)+' — '+st+'">'+
+             '<span aria-hidden="true">'+(i+1)+'</span><span class="mk" aria-hidden="true">'+mk+'</span></li>';
+    }
+    openCard({
+      kicker:L.visitKicker, title:L.visitTitle(n+1),
+      body:'<p>'+L.visitLead+'</p><ol class="cal">'+cal+'</ol><p class="gf-today">'+L.visitToday('<b>'+giftText(g,1)+'</b>')+'</p>',
+      main: videoOK() ? L.dblBtn : L.takeBtn, alt: videoOK() ? L.takeBtn : null, ad: videoOK() ? 'visit' : null,
+      done(){
+        const x = this.doubled ? 2 : 1;
+        giveGift(g, x);
+        S.visit = {n:(n+1)%7, day};
+        visitQueued = false;
+        save(); refresh();
+        showBig(L.visitKicker, L.visitTitle(n+1), giftText(g, x), 'var(--gold)');
+      }});
+  }
+
+  /* ---- reminder invite (app only) ---- */
+  let notifyAsking = false;
+  window.CCNotify = {
+    status(s){
+      if(!notifyAsking) return;
+      notifyAsking = false;
+      if(s !== 'notDetermined' || S.askedNotify) return;
+      /* never more than two cards in a row: if this visit is already
+         busy, the invite waits for a quieter one */
+      if((card ? 1 : 0) + cardQ.length > 1) return;
+      queueCard(showAsk);
+    }
+  };
+  function maybeAsk(){
+    if(!Native.on || S.askedNotify || (S.sessions||0) < 2 || notifyAsking) return;
+    notifyAsking = true;
+    Native.notifyQuery();
+  }
+  function showAsk(){
+    if(S.askedNotify) return nextCard();
+    S.askedNotify = true; save();
+    openCard({
+      title:L.notifyTitle, body:'<p>'+L.askBody+'</p>',
+      main:L.askYes, alt:L.askNo, note:L.askNote(L.notifyBtn),
+      done(how){ if(how === 'main') Native.notifyAsk(); }});
+  }
+
+  /* ---- coming back to a page that was only hidden ----
+     A phone keeps the app alive in the background for a while. Coming
+     back then is not a fresh start, so the away earnings have to be
+     counted here too — before 1.3 they were only counted on a cold start.
+     Time hidden behind a full-screen video is not "away". */
+  let hiddenAt = 0, hiddenInAd = false;
+  /* a video has just ended. If the page is still hidden (the player left
+     for the home screen during it), being away starts now */
+  function afterAd(){
+    if(document.hidden){ hiddenAt = Date.now(); hiddenInAd = false; }
+  }
+  function onReturn(){
+    const t = hiddenAt; hiddenAt = 0;
+    const skip = !t || hiddenInAd || Ads.busy;
+    hiddenInAd = false;
+    if(skip) return;
+    const away = (Date.now()-t)/1000;
+    if(away >= 300) S.sessions = (S.sessions||0) + 1;
+    creditAway(away);
+    checkVisit();
+    if(away >= 300) maybeAsk();
+    save(); refresh();
+  }
 
   /* ---------- tabs ---------- */
   const tabs = {mine:$('tab-mine'), core:$('tab-core'), bonus:$('tab-bonus'),
@@ -3286,7 +3725,7 @@
     S.c = 0; S.total = 0;
     TAPS.forEach(t => S.taps[t.id] = 0);
     GENS.forEach(g => S.gens[g.id] = 0);
-    boost = {mult:1, until:0};
+    echoUntil = 0;
     save();
     let sub = L.rebirthDone(fmt(gain), fmtMult());
     if(opened) sub += '<br>' + L.unlockSub(L.stages[seamsOpen()-1]);
@@ -3422,8 +3861,10 @@
       if(!v){ toast(L.emptyCode); return; }
       const d = decode(v);
       if(!d || (typeof d.grand === 'undefined' && typeof d.total === 'undefined')){ toast(L.badCode); return; }
-      applyData(d);
-      boost = {mult:1, until:0};
+      const keep = {visit:S.visit, sessions:S.sessions, askedNotify:S.askedNotify, dbl:S.dbl,
+                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd};
+      applyData(d); Object.assign(S, keep);
+      echoUntil = 0;
       $('importCode').value = '';
       save(); setPaused(S.paused); refresh();
       showBig(L.loadKicker, L.loadTitle, L.loadSub(fmt(S.grand)), '#7FE6E0');
@@ -3438,8 +3879,10 @@
         return;
       }
       wipeArmed = false; b.textContent = L.wipe;
-      applyData({}); S.cores = 0;
-      boost = {mult:1, until:0};
+      const keep = {visit:S.visit, sessions:S.sessions, askedNotify:S.askedNotify,
+                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd};
+      applyData({}); S.cores = 0; Object.assign(S, keep);
+      echoUntil = 0;
       try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
       setPaused(false); refresh(); toast(L.wipeDone);
     });
@@ -3488,8 +3931,7 @@
       S.c += gain; S.total += gain; S.grand += gain;
       sub = L.rwGot.skip(fmt(gain));
     }else if(id === 'boost'){
-      boost = {mult: Math.max(2, boostMult()),
-               until: Math.max(boost.until, Date.now() + 30*60*1000)};
+      addDouble(30);
       sub = L.rwGot.boost;
     }else if(id === 'orb'){
       if(!orb && W > 80) spawnOrb();
@@ -3614,9 +4056,9 @@
     let html = langDef().rateFirst ? L.perSec+' '+v : v+' '+L.perSec;
     if(S.cores) html += '<span class="sep">|</span>'+L.coreMult+' ×'+fmtMult();
     if(b > 1){
-      const ms = boost.until - Date.now();
+      const ms = boostEnds() - Date.now();
       html += '<span class="sep">|</span><span class="boost">'+L.resonance+' ×'+b+' '+
-        (ms > 60000 ? L.rwWait(mmss(ms)) : L.remain(Math.ceil(ms/1000)))+'</span>';
+        (ms > 60000 ? L.rwWait(hms(ms)) : L.remain(Math.ceil(ms/1000)))+'</span>';
     }
     $('rate').innerHTML = supWrap(html);
 
@@ -3769,24 +4211,15 @@
     let fi = 1;
     try{ const v = localStorage.getItem('cc-fs'); if(v !== null) fi = +v; }catch(e){}
 
+    Ads.init();
     if(hot && hot.state){
       Object.assign(S, hot.state);
     }else{
       const savedAt = load();
-      if(savedAt && !S.paused){
-        const away = Math.min((Date.now()-savedAt)/1000, 8*3600);
-        const r = baseRate();
-        if(away > 60 && r > 0){
-          const earned = r*away*0.5;
-          S.c += earned; S.total += earned; S.grand += earned;
-          const mins = Math.floor(away/60);
-          setTimeout(() => showBig(L.backKicker, L.backTitle,
-            L.backSub(L.hm(Math.floor(mins/60), mins%60), fmt(earned)), '#7FE6E0'), 700);
-        }
-      }
+      S.sessions = (S.sessions||0) + 1;
+      if(savedAt) creditAway((Date.now()-savedAt)/1000);
     }
 
-    Ads.init();
     applyStaticText();
     buildAll();
     applyFs(fi);
@@ -3799,6 +4232,9 @@
     let seen = true;
     try{ seen = !!localStorage.getItem('cc-seen'); }catch(e){}
     if(!seen && S.grand === 0) showWelcome();
+    checkVisit();
+    maybeAsk();
+    save();
     if(Native.on) Native.privacy(false);
     requestAnimationFrame(frame);
     try{ window.claude && window.claude.hot && window.claude.hot.snapshot(() => ({state:S})); }catch(e){}
@@ -3806,7 +4242,10 @@
 
   window.addEventListener('beforeunload', save);
   document.addEventListener('visibilitychange', () => {
-    if(document.hidden){ save(); Native.idle(); }
+    if(document.hidden){
+      hiddenAt = Date.now(); hiddenInAd = Ads.busy;
+      save(); Native.idle();
+    }else onReturn();
   });
   window.addEventListener('pagehide', () => { save(); Native.idle(); });
 

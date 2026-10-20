@@ -2,17 +2,22 @@
 //  GameBridge.swift
 //
 //  ゲーム（JavaScript）からの呼び出しを受け取り、アプリ側の機能につなぎます。
-//  受け取るのは3種類だけです。
+//  受け取るのは次のものだけです。
 //
 //    ccHaptic  { kind: "tap" | "buy" | "orb" | "seam" | "rebirth" }
-//    ccAds     { reward: "skip" | "boost" | "orb" | "core" }
+//    ccAds     { reward: "skip" | "boost" | "orb" | "core" | "back" | "visit" }
+//    ccAds     { query: true }  いま見せられる広告があるか教えてほしい（1.3）
 //    ccIdle    { rate: Int, paused: Bool, fullAfterSeconds: Int }
-//    ccNotify  {}   メニューの「お知らせの設定」が押された
+//    ccNotify  {}             メニューの「お知らせの設定」が押された
+//    ccNotify  { query: true } 通知の許可がまだ未回答か教えてほしい（1.3）
+//    ccNotify  { ask: true }   案内のカードで「受け取る」が押された（1.3）
 //    ccPrivacy {}             同意を変える入口を見せるべきか教えてほしい
 //    ccPrivacy { open: true } メニューの「プライバシー設定」が押された
 //
 //  広告の返事は window.CCAds.grant(id) / window.CCAds.fail(id) で、
-//  プライバシー設定のボタンを出すかどうかは window.CCPrivacy.set(真偽) で返します。
+//  広告の用意ができたかは window.CCAds.ready(真偽)、画面に出たことは window.CCAds.shown() で、
+//  プライバシー設定のボタンを出すかどうかは window.CCPrivacy.set(真偽) で、
+//  通知の許可の状態は window.CCNotify.status('notDetermined' など) で返します。
 //
 
 import UIKit
@@ -49,6 +54,10 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             Haptics.shared.play(kind)
 
         case "ccAds":
+            if body["query"] as? Bool == true {
+                sendAdState(ready: AdsManager.shared.isReady)
+                return
+            }
             guard let reward = body["reward"] as? String else { return }
             showRewardedAd(for: reward)
 
@@ -61,7 +70,15 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 afterSeconds: seconds, perSecond: rate, paused: paused)
 
         case "ccNotify":
-            NotificationManager.shared.promptOrOpenSettings()
+            if body["query"] as? Bool == true {
+                sendNotifyStatus()
+            } else if body["ask"] as? Bool == true {
+                // 案内のカードで「受け取る」を押した人にだけ、iOS の許可の画面を出す。
+                // すでに答えている人には何もしない（設定アプリも開かない）。
+                NotificationManager.shared.requestIfUndetermined { self.sendNotifyStatus() }
+            } else {
+                NotificationManager.shared.promptOrOpenSettings()
+            }
 
         case "ccPrivacy":
             if body["open"] as? Bool == true {
@@ -98,6 +115,22 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         }
     }
 
+    /// 広告の用意ができているかをゲームへ伝えます。
+    func sendAdState(ready: Bool) {
+        let js = "window.CCAds && window.CCAds.ready && window.CCAds.ready(\(ready ? "true" : "false"));"
+        DispatchQueue.main.async {
+            self.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
+    /// 広告が画面に出たことをゲームへ伝えます。
+    func sendAdShown() {
+        let js = "window.CCAds && window.CCAds.shown && window.CCAds.shown();"
+        DispatchQueue.main.async {
+            self.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
     // MARK: - プライバシー設定
 
     /// メニューに「プライバシー設定」のボタンを出すかどうかをゲームへ伝えます。
@@ -106,6 +139,17 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let on = ConsentManager.shared.privacyOptionsRequired ? "true" : "false"
         let js = "window.CCPrivacy && window.CCPrivacy.set(\(on));"
         webView?.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    // MARK: - 通知の許可の状態
+
+    /// 通知の許可がどうなっているかをゲームへ伝えます。
+    /// ゲームは "notDetermined"（まだ答えていない）のときだけ案内のカードを出します。
+    func sendNotifyStatus() {
+        NotificationManager.shared.status { state in
+            let js = "window.CCNotify && window.CCNotify.status('\(state)');"
+            self.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
     }
 
     // MARK: - 画面遷移の制御
