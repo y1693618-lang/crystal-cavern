@@ -317,15 +317,15 @@
   .gf-body b{color:var(--ink)}
   .gf-actions{display:flex;flex-direction:column;margin-top:8px}
   .big-btn.quiet{background:transparent;border-color:var(--line);color:var(--ink)}
-  .welcome-card ol.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:14px 0 6px;padding:0;list-style:none}
-  .welcome-card .cal li{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  ol.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:14px 0 6px;padding:0;list-style:none}
+  ol.cal li{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     min-height:calc(50px * var(--fs));border-radius:9px;border:1px solid var(--line-soft);background:var(--panel-2);
     font-family:var(--font-num);font-size:var(--t-12);color:var(--ink-faint);line-height:1}
-  .welcome-card .cal li .mk{font-size:var(--t-14);font-weight:700;color:var(--ink-faint)}
-  .welcome-card .cal li.done{color:var(--ink-dim)}
-  .welcome-card .cal li.done .mk{color:var(--cyan)}
-  .welcome-card .cal li.today{border:2px solid var(--gold);color:var(--ink);background:color-mix(in srgb,var(--gold) 16%,var(--panel-2))}
-  .welcome-card .cal li.today .mk{color:var(--gold)}
+  ol.cal li .mk{font-size:var(--t-14);font-weight:700;color:var(--ink-faint)}
+  ol.cal li.done{color:var(--ink-dim)}
+  ol.cal li.done .mk{color:var(--cyan)}
+  ol.cal li.today{border:2px solid var(--gold);color:var(--ink);background:color-mix(in srgb,var(--gold) 16%,var(--panel-2))}
+  ol.cal li.today .mk{color:var(--gold)}
   .gf-today{color:var(--ink)}
 
   .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:15px 16px;font-size:var(--t-13);color:var(--ink-dim);line-height:1.8}
@@ -864,6 +864,7 @@
     dblBtn:'動画を見て2倍にする', takeBtn:'受け取る',
     visitKicker:'通いボーナス', visitTitle:n=>n+'日目',
     visitLead:'1日1回、開くと贈り物が届きます。7日目は大きな贈り物です。休んでも、続きから進みます。',
+    visitNeed:'設備をひとつ買うと、毎日の贈り物が届くようになります。',
     visitToday:g=>'今日の贈り物：'+g, visitNow:'今日', visitDone:'受け取り済み', visitNext:'これから',
     dur:m=>m>=60?(m/60)+'時間':m+'分',
     gifts:{cr:d=>'結晶（'+d+'ぶん）', orb:'光る球をすぐに呼ぶ', orb2:'光る球を2つ呼ぶ', boost:d=>'収入2倍（'+d+'）'},
@@ -976,6 +977,7 @@
     dblBtn:'Watch a video to double it', takeBtn:'Collect',
     visitKicker:'Daily gift', visitTitle:n=>'Day '+n,
     visitLead:'Open the game once a day and a gift is waiting. Day 7 brings a bigger one. Miss a day and you simply carry on where you left off.',
+    visitNeed:'Buy any building and the daily gift starts arriving.',
     visitToday:g=>"Today's gift: "+g, visitNow:'today', visitDone:'collected', visitNext:'still to come',
     dur:m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' minutes',
     gifts:{cr:d=>'Crystals ('+d+' of mining)', orb:'An orb, right now', orb2:'Two orbs', boost:d=>'Double income ('+d+')'},
@@ -1087,6 +1089,7 @@
     dblBtn:'看视频领取双倍', takeBtn:'领取',
     visitKicker:'每日礼物', visitTitle:n=>'第'+n+'天',
     visitLead:'每天打开一次游戏，就能收到一份礼物。第7天会有一份大礼。中间漏掉几天也没关系，天数会接着上次继续，不会从头算起。',
+    visitNeed:'购买任意一个设备，每日礼物就会开始送达。',
     visitToday:g=>'今天的礼物：'+g, visitNow:'今天', visitDone:'已领取', visitNext:'未到',
     dur:m=>m>=60?(m/60)+'小时':m+'分钟',
     gifts:{cr:d=>'结晶（'+d+'的挖掘量）', orb:'立即召唤光球', orb2:'召唤两个光球', boost:d=>d+'内所有收入×2'},
@@ -1199,6 +1202,7 @@
     dblBtn:'영상 보고 2배 받기', takeBtn:'받기',
     visitKicker:'출석 선물', visitTitle:n=>n+'일차',
     visitLead:'하루에 한 번 게임을 열면 선물이 도착합니다. 7일차에는 큰 선물이 기다립니다. 며칠 쉬어도 처음으로 돌아가지 않고 이어서 진행됩니다.',
+    visitNeed:'설비를 하나라도 사면 출석 선물이 도착하기 시작합니다.',
     visitToday:g=>'오늘의 선물: '+g, visitNow:'오늘', visitDone:'받음', visitNext:'예정',
     dur:m=>m>=60?(m/60)+'시간':m+'분',
     gifts:{cr:d=>'결정('+d+' 채굴량)', orb:'빛의 구슬 바로 부르기', orb2:'빛의 구슬 2개 부르기', boost:d=>d+' 동안 모든 수입 2배'},
@@ -1311,6 +1315,7 @@
     dblBtn:'Ver un vídeo para duplicar', takeBtn:'Recoger',
     visitKicker:'Regalo diario', visitTitle:n=>'Día '+n,
     visitLead:'Abre el juego una vez al día y te espera un regalo. El día 7 trae uno más grande. Si un día no entras, no pierdes nada: sigues por donde ibas.',
+    visitNeed:'Compra cualquier instalación y el regalo diario empezará a llegar.',
     visitToday:g=>'Regalo de hoy: '+g, visitNow:'hoy', visitDone:'recogido', visitNext:'por llegar',
     dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
     gifts:{cr:d=>'Cristales ('+d+' de excavación)', orb:'Un orbe al instante', orb2:'Dos orbes', boost:d=>'Ingresos ×2 durante '+d},
@@ -1422,6 +1427,7 @@
     dblBtn:'看影片領取雙倍', takeBtn:'領取',
     visitKicker:'每日禮物', visitTitle:n=>'第'+n+'天',
     visitLead:'每天開啟一次遊戲，就能收到一份禮物。第7天會有一份大禮。中間漏掉幾天也沒關係，天數會接著上次繼續，不會從頭算起。',
+    visitNeed:'購買任何一個設備，每日禮物就會開始送達。',
     visitToday:g=>'今天的禮物：'+g, visitNow:'今天', visitDone:'已領取', visitNext:'未到',
     dur:m=>m>=60?(m/60)+'小時':m+'分鐘',
     gifts:{cr:d=>'結晶（'+d+'的挖掘量）', orb:'立即召喚光球', orb2:'召喚兩個光球', boost:d=>d+'內所有收入×2'},
@@ -1533,6 +1539,7 @@
     dblBtn:'Doubler avec une vidéo', takeBtn:'Récupérer',
     visitKicker:'Cadeau du jour', visitTitle:n=>'Jour '+n,
     visitLead:'Ouvrez le jeu une fois par jour : un cadeau vous attend. Le jour 7, il est plus généreux. Si vous manquez un jour, rien n’est perdu : vous reprenez là où vous en étiez.',
+    visitNeed:'Achetez n’importe quel bâtiment et le cadeau du jour commencera à arriver.',
     visitToday:g=>'Cadeau d’aujourd’hui : '+g, visitNow:'aujourd’hui', visitDone:'récupéré', visitNext:'à venir',
     dur:m=>m>=60?(m/60)+(m===60?' heure':' heures'):m+' minutes',
     gifts:{cr:d=>'Cristaux ('+d+' d’extraction)', orb:'Un orbe, tout de suite', orb2:'Deux orbes', boost:d=>'Revenus ×2 pendant '+d},
@@ -1642,8 +1649,9 @@
       +'Genau dann kommt eine einzige lautlose Erinnerung, sonst nichts.',
     notifyBtn:'Erinnerungseinstellungen',
     dblBtn:'Video ansehen und verdoppeln', takeBtn:'Einsammeln',
-    visitKicker:'TÄGLICHES GESCHENK', visitTitle:n=>'Tag '+n,
+    visitKicker:'Tägliches Geschenk', visitTitle:n=>'Tag '+n,
     visitLead:'Öffne das Spiel einmal am Tag, dann wartet ein Geschenk auf dich. Am 7. Tag gibt es ein größeres. Lässt du einen Tag aus, geht nichts verloren – du machst einfach dort weiter, wo du warst.',
+    visitNeed:'Sobald du ein Gebäude kaufst, kommt das tägliche Geschenk.',
     visitToday:g=>'Heutiges Geschenk: '+g, visitNow:'heute', visitDone:'eingesammelt', visitNext:'kommt noch',
     dur:m=>m>=60?(m/60)+(m===60?' Stunde':' Stunden'):m+' Minuten',
     gifts:{cr:d=>'Kristalle ('+d+' Abbau)', orb:'Sofort eine Kugel herbeirufen', orb2:'Zwei Kugeln herbeirufen', boost:d=>'Alle Einnahmen '+d+' lang ×2'},
@@ -1755,6 +1763,7 @@
     dblBtn:'Raddoppia con un video', takeBtn:'Ritira',
     visitKicker:'Regalo del giorno', visitTitle:n=>'Giorno '+n,
     visitLead:'Apri il gioco una volta al giorno e trovi un regalo ad aspettarti. Il giorno 7 il regalo è più grande. Se salti un giorno non perdi nulla: riprendi da dove avevi lasciato.',
+    visitNeed:'Compra un edificio qualsiasi e il regalo del giorno inizierà ad arrivare.',
     visitToday:g=>'Regalo di oggi: '+g, visitNow:'oggi', visitDone:'ritirato', visitNext:'da raggiungere',
     dur:m=>m>=60?(m/60)+(m===60?' ora':' ore'):m+' minuti',
     gifts:{cr:d=>'Cristalli ('+d+' di scavo)', orb:'Una sfera, subito', orb2:'Due sfere', boost:d=>'Guadagni ×2 per '+d},
@@ -1866,6 +1875,7 @@
     dblBtn:'Ver um vídeo para dobrar', takeBtn:'Receber',
     visitKicker:'Presente diário', visitTitle:n=>'Dia '+n,
     visitLead:'Abra o jogo uma vez por dia e um presente estará esperando por você. O dia 7 traz um presente maior. Se faltar um dia, nada se perde: você continua de onde parou.',
+    visitNeed:'Compre qualquer construção e o presente diário começará a chegar.',
     visitToday:g=>'Presente de hoje: '+g, visitNow:'hoje', visitDone:'recebido', visitNext:'ainda por vir',
     dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
     gifts:{cr:d=>'Cristais ('+d+' de mineração)', orb:'Um orbe agora mesmo', orb2:'Dois orbes', boost:d=>'Renda ×2 por '+d},
@@ -1975,8 +1985,9 @@
       +'Op dat moment komt er één stille melding, en verder niets.',
     notifyBtn:'Meldingsinstellingen',
     dblBtn:'Video bekijken en verdubbelen', takeBtn:'Ophalen',
-    visitKicker:'DAGELIJKS CADEAU', visitTitle:n=>'Dag '+n,
+    visitKicker:'Dagelijks cadeau', visitTitle:n=>'Dag '+n,
     visitLead:'Open het spel één keer per dag en er ligt een cadeau voor je klaar. Op dag 7 is het cadeau groter. Sla je een dag over, dan verlies je niets: je gaat gewoon verder waar je was.',
+    visitNeed:'Zodra je een gebouw koopt, komt het dagelijkse cadeau.',
     visitToday:g=>'Cadeau van vandaag: '+g, visitNow:'vandaag', visitDone:'opgehaald', visitNext:'komt nog',
     dur:m=>m>=60?(m/60)+' uur':m+' minuten',
     gifts:{cr:d=>'Kristallen ('+d+' aan opbrengst)', orb:'Meteen een bol oproepen', orb2:'Twee bollen oproepen', boost:d=>'Alle inkomsten '+d+' ×2'},
@@ -2086,8 +2097,9 @@
       +'Wtedy przychodzi jedno ciche przypomnienie i nic więcej.',
     notifyBtn:'Ustawienia przypomnień',
     dblBtn:'Obejrzyj film, aby podwoić', takeBtn:'Odbierz',
-    visitKicker:'CODZIENNY PREZENT', visitTitle:n=>'Dzień '+n,
+    visitKicker:'Codzienny prezent', visitTitle:n=>'Dzień '+n,
     visitLead:'Otwórz grę raz dziennie, a będzie na ciebie czekać prezent. Siódmego dnia prezent jest większy. Jeśli opuścisz jakiś dzień, nic nie przepada – po prostu kontynuujesz od tego samego miejsca.',
+    visitNeed:'Kup dowolny budynek, a codzienny prezent zacznie przychodzić.',
     visitToday:g=>'Dzisiejszy prezent: '+g, visitNow:'dziś', visitDone:'odebrano', visitNext:'jeszcze przed tobą',
     dur:m=>{const p=(n,a,b,c)=>n+' '+(n===1?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'godzina','godziny','godzin'):p(m,'minuta','minuty','minut')},
     gifts:{cr:d=>'Kryształy ('+d+' wydobycia)', orb:'Kula, od razu', orb2:'Dwie kule', boost:d=>'Cały dochód ×2 ('+d+')'},
@@ -2197,8 +2209,9 @@
       +'В этот момент приходит одно беззвучное напоминание. Больше ничего не присылается.',
     notifyBtn:'Настройки напоминаний',
     dblBtn:'Посмотреть видео и удвоить', takeBtn:'Забрать',
-    visitKicker:'ЕЖЕДНЕВНЫЙ ПОДАРОК', visitTitle:n=>'День '+n,
+    visitKicker:'Ежедневный подарок', visitTitle:n=>'День '+n,
     visitLead:'Заходите в игру раз в день — и вас будет ждать подарок. На 7-й день он больше обычного. Если пропустить день, ничего не теряется: вы просто продолжите с того же места.',
+    visitNeed:'Купите любую постройку — и ежедневный подарок начнёт приходить.',
     visitToday:g=>'Подарок на сегодня: '+g, visitNow:'сегодня', visitDone:'получено', visitNext:'впереди',
     dur:m=>{const p=(n,a,b,c)=>n+' '+(n%10===1&&n%100!==11?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'час','часа','часов'):p(m,'минута','минуты','минут')},
     gifts:{cr:d=>'Кристаллы ('+d+' добычи)', orb:'Сфера прямо сейчас', orb2:'Две сферы', boost:d=>'Весь доход ×2 на '+d},
@@ -2308,8 +2321,9 @@
       +'O anda yalnızca tek bir sessiz hatırlatma gelir, başka hiçbir şey gönderilmez.',
     notifyBtn:'Hatırlatma ayarları',
     dblBtn:'Video izle, ikiye katla', takeBtn:'Al',
-    visitKicker:'GÜNLÜK HEDİYE', visitTitle:n=>n+'. gün',
+    visitKicker:'Günlük hediye', visitTitle:n=>n+'. gün',
     visitLead:'Oyunu günde bir kez açtığında seni bir hediye bekler. 7. günün hediyesi daha büyüktür. Bir gün kaçırırsan hiçbir şey kaybetmezsin; kaldığın yerden devam edersin.',
+    visitNeed:'Herhangi bir bina aldığında günlük hediye gelmeye başlar.',
     visitToday:g=>'Bugünün hediyesi: '+g, visitNow:'bugün', visitDone:'alındı', visitNext:'henüz gelmedi',
     dur:m=>m>=60?(m/60)+' saat':m+' dakika',
     gifts:{cr:d=>'Kristal ('+d+(/saat$/.test(d)?'lik':'lık')+' kazı)', orb:'Hemen bir küre', orb2:'İki küre', boost:d=>d+' boyunca tüm gelir ×2'},
@@ -2419,8 +2433,9 @@
       +'Lúc đó chỉ có một lời nhắc không âm thanh, ngoài ra không gửi gì khác.',
     notifyBtn:'Cài đặt nhắc nhở',
     dblBtn:'Xem video để nhận gấp đôi', takeBtn:'Nhận',
-    visitKicker:'QUÀ MỖI NGÀY', visitTitle:n=>'Ngày '+n,
+    visitKicker:'Quà mỗi ngày', visitTitle:n=>'Ngày '+n,
     visitLead:'Mỗi ngày mở trò chơi một lần, bạn sẽ nhận được một món quà. Ngày 7 là món quà lớn hơn. Lỡ vài ngày cũng không sao: bạn sẽ đi tiếp từ ngày đang dở, không phải bắt đầu lại.',
+    visitNeed:'Mua một công trình bất kỳ, quà mỗi ngày sẽ bắt đầu đến với bạn.',
     visitToday:g=>'Quà hôm nay: '+g, visitNow:'hôm nay', visitDone:'đã nhận', visitNext:'chưa tới',
     dur:m=>m>=60?(m/60)+' giờ':m+' phút',
     gifts:{cr:d=>'Tinh thể (tương đương '+d+' đào)', orb:'Gọi ngay một quả cầu', orb2:'Gọi hai quả cầu', boost:d=>'Mọi thu nhập ×2 trong '+d},
@@ -2532,6 +2547,7 @@
     dblBtn:'ดูวิดีโอเพื่อรับสองเท่า', takeBtn:'รับ',
     visitKicker:'ของขวัญรายวัน', visitTitle:n=>'วันที่ '+n,
     visitLead:'เปิดเกมวันละครั้ง จะมีของขวัญรออยู่ วันที่ 7 เป็นของขวัญชิ้นใหญ่ ถ้าเว้นไปบางวันก็ไม่เป็นไร จะนับต่อจากวันเดิม ไม่เริ่มใหม่',
+    visitNeed:'ซื้อสิ่งก่อสร้างอะไรก็ได้สักอย่าง ของขวัญรายวันก็จะเริ่มมาถึง',
     visitToday:g=>'ของขวัญวันนี้: '+g, visitNow:'วันนี้', visitDone:'รับแล้ว', visitNext:'ยังไม่ถึง',
     dur:m=>m>=60?(m/60)+' ชั่วโมง':m+' นาที',
     gifts:{cr:d=>'คริสตัล (เท่ากับขุด '+d+')', orb:'เรียกลูกแสงทันที', orb2:'เรียกลูกแสง 2 ลูก', boost:d=>'รายได้ทั้งหมด ×2 นาน '+d},
@@ -2643,6 +2659,7 @@
     dblBtn:'Gandakan lewat video', takeBtn:'Ambil',
     visitKicker:'Hadiah harian', visitTitle:n=>'Hari ke-'+n,
     visitLead:'Buka permainan sekali sehari, dan sebuah hadiah sudah menunggu. Hadiah hari ke-7 lebih besar. Kalau ada hari yang terlewat, tidak ada yang hilang: kamu tinggal lanjut dari hari terakhir.',
+    visitNeed:'Beli bangunan apa saja, dan hadiah harian akan mulai datang.',
     visitToday:g=>'Hadiah hari ini: '+g, visitNow:'hari ini', visitDone:'sudah diambil', visitNext:'belum tiba',
     dur:m=>m>=60?(m/60)+' jam':m+' menit',
     gifts:{cr:d=>'Kristal (senilai '+d+' penggalian)', orb:'Satu bola, sekarang juga', orb2:'Dua bola', boost:d=>'Pendapatan ×2 selama '+d},
@@ -3235,10 +3252,15 @@
     }));
     listMine.appendChild(qty);
 
-    /* the bonuses live in their own tab, which only exists when ads are on */
+    /* the Bonus tab: the daily gift calendar on top (always, also on the
+       web), then the video bonuses when ads are on */
     rwRows = {};
     listBonus.innerHTML = '';
-    tabs.bonus.hidden = Ads.mode === 'off';
+    tabs.bonus.hidden = false;
+    const vc = document.createElement('div');
+    vc.className = 'card'; vc.id = 'visitCard';
+    listBonus.appendChild(vc);
+    visitKey = '';
     if(Ads.mode !== 'off'){
       const card = document.createElement('div');
       card.className = 'card';
@@ -3574,19 +3596,60 @@
     visitQueued = true;
     queueCard(showVisit);
   }
-  function showVisit(){
-    const n = S.visit.n, g = VISIT[n], day = todayKey();
+  /* the 7 boxes. done = boxes already collected; mark = the box for today,
+     or -1 when today's gift has been collected */
+  function calHTML(done, mark){
     let cal = '';
     for(let i = 0; i < 7; i++){
-      const cls = i < n ? 'done' : (i === n ? 'today' : '');
-      const mk = i < n ? '✓' : (i === n ? '◆' : (i === 6 ? '★' : '·'));
-      const st = i < n ? L.visitDone : (i === n ? L.visitNow : L.visitNext);
-      cal += '<li class="'+cls+'"'+(i === n ? ' aria-current="date"' : '')+' aria-label="'+L.visitTitle(i+1)+' — '+st+'">'+
+      const cls = i < done ? 'done' : (i === mark ? 'today' : '');
+      const mk = i < done ? '✓' : (i === mark ? '◆' : (i === 6 ? '★' : '·'));
+      const st = i < done ? L.visitDone : (i === mark ? L.visitNow : L.visitNext);
+      cal += '<li class="'+cls+'"'+(i === mark ? ' aria-current="date"' : '')+' aria-label="'+L.visitTitle(i+1)+' — '+st+'">'+
              '<span aria-hidden="true">'+(i+1)+'</span><span class="mk" aria-hidden="true">'+mk+'</span></li>';
     }
+    return '<ol class="cal">'+cal+'</ol>';
+  }
+  const visitOpen = () => S.visit.day !== todayKey();
+  /* the calendar card in the Bonus tab; redrawn only when something changed */
+  let visitKey = '';
+  function refreshVisitCard(){
+    const vc = $('visitCard'); if(!vc) return;
+    const open = visitOpen(), rated = baseRate() > 0, n = S.visit.n;
+    const key = [langId, n, open, rated, visitQueued || !!card].join('|');
+    if(key === visitKey) return;
+    visitKey = key;
+    /* the status words are lower case for use inside a sentence; as a
+       row label they start with a capital where the script has one */
+    const cap = t => t.charAt(0).toLocaleUpperCase(langDef().html) + t.slice(1);
+    let h = '<h3>'+L.visitKicker+'</h3><p>'+L.visitLead+'</p>';
+    if(open){
+      /* today's box is n; boxes before it are done */
+      h += calHTML(n, n);
+      h += '<div class="stat-row"><span>'+cap(L.visitNow)+'</span><span>'+giftText(VISIT[n],1)+'</span></div>';
+      if(rated) h += '<button class="big-btn" id="btnVisit"'+(visitQueued || card ? ' disabled' : '')+'>'+L.takeBtn+'</button>';
+      else h += '<p class="quiet" style="margin-top:10px">'+L.visitNeed+'</p>';
+    }else{
+      /* collected today: the box before n was today's. After day 7 the
+         cycle starts again, so all seven show as done */
+      const done = n === 0 ? 7 : n;
+      h += calHTML(done, -1);
+      h += '<div class="stat-row"><span>'+cap(L.visitNow)+'</span><span>'+cap(L.visitDone)+'</span></div>';
+      h += '<div class="stat-row"><span>'+L.visitTitle(n+1)+'</span><span>'+giftText(VISIT[n],1)+'</span></div>';
+    }
+    vc.innerHTML = h;
+    const b = $('btnVisit');
+    if(b) b.addEventListener('click', () => {
+      if(visitQueued || !visitOpen() || baseRate() <= 0) return;
+      visitQueued = true; visitKey = '';
+      queueCard(showVisit);
+    });
+  }
+  function showVisit(){
+    const n = S.visit.n, g = VISIT[n], day = todayKey();
+    const cal = calHTML(n, n);
     openCard({
       kicker:L.visitKicker, title:L.visitTitle(n+1),
-      body:'<p>'+L.visitLead+'</p><ol class="cal">'+cal+'</ol><p class="gf-today">'+L.visitToday('<b>'+giftText(g,1)+'</b>')+'</p>',
+      body:'<p>'+L.visitLead+'</p>'+cal+'<p class="gf-today">'+L.visitToday('<b>'+giftText(g,1)+'</b>')+'</p>',
       main: videoOK() ? L.dblBtn : L.takeBtn, alt: videoOK() ? L.takeBtn : null, ad: videoOK() ? 'visit' : null,
       done(){
         const x = this.doubled ? 2 : 1;
@@ -3655,7 +3718,6 @@
   const panels = {mine:listMine, core:listCore, bonus:listBonus,
                   howto:listHowto, menu:listMenu};
   function selectTab(which){
-    if(which === 'bonus' && Ads.mode === 'off') which = 'mine';
     currentTab = which;
     for(const k in tabs){
       tabs[k].setAttribute('aria-selected', String(k===which));
@@ -3745,6 +3807,7 @@
     if(b2) b2.textContent = v ? L.pauseSecBtnOn : L.pauseSecBtn;
     $('tap').setAttribute('aria-disabled', String(v));
     save();
+    if(!v && typeof checkVisit === 'function') checkVisit();
   }
 
   $('tap').addEventListener('click', e => mine(e.clientX||null, e.clientY||null, e.detail === 0));
@@ -4111,6 +4174,7 @@
       }
     }
 
+    refreshVisitCard();
     for(const k in rwRows){
       const r = rwRows[k], left = cdLeft(k);
       const can = rewardReady(r.def);
