@@ -1,3 +1,7 @@
 /* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
 "notify.title" = "Hang đã đầy";
 "notify.body" = "Phần tích lũy khi bạn vắng mặt đã đạt giới hạn. Hãy quay lại nhận nhé.";
+
+/* 1.4: the expedition is back (once, silent) */
+"notify.exp.title" = "Đội thám hiểm đã về";
+"notify.exp.body" = "Đội đã mang tinh thể về. Nhận xong, đội sẽ lên đường lại.";

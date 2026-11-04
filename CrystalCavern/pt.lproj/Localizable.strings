@@ -1,3 +1,7 @@
 /* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
 "notify.title" = "A caverna está cheia";
 "notify.body" = "O que se acumula enquanto você está fora chegou ao limite. Venha buscar.";
+
+/* 1.4: the expedition is back (once, silent) */
+"notify.exp.title" = "A expedição voltou";
+"notify.exp.body" = "Ela trouxe cristais. Receba e ela sai de novo.";

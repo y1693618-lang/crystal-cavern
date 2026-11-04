@@ -65,7 +65,7 @@ targets:
         # ▲▲▲ codemagic.yaml の bundle_identifier も同じ値に ▲▲▲
 
         PRODUCT_NAME: CrystalCavern
-        MARKETING_VERSION: "1.3"
+        MARKETING_VERSION: "1.4"
         CURRENT_PROJECT_VERSION: "1"      # Codemagic が毎回書き換えます
         VERSIONING_SYSTEM: apple-generic
 

@@ -1,3 +1,7 @@
 /* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
 "notify.title" = "De grot is vol";
 "notify.body" = "Wat zich ophoopt terwijl je weg bent, heeft zijn grens bereikt. Kom het ophalen.";
+
+/* 1.4: the expedition is back (once, silent) */
+"notify.exp.title" = "De expeditie is terug";
+"notify.exp.body" = "Ze heeft kristallen meegebracht. Haal ze op en ze vertrekt opnieuw.";

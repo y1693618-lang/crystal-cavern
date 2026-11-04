@@ -22,6 +22,7 @@ struct GameScreen: UIViewRepresentable {
         content.add(context.coordinator, name: "ccIdle")    // 通知の予約
         content.add(context.coordinator, name: "ccNotify")  // 通知の許可（メニューから）
         content.add(context.coordinator, name: "ccPrivacy") // 広告の同意を変える（EU など）
+        content.add(context.coordinator, name: "ccReview")  // 星の評価のお願い（1.4）
 
         // ゲームに「この端末の言語」を渡す。iOS がこのアプリ用に選んだ言語で、
         // 設定 → 結晶洞窟 → 言語 でアプリだけ別の言語にしている場合もそれに従う。

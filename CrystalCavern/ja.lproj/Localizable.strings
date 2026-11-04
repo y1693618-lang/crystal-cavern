@@ -1,3 +1,7 @@
 /* 留守のあいだの通知（8時間で上限に達したとき、一度だけ・音なし） */
 "notify.title" = "洞窟がいっぱいです";
 "notify.body" = "留守のあいだに貯まる分が上限に達しました。受け取りに来てください。";
+
+/* 1.4: the expedition is back (once, silent) */
+"notify.exp.title" = "採掘隊が帰ってきました";
+"notify.exp.body" = "結晶を持ち帰りました。受け取ると、もう一度出発します。";

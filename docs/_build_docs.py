@@ -10,8 +10,8 @@ GitHub Pages にそのまま置けるよう、1ファイルで完結させてい
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UPDATED_JA = "2026年10月20日"
-UPDATED_EN = "20 October 2026"
+UPDATED_JA = "2026年11月4日"
+UPDATED_EN = "4 November 2026"
 EMAIL = "r451mjkl@icloud.com"          # ← 本当のアドレスが決まったらここだけ直す
 APP_NAME_JA = "結晶洞窟"
 APP_NAME_EN = "Crystal Cavern"
@@ -148,9 +148,13 @@ PRIVACY_JA = f"""
 <p>EU・イギリス・スイスでは、広告についての同意を確認する画面が別に表示されます。答えはあとから、ゲームのメニュー（「規約とプライバシー」）にある<strong>「プライバシー設定」</strong>で変えられます。このボタンは、これらの地域の方にだけ表示されます。</p>
 
 <h2>通知について</h2>
-<p>留守のあいだに貯まる分は8時間で上限に達します。そこで一度だけ「洞窟がいっぱいです」とお知らせします。通知は<strong>音を鳴らしません。</strong></p>
+<p>お知らせするのは次の2種類だけです。通知は<strong>音を鳴らしません。</strong></p>
+<ul>
+<li>留守のあいだに貯まる分は8時間で上限に達します。そこで一度だけ「洞窟がいっぱいです」とお知らせします。</li>
+<li>採掘隊が帰ってきたときに、一度だけお知らせします（出ている隊のうち、いちばん早く帰る時刻に1回だけです）。</li>
+</ul>
 <p>許可は、2回目にゲームを開いたときに一度だけ、ゲームの中の案内でお尋ねします。iOS の許可の確認が出るのは、案内で「お知らせを受け取る」を選んだときだけです。「今はしない」を選んだ場合や案内を閉じた場合は、二度と尋ねません。あとからゲームのメニューの「お知らせの設定」で変えられ、<code>設定 → 通知</code> からもいつでも切れます。</p>
-<p>通知は iPhone の中だけで予約しています。通知のために情報を外部へ送ることはありません。</p>
+<p>どちらの通知も iPhone の中だけで予約しています。通知のために情報を外部へ送ることはありません。</p>
 
 <h2>お子様の利用について</h2>
 <p>このアプリは全年齢を対象としています。個人情報を集める機能がないため、お子様が遊んだ場合も情報が集まることはありません。</p>
@@ -228,9 +232,13 @@ PRIVACY_EN = f"""
 <p>In the EEA, the UK and Switzerland, a separate screen asks for your consent to advertising. You can change your answer later with <strong>Privacy settings</strong>, in the “Terms and privacy” card of the game&#39;s Menu. The button appears only for players in those regions.</p>
 
 <h2>Notifications</h2>
-<p>What accumulates while you are away reaches its limit after eight hours. The app tells you once, at that point. The notification is <strong>silent</strong>.</p>
+<p>The app sends only these two kinds of notification, and both are <strong>silent</strong>.</p>
+<ul>
+<li>What accumulates while you are away reaches its limit after eight hours. The app tells you once, at that point.</li>
+<li>When an expedition comes back, the app tells you once (at the time the first team still out returns).</li>
+</ul>
 <p>We ask once, with a short note inside the game the second time you open it. The iPhone’s own permission prompt appears only if you choose “Yes, remind me”. If you choose “Not now” or close the note, we never ask again. You can change this later under “Reminder settings” in the game’s menu, and turn it off at any time under <code>Settings → Notifications</code>.</p>
-<p>The notification is scheduled on your iPhone itself. Nothing is sent anywhere to make it work.</p>
+<p>The notifications are scheduled on your iPhone itself. Nothing is sent anywhere to make them work.</p>
 
 <h2>Children</h2>
 <p>The app is suitable for all ages. Because it has no way of collecting personal information, nothing is collected when a child plays it.</p>

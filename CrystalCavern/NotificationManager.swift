@@ -6,6 +6,9 @@
 //  8時間経ったところで一度だけ知らせ、取りこぼしを防ぎます。
 //
 //  ・通知は「一度だけ」「8時間後」。それ以上は送りません。
+//  ・1.4 から、採掘隊が帰ってきたときにも一度だけ知らせます。
+//    出ている隊のうち、いちばん早く帰る時刻に1回だけです。
+//    送るのはこの2種類だけです。
 //  ・毎秒の収入がない人には送りません（知らせる中身がないため）。
 //  ・一時停止中の人にも送りません。
 //  ・許可を尋ねるのは、本人が押したときだけです。
@@ -26,6 +29,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     private override init() { super.init() }
 
     private let identifier = "cave-full"
+    private let expeditionID = "expedition-back"
 
     // MARK: - 予約
 
@@ -42,6 +46,31 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 self.add(seconds: seconds)
             default:
                 break       // 未回答でも拒否でも、黙って何もしない
+            }
+        }
+    }
+
+    /// 採掘隊が帰ってくる時刻に一度だけ（1.4）。0 秒なら予約しません。
+    /// こちらも、すでに許可されているときだけです。
+    func scheduleExpedition(afterSeconds seconds: Int) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [expeditionID])
+        guard seconds > 60 else { return }
+
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional:
+                let content = UNMutableNotificationContent()
+                content.title = NSLocalizedString("notify.exp.title", comment: "採掘隊の通知の見出し")
+                content.body = NSLocalizedString("notify.exp.body", comment: "採掘隊の通知の本文")
+                content.sound = nil     // 音は鳴らしません
+                let trigger = UNTimeIntervalNotificationTrigger(
+                    timeInterval: TimeInterval(seconds), repeats: false)
+                let request = UNNotificationRequest(
+                    identifier: self.expeditionID, content: content, trigger: trigger)
+                UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+            default:
+                break
             }
         }
     }
@@ -116,7 +145,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func cancelPending() {
         UNUserNotificationCenter.current()
-            .removePendingNotificationRequests(withIdentifiers: [identifier])
+            .removePendingNotificationRequests(withIdentifiers: [identifier, expeditionID])
     }
 
     // MARK: - 前面にいるときの扱い

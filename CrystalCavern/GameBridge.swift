@@ -5,9 +5,11 @@
 //  受け取るのは次のものだけです。
 //
 //    ccHaptic  { kind: "tap" | "buy" | "orb" | "seam" | "rebirth" }
-//    ccAds     { reward: "skip" | "boost" | "orb" | "core" | "back" | "visit" }
+//    ccAds     { reward: "skip" | "boost" | "orb" | "core" | "back" | "visit" | "exp" }
 //    ccAds     { query: true }  いま見せられる広告があるか教えてほしい（1.3）
-//    ccIdle    { rate: Int, paused: Bool, fullAfterSeconds: Int }
+//    ccIdle    { rate: Int, paused: Bool, fullAfterSeconds: Int,
+//                expeditionAfterSeconds: Int }   採掘隊が帰るまでの秒数（1.4）。0 なら出ていない
+//    ccReview  {}             星の評価のお願い（1.4）。出すかどうかは iOS が決める
 //    ccNotify  {}             メニューの「お知らせの設定」が押された
 //    ccNotify  { query: true } 通知の許可がまだ未回答か教えてほしい（1.3）
 //    ccNotify  { ask: true }   案内のカードで「受け取る」が押された（1.3）
@@ -22,6 +24,7 @@
 
 import UIKit
 import WebKit
+import StoreKit
 
 final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
@@ -68,6 +71,14 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
             let seconds = body["fullAfterSeconds"] as? Int ?? 8 * 3600
             NotificationManager.shared.scheduleCaveFull(
                 afterSeconds: seconds, perSecond: rate, paused: paused)
+            // 採掘隊（1.4）。出ている隊のうち、いちばん早く帰る時刻に1回だけ。
+            let exp = body["expeditionAfterSeconds"] as? Int ?? 0
+            NotificationManager.shared.scheduleExpedition(afterSeconds: exp)
+
+        case "ccReview":
+            // Apple 標準の「このアプリを評価」の小さな画面。
+            // 本当に出すかどうか（1年に3回まで）は iOS が決めます。
+            requestReview()
 
         case "ccNotify":
             if body["query"] as? Bool == true {
@@ -128,6 +139,18 @@ final class GameBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let js = "window.CCAds && window.CCAds.shown && window.CCAds.shown();"
         DispatchQueue.main.async {
             self.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
+    // MARK: - 評価のお願い（1.4）
+
+    private func requestReview() {
+        Task { @MainActor in
+            guard let scene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive }) else { return }
+            // iOS 16 から使える書き方。このアプリは iOS 16 以上なので、これだけで足ります。
+            AppStore.requestReview(in: scene)
         }
     }
 

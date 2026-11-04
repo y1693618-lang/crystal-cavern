@@ -207,8 +207,10 @@
      lines tall and left its word sitting higher than its neighbours. Lifted
      out of the flow into the corner, it cannot push anything around. */
   .tab{position:relative}
-  .tab .dot{position:absolute;top:6px;right:6px;width:6px;height:6px;
-    border-radius:99px;background:var(--gold);opacity:0;transition:opacity .2s}
+  /* 1.4: a little larger and ringed, so it reads as a mark of its own
+     against any tab colour and not only by its colour */
+  .tab .dot{position:absolute;top:5px;right:5px;width:8px;height:8px;
+    border-radius:99px;background:var(--gold);box-shadow:0 0 0 2px var(--bg);opacity:0;transition:opacity .2s}
   .tab.ready .dot{opacity:1}
 
   .list{
@@ -327,6 +329,14 @@
   ol.cal li.today{border:2px solid var(--gold);color:var(--ink);background:color-mix(in srgb,var(--gold) 16%,var(--panel-2))}
   ol.cal li.today .mk{color:var(--gold)}
   .gf-today{color:var(--ink)}
+  /* 1.4: today's requests — a tick that reads without colour */
+  .quest-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:var(--t-13)}
+  .quest-row:last-of-type{border-bottom:0}
+  .quest-row .qn{min-width:0;overflow-wrap:anywhere}
+  .quest-row .qp{font-family:var(--font-num);font-weight:600;color:var(--ink);white-space:nowrap}
+  .quest-row.done .qn{color:var(--ink-faint)}
+  .quest-row.done .qp{color:var(--cyan)}
+  .res-list{display:flex;flex-direction:column;gap:7px}
 
   .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:15px 16px;font-size:var(--t-13);color:var(--ink-dim);line-height:1.8}
   .card h3{margin:0 0 10px;font-family:var(--font-display);font-size:var(--t-17);color:var(--ink);letter-spacing:.04em;font-weight:400}
@@ -491,9 +501,9 @@
 
     <section class="shop">
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" id="tab-mine" aria-selected="true"></button>
+        <button class="tab" role="tab" id="tab-mine" aria-selected="true"><span id="tabMineLabel"></span><span class="dot"></span></button>
         <button class="tab" role="tab" id="tab-core" aria-selected="false"><span id="tabCoreLabel"></span><span class="dot"></span></button>
-        <button class="tab" role="tab" id="tab-bonus" aria-selected="false" hidden></button>
+        <button class="tab" role="tab" id="tab-bonus" aria-selected="false" hidden><span id="tabBonusLabel"></span><span class="dot"></span></button>
         <button class="tab" role="tab" id="tab-howto" aria-selected="false"></button>
         <button class="tab" role="tab" id="tab-menu" aria-selected="false"></button>
       </div>
@@ -562,7 +572,7 @@
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
   const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-  const VERSION = '1.3';
+  const VERSION = '1.4';
 
   /* ================================================================
      Rewarded ads — one seam, four back ends
@@ -707,14 +717,19 @@
        says whether this player needs a way back to their choice; only then
        does the button appear. {open:true} shows Google's form again. */
     privacy(open){ this.post('ccPrivacy', open ? {open:true} : {}); },
-    /* Hand the app enough to schedule "the cave is full" for later. */
+    /* Hand the app enough to schedule "the cave is full" for later,
+       and (1.4) when the first expedition still out comes back. */
     idle(){
       this.post('ccIdle', {
         rate: Math.round(baseRate()),
         paused: !!S.paused,
-        fullAfterSeconds: 8*3600
+        fullAfterSeconds: 8*3600,
+        expeditionAfterSeconds: S.paused ? 0 : expSecondsLeft()
       });
-    }
+    },
+    /* 1.4: Apple's own "rate this app" sheet. iOS decides whether it is
+       shown at all (three times a year at most); the game asks once. */
+    review(){ this.post('ccReview', {}); }
   };
 
   /* Whether this player should see "Privacy settings" in the menu.
@@ -858,8 +873,8 @@
     rwResetNote:'日付が変わると回数がリセットされます。',
     rwEmpty:'本日の回数を使い切りました', rwResetIn:t=>'リセットまで '+t,
     notifyTitle:'留守のあいだのお知らせ',
-    notifyBody:'留守のあいだに貯まる分は8時間で上限に達します。そのときに一度だけお知らせします。'
-      +'音は鳴りません。送るのはこれ1種類だけで、ほかに何かを送ることはありません。',
+    notifyBody:'留守のあいだに貯まる分が8時間で上限に達したときと、採掘隊が帰ってきたときに、お知らせします。'
+      +'音は鳴りません。送るのはこの2種類だけで、ほかに何かを送ることはありません。',
     notifyBtn:'お知らせの設定',
     dblBtn:'動画を見て2倍にする', takeBtn:'受け取る',
     visitKicker:'通いボーナス', visitTitle:n=>n+'日目',
@@ -868,7 +883,7 @@
     visitToday:g=>'今日の贈り物：'+g, visitNow:'今日', visitDone:'受け取り済み', visitNext:'これから',
     dur:m=>m>=60?(m/60)+'時間':m+'分',
     gifts:{cr:d=>'結晶（'+d+'ぶん）', orb:'光る球をすぐに呼ぶ', orb2:'光る球を2つ呼ぶ', boost:d=>'収入2倍（'+d+'）'},
-    askBody:'留守のあいだに貯まる結晶は、8時間でいっぱいになります。いっぱいになったとき、一度だけお知らせしましょうか？',
+    askBody:'留守のあいだに貯まる結晶が8時間でいっぱいになったときと、採掘隊が帰ってきたときに、お知らせしましょうか？',
     askYes:'お知らせを受け取る', askNo:'今はしない',
     askNote:b=>'音は鳴りません。あとからメニューの「'+b+'」でいつでも変えられます。',
     privacyBtn:'プライバシー設定',
@@ -876,7 +891,33 @@
     legalBody:'このアプリの利用規約は、Apple の標準の使用許諾契約です。'
       +'個人情報の扱いはプライバシーポリシーに書いてあります。',
     legalEula:'利用規約（Apple）', legalPrivacy:'プライバシーポリシー',
-    legalBodyWeb:'個人情報の扱いはプライバシーポリシーに書いてあります。'
+    legalBodyWeb:'個人情報の扱いはプライバシーポリシーに書いてあります。',
+    expTitle:'採掘隊', expSend:'送り出す',
+    expLocked:s=>'「'+s+'」に着くと、採掘隊を送り出せます',
+    expIdle:d=>d+'で結晶を持ち帰ります', expOut:t=>'帰りまで '+t, expBackN:n=>n+'隊が帰ってきました',
+    expCardTitle:'採掘隊が帰ってきた',
+    expCardBody:(n,v)=>n+'隊が 結晶 '+v+' を持ち帰りました。受け取ると、もう一度出発します。',
+    expSent:d=>'採掘隊が出発しました。'+d+'で帰ってきます',
+    rpGain:n=>'研究点 +'+n, giftRp:n=>'研究点 '+n,
+    resTitle:'核の研究', resHave:'いまの研究点', resKicker:'研究',
+    resBody:'研究点を使って研究を覚えます。覚えた研究は、再結晶しても消えません。',
+    resHow:'研究点は、新しい鉱脈を見つける・再結晶する・採掘隊が4回帰ってくる・今日の依頼を終える・通いボーナス（3日目と7日目）で手に入ります。',
+    res:{moss:['光るコケの苗','再結晶のあと、光るコケを10個持った状態から始まる'],
+      echo:['長い共鳴','「結晶の共鳴」が30秒から40秒になる'],
+      team:['採掘隊を増やす',n=>'同時に出せる採掘隊が'+n+'隊になる'],
+      fast:['近道','採掘隊が15%早く帰ってくる'],
+      qual:['結晶の質',n=>'すべての収入 +5%（いまは +'+n+'%）。何回でも覚えられる']},
+    resLearned:'覚えた', resCost:n=>n+'点', resLockedQual:'ほかの研究をすべて覚えると開く',
+    questTitle:'今日の依頼', questLead:'3つとも終えると研究点 +1。日付が変わると新しい依頼になります。',
+    quests:{orb:n=>'光る球を'+n+'回拾う', tap:n=>'結晶を'+n+'回掘る', buy:n=>'設備を合計'+n+'個買う', send:n=>'採掘隊を'+n+'回送り出す'},
+    questDone:'達成', questAllDone:'今日の依頼をすべて終えました',
+    coreAsk:(a,b)=>'このまま再結晶すると、核を '+a+' つ得ます。短い動画を見ると「核の増量」で '+b+' つに増えます。',
+    coreAskVideo:'動画を見て核を増やす', coreAskPlain:'そのまま再結晶する',
+    howtoNew:[
+      ['採掘隊を送り出す',s=>'「'+s+'」に着くと、「掘る」タブのいちばん上から採掘隊を送り出せます。2時間で結晶を持ち帰り、受け取るともう一度出発します。'],
+      ['核の研究で強くなる','「再結晶」タブで、研究点を使って研究を覚えます。研究点は、新しい鉱脈・再結晶・採掘隊が4回帰ってくる・今日の依頼で手に入ります。覚えた研究は再結晶しても消えません。'],
+      ['今日の依頼','「ボーナス」タブに、毎日3つの依頼が出ます。3つとも終えると研究点 +1。']
+    ]
   },
   en:{
     crystals:'Crystals', perSec:'per sec', coreMult:'Cores', resonance:'Resonance', remain:n=>n+'s left',
@@ -971,8 +1012,8 @@
     rwResetNote:'The count resets when the date changes.',
     rwEmpty:'None left today', rwResetIn:t=>'Resets in '+t,
     notifyTitle:'Reminders while you are away',
-    notifyBody:'What builds up while you are away reaches its limit after eight hours. '
-      +'A single silent reminder is sent at that moment, and nothing else is ever sent.',
+    notifyBody:'You get a reminder when what builds up while you are away reaches its eight-hour limit, and when an expedition comes back. '
+      +'Both are silent, and nothing else is ever sent.',
     notifyBtn:'Reminder settings',
     dblBtn:'Watch a video to double it', takeBtn:'Collect',
     visitKicker:'Daily gift', visitTitle:n=>'Day '+n,
@@ -981,7 +1022,7 @@
     visitToday:g=>"Today's gift: "+g, visitNow:'today', visitDone:'collected', visitNext:'still to come',
     dur:m=>m>=60?(m/60)+(m===60?' hour':' hours'):m+' minutes',
     gifts:{cr:d=>'Crystals ('+d+' of mining)', orb:'An orb, right now', orb2:'Two orbs', boost:d=>'Double income ('+d+')'},
-    askBody:'What builds up while you are away is full after 8 hours. Shall we let you know, just once, when it is full?',
+    askBody:'Shall we let you know when what builds up while you are away is full after 8 hours, and when an expedition comes back?',
     askYes:'Yes, remind me', askNo:'Not now',
     askNote:b=>'No sound. You can change this any time under “'+b+'” in the menu.',
     privacyBtn:'Privacy settings',
@@ -989,7 +1030,33 @@
     legalBody:'This app is covered by Apple\u2019s standard licence agreement. '
       +'How your information is handled is set out in the privacy policy.',
     legalEula:'Licence agreement (Apple)', legalPrivacy:'Privacy policy',
-    legalBodyWeb:'How your information is handled is set out in the privacy policy.'
+    legalBodyWeb:'How your information is handled is set out in the privacy policy.',
+    expTitle:'Expedition', expSend:'Send out',
+    expLocked:s=>'Reach '+s+' to send out an expedition',
+    expIdle:d=>'Brings back crystals in '+d, expOut:t=>'Back in '+t, expBackN:n=>(n===1?'1 team is':n+' teams are')+' back',
+    expCardTitle:'The expedition is back',
+    expCardBody:(n,v)=>(n===1?'Your team':'Your '+n+' teams')+' brought back '+v+' crystals. Collecting sends '+(n===1?'it':'them')+' out again.',
+    expSent:d=>'The expedition has set out. Back in '+d+'.',
+    rpGain:n=>'+'+n+' research point'+(n===1?'':'s'), giftRp:n=>n+' research point'+(n===1?'':'s'),
+    resTitle:'Core research', resHave:'Research points', resKicker:'RESEARCH',
+    resBody:'Spend research points to learn research. What you learn stays through every rebirth.',
+    resHow:'Research points come from finding a new seam, rebirthing, every 4 expedition returns, finishing today’s requests, and the daily gift on days 3 and 7.',
+    res:{moss:['Moss seedlings','Every rebirth starts with 10 Glowing Moss'],
+      echo:['Long resonance','Crystal Resonance lasts 40 seconds instead of 30'],
+      team:['More expeditions',n=>'Send out up to '+n+' teams at once'],
+      fast:['Shortcut','Expeditions come back 15% sooner'],
+      qual:['Crystal quality',n=>'+5% to all income (now +'+n+'%). Can be learned again and again']},
+    resLearned:'Learned', resCost:n=>n+' pt'+(n===1?'':'s'), resLockedQual:'Opens once every other research is learned',
+    questTitle:'Today’s requests', questLead:'Finish all three for +1 research point. New requests arrive when the date changes.',
+    quests:{orb:n=>'Catch '+n+' glowing orbs', tap:n=>'Tap the crystal '+n+' times', buy:n=>'Buy '+n+' buildings in total', send:n=>'Send out '+n+' expeditions'},
+    questDone:'Done', questAllDone:'All of today’s requests are done',
+    coreAsk:(a,b)=>'Rebirth now and you gain '+a+' cores. Watch a short video for Extra cores and you gain '+b+' instead.',
+    coreAskVideo:'Watch a video for more cores', coreAskPlain:'Just rebirth',
+    howtoNew:[
+      ['Send out expeditions',s=>'Once you reach '+s+', send an expedition from the top of the Mine tab. It comes back with crystals after two hours; collect them and it sets out again.'],
+      ['Grow stronger with core research','In the Rebirth tab, spend research points on research. Points come from new seams, rebirths, every 4 expedition returns and today’s requests. What you learn stays through every rebirth.'],
+      ['Today’s requests','Three requests appear in the Bonus tab every day. Finish all three for +1 research point.']
+    ]
   },
   zh:{
     crystals:'结晶', perSec:'每秒', coreMult:'核', resonance:'共鸣', remain:n=>'剩余'+n+'秒',
@@ -1083,8 +1150,8 @@
     rwResetNote:'日期变更后次数会重置。',
     rwEmpty:'今天的次数已用完', rwResetIn:t=>'距离重置 '+t,
     notifyTitle:'离开期间的提醒',
-    notifyBody:'离开期间累积的部分会在8小时后达到上限，届时只提醒一次。'
-      +'不会发出声音，也不会发送其他任何通知。',
+    notifyBody:'离开期间累积的部分在8小时后达到上限时，以及采掘队回来时，会通知你。'
+      +'没有声音。只会发送这两种通知，不会发送其他任何内容。',
     notifyBtn:'提醒设置',
     dblBtn:'看视频领取双倍', takeBtn:'领取',
     visitKicker:'每日礼物', visitTitle:n=>'第'+n+'天',
@@ -1093,7 +1160,7 @@
     visitToday:g=>'今天的礼物：'+g, visitNow:'今天', visitDone:'已领取', visitNext:'未到',
     dur:m=>m>=60?(m/60)+'小时':m+'分钟',
     gifts:{cr:d=>'结晶（'+d+'的挖掘量）', orb:'立即召唤光球', orb2:'召唤两个光球', boost:d=>d+'内所有收入×2'},
-    askBody:'离开期间累积的结晶，8小时后就会存满。需要在存满时提醒一次吗？',
+    askBody:'离开期间累积的结晶在8小时后存满时，以及采掘队回来时，需要通知你吗？',
     askYes:'接收提醒', askNo:'暂不需要',
     askNote:b=>'不会发出声音。之后随时可以在菜单的「'+b+'」中更改。',
     privacyBtn:'隐私设置',
@@ -1101,7 +1168,33 @@
     legalBody:'本应用适用 Apple 的标准使用许可协议。'
       +'个人信息的处理方式请见隐私政策。',
     legalEula:'使用许可协议（Apple）', legalPrivacy:'隐私政策',
-    legalBodyWeb:'个人信息的处理方式请见隐私政策。'
+    legalBodyWeb:'个人信息的处理方式请见隐私政策。',
+    expTitle:'采掘队', expSend:'派出',
+    expLocked:s=>'到达「'+s+'」后即可派出采掘队',
+    expIdle:d=>d+'后带回结晶', expOut:t=>'返回还需 '+t, expBackN:n=>n+'支队伍回来了',
+    expCardTitle:'采掘队回来了',
+    expCardBody:(n,v)=>n+'支队伍带回了 '+v+' 结晶。领取后会再次出发。',
+    expSent:d=>'采掘队出发了，'+d+'后回来',
+    rpGain:n=>'研究点 +'+n, giftRp:n=>'研究点 '+n,
+    resTitle:'核研究', resHave:'当前研究点', resKicker:'研究',
+    resBody:'使用研究点学习研究。学会的研究在重结晶后也不会消失。',
+    resHow:'研究点来自：发现新矿脉、重结晶、采掘队每返回4次、完成今日委托、每日礼物（第3天和第7天）。',
+    res:{moss:['苔藓幼苗','重结晶后，开局就拥有10个发光的苔藓'],
+      echo:['长共鸣','「结晶共鸣」从30秒延长到40秒'],
+      team:['增加采掘队',n=>'可同时派出'+n+'支采掘队'],
+      fast:['近路','采掘队提前15%返回'],
+      qual:['结晶品质',n=>'所有收入 +5%（目前 +'+n+'%）。可以反复学习']},
+    resLearned:'已学会', resCost:n=>n+'点', resLockedQual:'学会其他所有研究后开放',
+    questTitle:'今日委托', questLead:'三项全部完成可获得研究点 +1。日期变更后会换成新的委托。',
+    quests:{orb:n=>'拾取光球'+n+'次', tap:n=>'挖掘结晶'+n+'次', buy:n=>'累计购买设备'+n+'个', send:n=>'派出采掘队'+n+'次'},
+    questDone:'完成', questAllDone:'今日委托已全部完成',
+    coreAsk:(a,b)=>'现在重结晶可获得 '+a+' 个核。观看短视频使用「核增量」，可增加到 '+b+' 个。',
+    coreAskVideo:'看视频增加核', coreAskPlain:'直接重结晶',
+    howtoNew:[
+      ['派出采掘队',s=>'到达「'+s+'」后，可在「挖掘」标签页最上方派出采掘队。2小时后带回结晶，领取后会再次出发。'],
+      ['用核研究变强','在「重结晶」标签页使用研究点学习研究。研究点来自新矿脉、重结晶、采掘队每返回4次以及今日委托。学会的研究在重结晶后也不会消失。'],
+      ['今日委托','「奖励」标签页每天会出现3项委托。全部完成可获得研究点 +1。']
+    ]
   },
   ko:{
     crystals:'결정', perSec:'초당', coreMult:'핵', resonance:'공명', remain:n=>n+'초 남음',
@@ -1196,8 +1289,8 @@
     rwResetNote:'날짜가 바뀌면 횟수가 초기화됩니다.',
     rwEmpty:'오늘 횟수를 모두 사용했습니다', rwResetIn:t=>'초기화까지 '+t,
     notifyTitle:'자리를 비운 동안의 알림',
-    notifyBody:'자리를 비운 동안 쌓이는 양은 8시간이면 상한에 이릅니다. 그때 한 번만 알립니다. '
-      +'소리는 나지 않으며, 이 밖의 알림은 보내지 않습니다.',
+    notifyBody:'자리를 비운 동안 쌓이는 양이 8시간 만에 상한에 도달했을 때와 채굴대가 돌아왔을 때 알려 드립니다. '
+      +'소리는 나지 않습니다. 보내는 알림은 이 두 가지뿐이며, 그 밖에는 아무것도 보내지 않습니다.',
     notifyBtn:'알림 설정',
     dblBtn:'영상 보고 2배 받기', takeBtn:'받기',
     visitKicker:'출석 선물', visitTitle:n=>n+'일차',
@@ -1206,7 +1299,7 @@
     visitToday:g=>'오늘의 선물: '+g, visitNow:'오늘', visitDone:'받음', visitNext:'예정',
     dur:m=>m>=60?(m/60)+'시간':m+'분',
     gifts:{cr:d=>'결정('+d+' 채굴량)', orb:'빛의 구슬 바로 부르기', orb2:'빛의 구슬 2개 부르기', boost:d=>d+' 동안 모든 수입 2배'},
-    askBody:'자리를 비운 동안 쌓이는 결정은 8시간이면 가득 찹니다. 가득 찼을 때 한 번만 알려 드릴까요?',
+    askBody:'자리를 비운 동안 쌓이는 결정이 8시간 후 가득 찼을 때와 채굴대가 돌아왔을 때 알려 드릴까요?',
     askYes:'알림 받기', askNo:'나중에',
     askNote:b=>'소리는 나지 않습니다. 언제든지 메뉴의 「'+b+'」에서 바꿀 수 있습니다.',
     privacyBtn:'개인정보 설정',
@@ -1214,7 +1307,33 @@
     legalBody:'이 앱에는 Apple의 표준 사용권 계약이 적용됩니다. '
       +'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.',
     legalEula:'사용권 계약(Apple)', legalPrivacy:'개인정보 처리방침',
-    legalBodyWeb:'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.'
+    legalBodyWeb:'개인정보의 취급은 개인정보 처리방침에 적혀 있습니다.',
+    expTitle:'채굴대', expSend:'보내기',
+    expLocked:s=>'‘'+s+'’에 도달하면 채굴대를 보낼 수 있습니다',
+    expIdle:d=>d+' 후 결정을 가져옵니다', expOut:t=>'귀환까지 '+t, expBackN:n=>'채굴대 '+n+'개가 돌아왔습니다',
+    expCardTitle:'채굴대가 돌아왔다',
+    expCardBody:(n,v)=>'채굴대 '+n+'개가 결정 '+v+'개를 가져왔습니다. 받으면 다시 출발합니다.',
+    expSent:d=>'채굴대가 출발했습니다. '+d+' 후 돌아옵니다',
+    rpGain:n=>'연구 포인트 +'+n, giftRp:n=>'연구 포인트 '+n,
+    resTitle:'핵 연구', resHave:'현재 연구 포인트', resKicker:'연구',
+    resBody:'연구 포인트로 연구를 익힙니다. 익힌 연구는 재결정해도 사라지지 않습니다.',
+    resHow:'연구 포인트는 새 광맥 발견, 재결정, 채굴대 4회 귀환, 오늘의 의뢰 완료, 출석 선물(3일째와 7일째)로 얻습니다.',
+    res:{moss:['이끼 묘목','재결정 후 빛나는 이끼 10개를 가진 상태로 시작'],
+      echo:['긴 공명','‘결정의 공명’이 30초에서 40초로 늘어남'],
+      team:['채굴대 늘리기',n=>'동시에 보낼 수 있는 채굴대가 '+n+'개'],
+      fast:['지름길','채굴대가 15% 빨리 돌아옴'],
+      qual:['결정의 질',n=>'모든 수입 +5%(현재 +'+n+'%). 몇 번이든 익힐 수 있음']},
+    resLearned:'익힘', resCost:n=>n+'포인트', resLockedQual:'다른 연구를 모두 익히면 열림',
+    questTitle:'오늘의 의뢰', questLead:'3개를 모두 마치면 연구 포인트 +1. 날짜가 바뀌면 새 의뢰가 나옵니다.',
+    quests:{orb:n=>'빛의 구슬 '+n+'번 줍기', tap:n=>'결정 '+n+'번 캐기', buy:n=>'설비 총 '+n+'개 사기', send:n=>'채굴대 '+n+'번 보내기'},
+    questDone:'완료', questAllDone:'오늘의 의뢰를 모두 마쳤습니다',
+    coreAsk:(a,b)=>'지금 재결정하면 핵을 '+a+'개 얻습니다. 짧은 영상을 보면 ‘핵 증량’으로 '+b+'개로 늘어납니다.',
+    coreAskVideo:'영상 보고 핵 늘리기', coreAskPlain:'그냥 재결정하기',
+    howtoNew:[
+      ['채굴대 보내기',s=>'‘'+s+'’에 도달하면 ‘채굴’ 탭 맨 위에서 채굴대를 보낼 수 있습니다. 2시간 후 결정을 가져오고, 받으면 다시 출발합니다.'],
+      ['핵 연구로 강해지기','‘재결정’ 탭에서 연구 포인트로 연구를 익힙니다. 연구 포인트는 새 광맥, 재결정, 채굴대 4회 귀환, 오늘의 의뢰로 얻습니다. 익힌 연구는 재결정해도 사라지지 않습니다.'],
+      ['오늘의 의뢰','‘보너스’ 탭에 매일 의뢰 3개가 나옵니다. 모두 마치면 연구 포인트 +1.']
+    ]
   },
   es:{
     crystals:'Cristales', perSec:'por seg', coreMult:'Núcleos', resonance:'Resonancia', remain:n=>'quedan '+n+' s',
@@ -1309,8 +1428,8 @@
     rwResetNote:'La cuenta se reinicia al cambiar la fecha.',
     rwEmpty:'No quedan para hoy', rwResetIn:t=>'Se reinicia en '+t,
     notifyTitle:'Avisos mientras no est\u00e1s',
-    notifyBody:'Lo que se acumula mientras no est\u00e1s llega a su l\u00edmite a las ocho horas. '
-      +'En ese momento se env\u00eda un \u00fanico aviso, sin sonido, y nunca se env\u00eda nada m\u00e1s.',
+    notifyBody:'Te avisamos cuando lo que se acumula mientras no estás llega a su límite de ocho horas y cuando vuelve una expedición. '
+      +'Los avisos no suenan y no se envía nada más.',
     notifyBtn:'Ajustes de avisos',
     dblBtn:'Ver un vídeo para duplicar', takeBtn:'Recoger',
     visitKicker:'Regalo diario', visitTitle:n=>'Día '+n,
@@ -1319,7 +1438,7 @@
     visitToday:g=>'Regalo de hoy: '+g, visitNow:'hoy', visitDone:'recogido', visitNext:'por llegar',
     dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
     gifts:{cr:d=>'Cristales ('+d+' de excavación)', orb:'Un orbe al instante', orb2:'Dos orbes', boost:d=>'Ingresos ×2 durante '+d},
-    askBody:'Lo que se acumula mientras no estás llega a su límite a las 8 horas. ¿Quieres recibir un único aviso cuando eso pase?',
+    askBody:'¿Te avisamos cuando lo que se acumula mientras no estás se llene a las 8 horas y cuando vuelva una expedición?',
     askYes:'Recibir el aviso', askNo:'Ahora no',
     askNote:b=>'Sin sonido. Puedes cambiarlo cuando quieras en «'+b+'», dentro del menú.',
     privacyBtn:'Ajustes de privacidad',
@@ -1327,7 +1446,33 @@
     legalBody:'Esta aplicaci\u00f3n se rige por el contrato de licencia est\u00e1ndar de Apple. '
       +'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
     legalEula:'Contrato de licencia (Apple)', legalPrivacy:'Pol\u00edtica de privacidad',
-    legalBodyWeb:'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.'
+    legalBodyWeb:'El tratamiento de tus datos se explica en la pol\u00edtica de privacidad.',
+    expTitle:'Expedición', expSend:'Enviar',
+    expLocked:s=>'Llega a '+s+' para enviar una expedición',
+    expIdle:d=>'Trae cristales en '+d, expOut:t=>'Vuelve en '+t, expBackN:n=>(n===1?'Ha vuelto 1 equipo':'Han vuelto '+n+' equipos'),
+    expCardTitle:'La expedición ha vuelto',
+    expCardBody:(n,v)=>(n===1?'Tu equipo ha':'Tus '+n+' equipos han')+' traído '+v+' cristales. Al recogerlos, '+(n===1?'vuelve':'vuelven')+' a salir.',
+    expSent:d=>'La expedición ha salido. Vuelve en '+d+'.',
+    rpGain:n=>'+'+n+' punto'+(n===1?'':'s')+' de investigación', giftRp:n=>n+' punto'+(n===1?'':'s')+' de investigación',
+    resTitle:'Investigación de núcleos', resHave:'Puntos de investigación', resKicker:'INVESTIGACIÓN',
+    resBody:'Gasta puntos de investigación para aprender mejoras. Lo aprendido se conserva en cada renacer.',
+    resHow:'Los puntos se consiguen al encontrar una veta nueva, al renacer, cada 4 regresos de expedición, al completar los encargos de hoy y con el regalo diario de los días 3 y 7.',
+    res:{moss:['Brotes de musgo','Cada renacer empieza con 10 Musgo luminoso'],
+      echo:['Resonancia larga','La Resonancia cristalina dura 40 segundos en vez de 30'],
+      team:['Más expediciones',n=>'Envía hasta '+n+' equipos a la vez'],
+      fast:['Atajo','Las expediciones vuelven un 15 % antes'],
+      qual:['Calidad del cristal',n=>'+5 % a todos los ingresos (ahora +'+n+' %). Se puede aprender una y otra vez']},
+    resLearned:'Aprendida', resCost:n=>n+' pt'+(n===1?'':'s'), resLockedQual:'Se abre al aprender todas las demás',
+    questTitle:'Encargos de hoy', questLead:'Completa los tres para ganar +1 punto de investigación. Al cambiar la fecha llegan encargos nuevos.',
+    quests:{orb:n=>'Atrapa '+n+' orbes', tap:n=>'Toca el cristal '+n+' veces', buy:n=>'Compra '+n+' instalaciones en total', send:n=>'Envía '+n+' expediciones'},
+    questDone:'Hecho', questAllDone:'Has completado todos los encargos de hoy',
+    coreAsk:(a,b)=>'Si renaces ahora, obtienes '+a+' núcleos. Con un vídeo corto de Núcleos extra, obtienes '+b+'.',
+    coreAskVideo:'Ver un vídeo para más núcleos', coreAskPlain:'Renacer sin más',
+    howtoNew:[
+      ['Envía expediciones',s=>'Al llegar a '+s+', envía una expedición desde arriba de la pestaña Cavar. Vuelve con cristales a las dos horas; al recogerlos, sale de nuevo.'],
+      ['Hazte fuerte con la investigación','En la pestaña Renacer, gasta puntos de investigación. Se consiguen con vetas nuevas, renaceres, cada 4 regresos de expedición y los encargos de hoy. Lo aprendido se conserva en cada renacer.'],
+      ['Encargos de hoy','Cada día aparecen tres encargos en la pestaña Bonus. Complétalos todos para ganar +1 punto de investigación.']
+    ]
   },
   zht:{
     crystals:'結晶', perSec:'每秒', coreMult:'核', resonance:'共鳴', remain:n=>'剩餘'+n+'秒',
@@ -1421,8 +1566,8 @@
     rwResetNote:'日期變更後次數會重置。',
     rwEmpty:'今天的次數已用完', rwResetIn:t=>'距離重置 '+t,
     notifyTitle:'離開期間的提醒',
-    notifyBody:'離開期間累積的部分會在8小時後達到上限，屆時只提醒一次。'
-      +'不會發出聲音，也不會傳送其他任何通知。',
+    notifyBody:'離開期間累積的部分在8小時後達到上限時，以及採掘隊回來時，會通知你。'
+      +'沒有聲音。只會傳送這兩種通知，不會傳送其他任何內容。',
     notifyBtn:'提醒設定',
     dblBtn:'看影片領取雙倍', takeBtn:'領取',
     visitKicker:'每日禮物', visitTitle:n=>'第'+n+'天',
@@ -1431,7 +1576,7 @@
     visitToday:g=>'今天的禮物：'+g, visitNow:'今天', visitDone:'已領取', visitNext:'未到',
     dur:m=>m>=60?(m/60)+'小時':m+'分鐘',
     gifts:{cr:d=>'結晶（'+d+'的挖掘量）', orb:'立即召喚光球', orb2:'召喚兩個光球', boost:d=>d+'內所有收入×2'},
-    askBody:'離開期間累積的結晶，8小時後就會存滿。需要在存滿時提醒一次嗎？',
+    askBody:'離開期間累積的結晶在8小時後存滿時，以及採掘隊回來時，需要通知你嗎？',
     askYes:'接收提醒', askNo:'暫時不用',
     askNote:b=>'不會發出聲音。之後隨時可以在選單的「'+b+'」中更改。',
     privacyBtn:'隱私權設定',
@@ -1439,7 +1584,33 @@
     legalBody:'本 App 適用 Apple 的標準使用授權合約。'
       +'個人資料的處理方式請見隱私權政策。',
     legalEula:'使用授權合約（Apple）', legalPrivacy:'隱私權政策',
-    legalBodyWeb:'個人資料的處理方式請見隱私權政策。'
+    legalBodyWeb:'個人資料的處理方式請見隱私權政策。',
+    expTitle:'採掘隊', expSend:'派出',
+    expLocked:s=>'抵達「'+s+'」後即可派出採掘隊',
+    expIdle:d=>d+'後帶回結晶', expOut:t=>'返回還需 '+t, expBackN:n=>n+'支隊伍回來了',
+    expCardTitle:'採掘隊回來了',
+    expCardBody:(n,v)=>n+'支隊伍帶回了 '+v+' 結晶。領取後會再次出發。',
+    expSent:d=>'採掘隊出發了，'+d+'後回來',
+    rpGain:n=>'研究點 +'+n, giftRp:n=>'研究點 '+n,
+    resTitle:'核研究', resHave:'目前研究點', resKicker:'研究',
+    resBody:'使用研究點學習研究。學會的研究在重結晶後也不會消失。',
+    resHow:'研究點來自：發現新礦脈、重結晶、採掘隊每返回4次、完成今日委託、每日禮物（第3天和第7天）。',
+    res:{moss:['苔蘚幼苗','重結晶後，開局就擁有10個發光的苔蘚'],
+      echo:['長共鳴','「結晶共鳴」從30秒延長到40秒'],
+      team:['增加採掘隊',n=>'可同時派出'+n+'支採掘隊'],
+      fast:['捷徑','採掘隊提早15%返回'],
+      qual:['結晶品質',n=>'所有收入 +5%（目前 +'+n+'%）。可以反覆學習']},
+    resLearned:'已學會', resCost:n=>n+'點', resLockedQual:'學會其他所有研究後開放',
+    questTitle:'今日委託', questLead:'三項全部完成可獲得研究點 +1。日期變更後會換成新的委託。',
+    quests:{orb:n=>'撿起光球'+n+'次', tap:n=>'挖掘結晶'+n+'次', buy:n=>'累計購買設備'+n+'個', send:n=>'派出採掘隊'+n+'次'},
+    questDone:'完成', questAllDone:'今日委託已全部完成',
+    coreAsk:(a,b)=>'現在重結晶可獲得 '+a+' 個核。觀看短片使用「核數加成」，可增加到 '+b+' 個。',
+    coreAskVideo:'看影片增加核', coreAskPlain:'直接重結晶',
+    howtoNew:[
+      ['派出採掘隊',s=>'抵達「'+s+'」後，可在「挖掘」分頁最上方派出採掘隊。2小時後帶回結晶，領取後會再次出發。'],
+      ['用核研究變強','在「重結晶」分頁使用研究點學習研究。研究點來自新礦脈、重結晶、採掘隊每返回4次以及今日委託。學會的研究在重結晶後也不會消失。'],
+      ['今日委託','「獎勵」分頁每天會出現3項委託。全部完成可獲得研究點 +1。']
+    ]
   },
   fr:{
     crystals:'Cristaux', perSec:'par s', coreMult:'Noyaux', resonance:'Résonance', remain:n=>'encore '+n+'\u00a0s',
@@ -1533,8 +1704,8 @@
     rwResetNote:'Le compteur repart à zéro au changement de date.',
     rwEmpty:'Plus aucun aujourd’hui', rwResetIn:t=>'Remise à zéro dans '+t,
     notifyTitle:'Rappels pendant votre absence',
-    notifyBody:'Ce qui s’accumule pendant votre absence atteint sa limite au bout de huit heures. '
-      +'Un seul rappel silencieux est envoyé à ce moment-là, et rien d’autre.',
+    notifyBody:'Un rappel est envoyé quand ce qui s’accumule pendant votre absence atteint sa limite de huit heures, et quand une expédition revient. '
+      +'Ils sont silencieux, et rien d’autre n’est jamais envoyé.',
     notifyBtn:'Réglages des rappels',
     dblBtn:'Doubler avec une vidéo', takeBtn:'Récupérer',
     visitKicker:'Cadeau du jour', visitTitle:n=>'Jour '+n,
@@ -1543,7 +1714,7 @@
     visitToday:g=>'Cadeau d’aujourd’hui : '+g, visitNow:'aujourd’hui', visitDone:'récupéré', visitNext:'à venir',
     dur:m=>m>=60?(m/60)+(m===60?' heure':' heures'):m+' minutes',
     gifts:{cr:d=>'Cristaux ('+d+' d’extraction)', orb:'Un orbe, tout de suite', orb2:'Deux orbes', boost:d=>'Revenus ×2 pendant '+d},
-    askBody:'Ce qui s’accumule pendant votre absence atteint sa limite au bout de 8 heures. Souhaitez-vous recevoir un seul rappel à ce moment-là ?',
+    askBody:'Voulez-vous être prévenu quand ce qui s’accumule pendant votre absence est plein au bout de 8 heures, et quand une expédition revient ?',
     askYes:'Recevoir le rappel', askNo:'Pas maintenant',
     askNote:b=>'Aucun son. Vous pouvez changer cela à tout moment dans « '+b+' », depuis le menu.',
     privacyBtn:'Réglages de confidentialité',
@@ -1551,7 +1722,33 @@
     legalBody:'Cette app est couverte par le contrat de licence standard d’Apple. '
       +'Le traitement de vos informations est décrit dans la politique de confidentialité.',
     legalEula:'Contrat de licence (Apple)', legalPrivacy:'Politique de confidentialité',
-    legalBodyWeb:'Le traitement de vos informations est décrit dans la politique de confidentialité.'
+    legalBodyWeb:'Le traitement de vos informations est décrit dans la politique de confidentialité.',
+    expTitle:'Expédition', expSend:'Envoyer',
+    expLocked:s=>'Atteignez '+s+' pour envoyer une expédition',
+    expIdle:d=>'Rapporte des cristaux en '+d, expOut:t=>'Retour dans '+t, expBackN:n=>(n===1?'1 équipe est revenue':n+' équipes sont revenues'),
+    expCardTitle:'L’expédition est revenue',
+    expCardBody:(n,v)=>(n===1?'Votre équipe a':'Vos '+n+' équipes ont')+' rapporté '+v+' cristaux. En les récupérant, '+(n===1?'elle repart':'elles repartent')+'.',
+    expSent:d=>'L’expédition est partie. Retour dans '+d+'.',
+    rpGain:n=>'+'+n+' point'+(n===1?'':'s')+' de recherche', giftRp:n=>n+' point'+(n===1?'':'s')+' de recherche',
+    resTitle:'Recherche des noyaux', resHave:'Points de recherche', resKicker:'RECHERCHE',
+    resBody:'Dépensez des points de recherche pour apprendre des recherches. Ce que vous apprenez reste à chaque renaissance.',
+    resHow:'Les points s’obtiennent en trouvant un nouveau filon, en renaissant, tous les 4 retours d’expédition, en terminant les demandes du jour et avec le cadeau du jour des jours 3 et 7.',
+    res:{moss:['Pousses de mousse','Chaque renaissance commence avec 10 Mousse lumineuse'],
+      echo:['Longue résonance','La Résonance cristalline dure 40 secondes au lieu de 30'],
+      team:['Plus d’expéditions',n=>'Envoyez jusqu’à '+n+' équipes à la fois'],
+      fast:['Raccourci','Les expéditions reviennent 15 % plus tôt'],
+      qual:['Qualité du cristal',n=>'+5 % sur tous les revenus (actuellement +'+n+' %). Peut s’apprendre encore et encore']},
+    resLearned:'Apprise', resCost:n=>n+' pt'+(n===1?'':'s'), resLockedQual:'S’ouvre quand toutes les autres sont apprises',
+    questTitle:'Demandes du jour', questLead:'Terminez les trois pour +1 point de recherche. De nouvelles demandes arrivent quand la date change.',
+    quests:{orb:n=>'Attrapez '+n+' orbes', tap:n=>'Touchez le cristal '+n+' fois', buy:n=>'Achetez '+n+' bâtiments au total', send:n=>'Envoyez '+n+' expéditions'},
+    questDone:'Fait', questAllDone:'Toutes les demandes du jour sont terminées',
+    coreAsk:(a,b)=>'En renaissant maintenant, vous obtenez '+a+' noyaux. Avec une courte vidéo « Noyaux en plus », vous en obtenez '+b+'.',
+    coreAskVideo:'Voir une vidéo pour plus de noyaux', coreAskPlain:'Renaître tout de suite',
+    howtoNew:[
+      ['Envoyez des expéditions',s=>'Une fois à '+s+', envoyez une expédition depuis le haut de l’onglet Creuser. Elle revient avec des cristaux au bout de deux heures ; récupérez-les et elle repart.'],
+      ['Devenez plus fort grâce à la recherche','Dans l’onglet Renaître, dépensez vos points de recherche. Ils viennent des nouveaux filons, des renaissances, de tous les 4 retours d’expédition et des demandes du jour. Ce que vous apprenez reste à chaque renaissance.'],
+      ['Demandes du jour','Trois demandes apparaissent chaque jour dans l’onglet Bonus. Terminez-les toutes pour +1 point de recherche.']
+    ]
   },
   de:{
     crystals:'Kristalle', perSec:'pro Sek.', coreMult:'Kerne', resonance:'Resonanz', remain:n=>'noch '+n+'\u00a0s',
@@ -1645,8 +1842,8 @@
     rwResetNote:'Der Zähler wird beim Datumswechsel zurückgesetzt.',
     rwEmpty:'Für heute aufgebraucht', rwResetIn:t=>'Zurückgesetzt in '+t,
     notifyTitle:'Erinnerung während deiner Abwesenheit',
-    notifyBody:'Was sich während deiner Abwesenheit ansammelt, erreicht nach acht Stunden seine Grenze. '
-      +'Genau dann kommt eine einzige lautlose Erinnerung, sonst nichts.',
+    notifyBody:'Du bekommst eine Erinnerung, wenn das, was sich während deiner Abwesenheit ansammelt, nach acht Stunden sein Limit erreicht, und wenn eine Expedition zurückkommt. '
+      +'Beide sind lautlos, und sonst wird nie etwas geschickt.',
     notifyBtn:'Erinnerungseinstellungen',
     dblBtn:'Video ansehen und verdoppeln', takeBtn:'Einsammeln',
     visitKicker:'Tägliches Geschenk', visitTitle:n=>'Tag '+n,
@@ -1655,7 +1852,7 @@
     visitToday:g=>'Heutiges Geschenk: '+g, visitNow:'heute', visitDone:'eingesammelt', visitNext:'kommt noch',
     dur:m=>m>=60?(m/60)+(m===60?' Stunde':' Stunden'):m+' Minuten',
     gifts:{cr:d=>'Kristalle ('+d+' Abbau)', orb:'Sofort eine Kugel herbeirufen', orb2:'Zwei Kugeln herbeirufen', boost:d=>'Alle Einnahmen '+d+' lang ×2'},
-    askBody:'Was sich während deiner Abwesenheit ansammelt, ist nach 8 Stunden voll. Soll dir das Spiel einmal Bescheid geben, sobald es so weit ist?',
+    askBody:'Sollen wir dir Bescheid geben, wenn das, was sich während deiner Abwesenheit ansammelt, nach 8 Stunden voll ist, und wenn eine Expedition zurückkommt?',
     askYes:'Ja, erinnere mich', askNo:'Jetzt nicht',
     askNote:b=>'Ganz ohne Ton. Du kannst das jederzeit im Menü unter „'+b+'“ ändern.',
     privacyBtn:'Datenschutzeinstellungen',
@@ -1663,7 +1860,33 @@
     legalBody:'Für diese App gilt die Standard-Lizenzvereinbarung von Apple. '
       +'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.',
     legalEula:'Lizenzvereinbarung (Apple)', legalPrivacy:'Datenschutzerklärung',
-    legalBodyWeb:'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.'
+    legalBodyWeb:'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.',
+    expTitle:'Expedition', expSend:'Losschicken',
+    expLocked:s=>'Erreiche '+s+', um eine Expedition loszuschicken',
+    expIdle:d=>'Bringt in '+d+' Kristalle zurück', expOut:t=>'Zurück in '+t, expBackN:n=>(n===1?'1 Trupp ist':n+' Trupps sind')+' zurück',
+    expCardTitle:'Die Expedition ist zurück',
+    expCardBody:(n,v)=>(n===1?'Dein Trupp hat':'Deine '+n+' Trupps haben')+' '+v+' Kristalle mitgebracht. Beim Einsammeln '+(n===1?'zieht er':'ziehen sie')+' wieder los.',
+    expSent:d=>'Die Expedition ist aufgebrochen. Zurück in '+d+'.',
+    rpGain:n=>'+'+n+' Forschungspunkt'+(n===1?'':'e'), giftRp:n=>n+' Forschungspunkt'+(n===1?'':'e'),
+    resTitle:'Kernforschung', resHave:'Forschungspunkte', resKicker:'FORSCHUNG',
+    resBody:'Gib Forschungspunkte aus, um Forschungen zu lernen. Gelerntes bleibt bei jedem Neustart erhalten.',
+    resHow:'Forschungspunkte gibt es für eine neue Ader, jeden Neustart, alle 4 Rückkehren einer Expedition, die erledigten Aufträge des Tages und das tägliche Geschenk an Tag 3 und 7.',
+    res:{moss:['Moossetzlinge','Jeder Neustart beginnt mit 10 Leuchtmoos'],
+      echo:['Lange Resonanz','Die Kristallresonanz hält 40 statt 30 Sekunden'],
+      team:['Mehr Expeditionen',n=>'Bis zu '+n+' Trupps gleichzeitig losschicken'],
+      fast:['Abkürzung','Expeditionen kommen 15 % früher zurück'],
+      qual:['Kristallqualität',n=>'+5 % auf alle Einnahmen (jetzt +'+n+' %). Immer wieder lernbar']},
+    resLearned:'Gelernt', resCost:n=>n+' P.', resLockedQual:'Öffnet sich, wenn alle anderen gelernt sind',
+    questTitle:'Aufträge des Tages', questLead:'Erledige alle drei für +1 Forschungspunkt. Wenn das Datum wechselt, kommen neue Aufträge.',
+    quests:{orb:n=>'Fange '+n+' leuchtende Kugeln', tap:n=>'Tippe '+n+'-mal auf den Kristall', buy:n=>'Kaufe insgesamt '+n+' Gebäude', send:n=>'Schicke '+n+' Expeditionen los'},
+    questDone:'Erledigt', questAllDone:'Alle Aufträge des Tages sind erledigt',
+    coreAsk:(a,b)=>'Ein Neustart bringt dir jetzt '+a+' Kerne. Mit einem kurzen Video für „Zusätzliche Kerne“ sind es '+b+'.',
+    coreAskVideo:'Video ansehen für mehr Kerne', coreAskPlain:'Einfach neu starten',
+    howtoNew:[
+      ['Expeditionen losschicken',s=>'Sobald du '+s+' erreichst, schickst du oben im Tab „Graben“ eine Expedition los. Nach zwei Stunden kommt sie mit Kristallen zurück; sammelst du sie ein, zieht sie wieder los.'],
+      ['Stärker durch Kernforschung','Im Tab „Neustart“ gibst du Forschungspunkte für Forschungen aus. Punkte gibt es für neue Adern, Neustarts, alle 4 Rückkehren einer Expedition und die Aufträge des Tages. Gelerntes bleibt bei jedem Neustart erhalten.'],
+      ['Aufträge des Tages','Jeden Tag erscheinen drei Aufträge im Tab „Bonus“. Erledige alle drei für +1 Forschungspunkt.']
+    ]
   },
   it:{
     crystals:'Cristalli', perSec:'al sec', coreMult:'Nuclei', resonance:'Risonanza', remain:n=>'ancora '+n+'\u00a0s',
@@ -1757,8 +1980,8 @@
     rwResetNote:'Il conteggio si azzera al cambio di data.',
     rwEmpty:'Esauriti per oggi', rwResetIn:t=>'Si azzera tra '+t,
     notifyTitle:'Promemoria mentre sei via',
-    notifyBody:'Ciò che si accumula mentre sei via raggiunge il limite dopo otto ore. '
-      +'In quel momento arriva un solo promemoria silenzioso, e nient’altro.',
+    notifyBody:'Ricevi un promemoria quando ciò che si accumula mentre sei via raggiunge il limite di otto ore e quando torna una spedizione. '
+      +'Sono silenziosi, e non viene mai inviato nient’altro.',
     notifyBtn:'Impostazioni promemoria',
     dblBtn:'Raddoppia con un video', takeBtn:'Ritira',
     visitKicker:'Regalo del giorno', visitTitle:n=>'Giorno '+n,
@@ -1767,7 +1990,7 @@
     visitToday:g=>'Regalo di oggi: '+g, visitNow:'oggi', visitDone:'ritirato', visitNext:'da raggiungere',
     dur:m=>m>=60?(m/60)+(m===60?' ora':' ore'):m+' minuti',
     gifts:{cr:d=>'Cristalli ('+d+' di scavo)', orb:'Una sfera, subito', orb2:'Due sfere', boost:d=>'Guadagni ×2 per '+d},
-    askBody:'Ciò che si accumula mentre sei via raggiunge il limite dopo 8 ore. Vuoi ricevere un solo promemoria quando succede?',
+    askBody:'Vuoi un avviso quando ciò che si accumula mentre sei via è pieno dopo 8 ore e quando torna una spedizione?',
     askYes:'Ricevi il promemoria', askNo:'Non ora',
     askNote:b=>'Nessun suono. Puoi cambiarlo quando vuoi da «'+b+'» nel menu.',
     privacyBtn:'Impostazioni privacy',
@@ -1775,7 +1998,33 @@
     legalBody:'Questa app è coperta dal contratto di licenza standard di Apple. '
       +'Come vengono trattate le tue informazioni è spiegato nell’informativa sulla privacy.',
     legalEula:'Contratto di licenza (Apple)', legalPrivacy:'Informativa sulla privacy',
-    legalBodyWeb:'Come vengono trattate le tue informazioni è spiegato nell’informativa sulla privacy.'
+    legalBodyWeb:'Come vengono trattate le tue informazioni è spiegato nell’informativa sulla privacy.',
+    expTitle:'Spedizione', expSend:'Invia',
+    expLocked:s=>'Raggiungi '+s+' per inviare una spedizione',
+    expIdle:d=>'Riporta cristalli in '+d, expOut:t=>'Di ritorno tra '+t, expBackN:n=>(n===1?'1 squadra è tornata':n+' squadre sono tornate'),
+    expCardTitle:'La spedizione è tornata',
+    expCardBody:(n,v)=>(n===1?'La tua squadra ha':'Le tue '+n+' squadre hanno')+' riportato '+v+' cristalli. Ritirandoli, '+(n===1?'riparte':'ripartono')+'.',
+    expSent:d=>'La spedizione è partita. Di ritorno tra '+d+'.',
+    rpGain:n=>'+'+n+' punt'+(n===1?'o':'i')+' ricerca', giftRp:n=>n+' punt'+(n===1?'o':'i')+' ricerca',
+    resTitle:'Ricerca dei nuclei', resHave:'Punti ricerca', resKicker:'RICERCA',
+    resBody:'Spendi i punti ricerca per imparare le ricerche. Ciò che impari resta a ogni rinascita.',
+    resHow:'I punti si ottengono trovando una nuova vena, rinascendo, ogni 4 ritorni di spedizione, completando le richieste di oggi e con il regalo del giorno nei giorni 3 e 7.',
+    res:{moss:['Germogli di muschio','Ogni rinascita parte con 10 Muschio luminoso'],
+      echo:['Risonanza lunga','La Risonanza cristallina dura 40 secondi invece di 30'],
+      team:['Più spedizioni',n=>'Invia fino a '+n+' squadre alla volta'],
+      fast:['Scorciatoia','Le spedizioni tornano il 15% prima'],
+      qual:['Qualità del cristallo',n=>'+5% a tutti i guadagni (ora +'+n+'%). Si può imparare più e più volte']},
+    resLearned:'Imparata', resCost:n=>n+' pt', resLockedQual:'Si apre dopo aver imparato tutte le altre',
+    questTitle:'Richieste di oggi', questLead:'Completale tutte e tre per +1 punto ricerca. Al cambio di data arrivano nuove richieste.',
+    quests:{orb:n=>'Prendi '+n+' sfere luminose', tap:n=>'Tocca il cristallo '+n+' volte', buy:n=>'Compra '+n+' edifici in tutto', send:n=>'Invia '+n+' spedizioni'},
+    questDone:'Fatto', questAllDone:'Hai completato tutte le richieste di oggi',
+    coreAsk:(a,b)=>'Rinascendo ora ottieni '+a+' nuclei. Con un breve video per Nuclei extra ne ottieni '+b+'.',
+    coreAskVideo:'Guarda un video per più nuclei', coreAskPlain:'Rinasci e basta',
+    howtoNew:[
+      ['Invia le spedizioni',s=>'Raggiunta '+s+', invia una spedizione dalla parte alta della scheda Scava. Torna con dei cristalli dopo due ore; ritirandoli, riparte.'],
+      ['Diventa più forte con la ricerca','Nella scheda Rinascita spendi i punti ricerca. Arrivano dalle nuove vene, dalle rinascite, ogni 4 ritorni di spedizione e dalle richieste di oggi. Ciò che impari resta a ogni rinascita.'],
+      ['Richieste di oggi','Ogni giorno compaiono tre richieste nella scheda Bonus. Completale tutte per +1 punto ricerca.']
+    ]
   },
   pt:{
     crystals:'Cristais', perSec:'por seg', coreMult:'Núcleos', resonance:'Ressonância', remain:n=>'restante: '+n+' s',
@@ -1869,8 +2118,8 @@
     rwResetNote:'A contagem zera quando a data muda.',
     rwEmpty:'Acabaram por hoje', rwResetIn:t=>'Zera em '+t,
     notifyTitle:'Aviso enquanto você está fora',
-    notifyBody:'O que se acumula enquanto você está fora chega ao limite depois de oito horas. '
-      +'Nesse momento chega um único aviso silencioso, e nada mais.',
+    notifyBody:'Você recebe um lembrete quando o que se acumula enquanto você está fora chega ao limite de oito horas e quando uma expedição volta. '
+      +'Os dois são silenciosos, e nada mais é enviado.',
     notifyBtn:'Ajustes do aviso',
     dblBtn:'Ver um vídeo para dobrar', takeBtn:'Receber',
     visitKicker:'Presente diário', visitTitle:n=>'Dia '+n,
@@ -1879,7 +2128,7 @@
     visitToday:g=>'Presente de hoje: '+g, visitNow:'hoje', visitDone:'recebido', visitNext:'ainda por vir',
     dur:m=>m>=60?(m/60)+(m===60?' hora':' horas'):m+' minutos',
     gifts:{cr:d=>'Cristais ('+d+' de mineração)', orb:'Um orbe agora mesmo', orb2:'Dois orbes', boost:d=>'Renda ×2 por '+d},
-    askBody:'O que se acumula enquanto você está fora chega ao limite depois de 8 horas. Quer receber um único aviso quando isso acontecer?',
+    askBody:'Quer que avisemos quando o que se acumula enquanto você está fora encher depois de 8 horas e quando uma expedição voltar?',
     askYes:'Receber o aviso', askNo:'Agora não',
     askNote:b=>'Sem som. Você pode mudar isso quando quiser em “'+b+'”, no menu.',
     privacyBtn:'Ajustes de privacidade',
@@ -1887,7 +2136,33 @@
     legalBody:'Este app segue o contrato de licença padrão da Apple. '
       +'O tratamento das suas informações está descrito na política de privacidade.',
     legalEula:'Contrato de licença (Apple)', legalPrivacy:'Política de privacidade',
-    legalBodyWeb:'O tratamento das suas informações está descrito na política de privacidade.'
+    legalBodyWeb:'O tratamento das suas informações está descrito na política de privacidade.',
+    expTitle:'Expedição', expSend:'Enviar',
+    expLocked:s=>'Chegue a '+s+' para enviar uma expedição',
+    expIdle:d=>'Traz cristais em '+d, expOut:t=>'Volta em '+t, expBackN:n=>(n===1?'1 equipe voltou':n+' equipes voltaram'),
+    expCardTitle:'A expedição voltou',
+    expCardBody:(n,v)=>(n===1?'Sua equipe trouxe':'Suas '+n+' equipes trouxeram')+' '+v+' cristais. Ao receber, '+(n===1?'ela sai':'elas saem')+' de novo.',
+    expSent:d=>'A expedição partiu. Volta em '+d+'.',
+    rpGain:n=>'+'+n+' ponto'+(n===1?'':'s')+' de pesquisa', giftRp:n=>n+' ponto'+(n===1?'':'s')+' de pesquisa',
+    resTitle:'Pesquisa dos núcleos', resHave:'Pontos de pesquisa', resKicker:'PESQUISA',
+    resBody:'Gaste pontos de pesquisa para aprender pesquisas. O que você aprende continua em cada renascimento.',
+    resHow:'Os pontos vêm de encontrar um novo veio, renascer, a cada 4 voltas de expedição, completar os pedidos de hoje e do presente diário nos dias 3 e 7.',
+    res:{moss:['Mudas de musgo','Todo renascimento começa com 10 Musgo luminoso'],
+      echo:['Ressonância longa','A Ressonância cristalina dura 40 segundos em vez de 30'],
+      team:['Mais expedições',n=>'Envie até '+n+' equipes ao mesmo tempo'],
+      fast:['Atalho','As expedições voltam 15% mais cedo'],
+      qual:['Qualidade do cristal',n=>'+5% em toda a renda (agora +'+n+'%). Pode ser aprendida várias vezes']},
+    resLearned:'Aprendida', resCost:n=>n+' pt'+(n===1?'':'s'), resLockedQual:'Abre depois de aprender todas as outras',
+    questTitle:'Pedidos de hoje', questLead:'Complete os três para ganhar +1 ponto de pesquisa. Quando a data muda, chegam pedidos novos.',
+    quests:{orb:n=>'Pegue '+n+' orbes brilhantes', tap:n=>'Toque no cristal '+n+' vezes', buy:n=>'Compre '+n+' construções no total', send:n=>'Envie '+n+' expedições'},
+    questDone:'Feito', questAllDone:'Todos os pedidos de hoje foram concluídos',
+    coreAsk:(a,b)=>'Renascendo agora, você ganha '+a+' núcleos. Com um vídeo curto de Núcleos extras, ganha '+b+'.',
+    coreAskVideo:'Ver um vídeo para mais núcleos', coreAskPlain:'Só renascer',
+    howtoNew:[
+      ['Envie expedições',s=>'Ao chegar a '+s+', envie uma expedição pelo topo da aba Minerar. Ela volta com cristais depois de duas horas; ao receber, sai de novo.'],
+      ['Fique mais forte com a pesquisa','Na aba Renascer, gaste pontos de pesquisa. Eles vêm de novos veios, renascimentos, a cada 4 voltas de expedição e dos pedidos de hoje. O que você aprende continua em cada renascimento.'],
+      ['Pedidos de hoje','Todo dia aparecem três pedidos na aba Bônus. Complete os três para ganhar +1 ponto de pesquisa.']
+    ]
   },
   nl:{
     crystals:'Kristallen', perSec:'per sec', coreMult:'Kernen', resonance:'Resonantie', remain:n=>'nog '+n+' s',
@@ -1981,8 +2256,8 @@
     rwResetNote:'De teller gaat terug naar nul als de datum verandert.',
     rwEmpty:'Op voor vandaag', rwResetIn:t=>'Reset over '+t,
     notifyTitle:'Melding terwijl je weg bent',
-    notifyBody:'Wat zich ophoopt terwijl je weg bent, bereikt na acht uur zijn grens. '
-      +'Op dat moment komt er één stille melding, en verder niets.',
+    notifyBody:'Je krijgt een herinnering wanneer wat zich ophoopt terwijl je weg bent na acht uur zijn grens bereikt, en wanneer een expeditie terugkomt. '
+      +'Beide zijn stil, en er wordt nooit iets anders gestuurd.',
     notifyBtn:'Meldingsinstellingen',
     dblBtn:'Video bekijken en verdubbelen', takeBtn:'Ophalen',
     visitKicker:'Dagelijks cadeau', visitTitle:n=>'Dag '+n,
@@ -1991,7 +2266,7 @@
     visitToday:g=>'Cadeau van vandaag: '+g, visitNow:'vandaag', visitDone:'opgehaald', visitNext:'komt nog',
     dur:m=>m>=60?(m/60)+' uur':m+' minuten',
     gifts:{cr:d=>'Kristallen ('+d+' aan opbrengst)', orb:'Meteen een bol oproepen', orb2:'Twee bollen oproepen', boost:d=>'Alle inkomsten '+d+' ×2'},
-    askBody:'Wat zich ophoopt terwijl je weg bent, is na 8 uur vol. Wil je één keer een melding krijgen zodra het vol is?',
+    askBody:'Zullen we het je laten weten wanneer wat zich ophoopt terwijl je weg bent na 8 uur vol is, en wanneer een expeditie terugkomt?',
     askYes:'Ja, laat het me weten', askNo:'Nu niet',
     askNote:b=>'De melding maakt geen geluid. Je kunt dit altijd aanpassen via ‘'+b+'’ in het menu.',
     privacyBtn:'Privacy-instellingen',
@@ -1999,7 +2274,33 @@
     legalBody:'Voor deze app geldt de standaard licentieovereenkomst van Apple. '
       +'Hoe er met je gegevens wordt omgegaan, staat in het privacybeleid.',
     legalEula:'Licentieovereenkomst (Apple)', legalPrivacy:'Privacybeleid',
-    legalBodyWeb:'Hoe er met je gegevens wordt omgegaan, staat in het privacybeleid.'
+    legalBodyWeb:'Hoe er met je gegevens wordt omgegaan, staat in het privacybeleid.',
+    expTitle:'Expeditie', expSend:'Uitsturen',
+    expLocked:s=>'Bereik '+s+' om een expeditie uit te sturen',
+    expIdle:d=>'Brengt over '+d+' kristallen terug', expOut:t=>'Terug over '+t, expBackN:n=>(n===1?'1 ploeg is':n+' ploegen zijn')+' terug',
+    expCardTitle:'De expeditie is terug',
+    expCardBody:(n,v)=>(n===1?'Je ploeg heeft':'Je '+n+' ploegen hebben')+' '+v+' kristallen meegebracht. Als je ze ophaalt, '+(n===1?'vertrekt hij':'vertrekken ze')+' opnieuw.',
+    expSent:d=>'De expeditie is vertrokken. Terug over '+d+'.',
+    rpGain:n=>'+'+n+' onderzoekspunt'+(n===1?'':'en'), giftRp:n=>n+' onderzoekspunt'+(n===1?'':'en'),
+    resTitle:'Kernonderzoek', resHave:'Onderzoekspunten', resKicker:'ONDERZOEK',
+    resBody:'Besteed onderzoekspunten om onderzoek te leren. Wat je leert, blijft bij elke herstart.',
+    resHow:'Punten krijg je voor een nieuwe ader, elke herstart, elke 4 keer dat een expeditie terugkomt, de opdrachten van vandaag en het dagelijkse cadeau op dag 3 en 7.',
+    res:{moss:['Moszaailingen','Elke herstart begint met 10 Lichtgevend mos'],
+      echo:['Lange resonantie','Kristalresonantie duurt 40 in plaats van 30 seconden'],
+      team:['Meer expedities',n=>'Stuur tot '+n+' ploegen tegelijk uit'],
+      fast:['Binnenweg','Expedities komen 15% eerder terug'],
+      qual:['Kristalkwaliteit',n=>'+5% op alle inkomsten (nu +'+n+'%). Kan steeds opnieuw geleerd worden']},
+    resLearned:'Geleerd', resCost:n=>n+' pt', resLockedQual:'Gaat open als al het andere onderzoek geleerd is',
+    questTitle:'Opdrachten van vandaag', questLead:'Voltooi alle drie voor +1 onderzoekspunt. Als de datum wisselt, komen er nieuwe opdrachten.',
+    quests:{orb:n=>'Vang '+n+' gloeiende bollen', tap:n=>'Tik '+n+' keer op het kristal', buy:n=>'Koop in totaal '+n+' gebouwen', send:n=>'Stuur '+n+' expedities uit'},
+    questDone:'Klaar', questAllDone:'Alle opdrachten van vandaag zijn klaar',
+    coreAsk:(a,b)=>'Herstart je nu, dan krijg je '+a+' kernen. Met een korte video voor Extra kernen krijg je er '+b+'.',
+    coreAskVideo:'Video bekijken voor meer kernen', coreAskPlain:'Gewoon herstarten',
+    howtoNew:[
+      ['Stuur expedities uit',s=>'Zodra je '+s+' bereikt, stuur je bovenaan het tabblad Graven een expeditie uit. Na twee uur komt die terug met kristallen; haal je ze op, dan vertrekt hij opnieuw.'],
+      ['Sterker door kernonderzoek','In het tabblad Herstart besteed je onderzoekspunten. Je krijgt ze voor nieuwe aders, herstarts, elke 4 keer dat een expeditie terugkomt en de opdrachten van vandaag. Wat je leert, blijft bij elke herstart.'],
+      ['Opdrachten van vandaag','Elke dag staan er drie opdrachten in het tabblad Bonus. Voltooi ze alle drie voor +1 onderzoekspunt.']
+    ]
   },
   pl:{
     crystals:'Kryształy', perSec:'na sek.', coreMult:'Rdzenie', resonance:'Rezonans', remain:n=>'jeszcze '+n+' s',
@@ -2093,8 +2394,8 @@
     rwResetNote:'Licznik zeruje się wraz ze zmianą daty.',
     rwEmpty:'Na dziś wykorzystane', rwResetIn:t=>'Zerowanie za '+t,
     notifyTitle:'Przypomnienie pod twoją nieobecność',
-    notifyBody:'To, co zbiera się pod twoją nieobecność, osiąga limit po ośmiu godzinach. '
-      +'Wtedy przychodzi jedno ciche przypomnienie i nic więcej.',
+    notifyBody:'Dostaniesz przypomnienie, gdy to, co zbiera się pod twoją nieobecność, osiągnie limit ośmiu godzin, oraz gdy wróci wyprawa. '
+      +'Oba są ciche i nic innego nie jest wysyłane.',
     notifyBtn:'Ustawienia przypomnień',
     dblBtn:'Obejrzyj film, aby podwoić', takeBtn:'Odbierz',
     visitKicker:'Codzienny prezent', visitTitle:n=>'Dzień '+n,
@@ -2103,7 +2404,7 @@
     visitToday:g=>'Dzisiejszy prezent: '+g, visitNow:'dziś', visitDone:'odebrano', visitNext:'jeszcze przed tobą',
     dur:m=>{const p=(n,a,b,c)=>n+' '+(n===1?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'godzina','godziny','godzin'):p(m,'minuta','minuty','minut')},
     gifts:{cr:d=>'Kryształy ('+d+' wydobycia)', orb:'Kula, od razu', orb2:'Dwie kule', boost:d=>'Cały dochód ×2 ('+d+')'},
-    askBody:'To, co zbiera się pod twoją nieobecność, osiąga limit po 8 godzinach. Czy wysłać ci wtedy jedno przypomnienie?',
+    askBody:'Czy dać ci znać, gdy to, co zbiera się pod twoją nieobecność, zapełni się po 8 godzinach, oraz gdy wróci wyprawa?',
     askYes:'Tak, przypomnij mi', askNo:'Nie teraz',
     askNote:b=>'Przypomnienie nie wydaje dźwięku. W każdej chwili możesz to zmienić w menu, w sekcji „'+b+'”.',
     privacyBtn:'Ustawienia prywatności',
@@ -2111,7 +2412,33 @@
     legalBody:'Tę aplikację obejmuje standardowa umowa licencyjna Apple. '
       +'Sposób przetwarzania twoich danych opisuje polityka prywatności.',
     legalEula:'Umowa licencyjna (Apple)', legalPrivacy:'Polityka prywatności',
-    legalBodyWeb:'Sposób przetwarzania twoich danych opisuje polityka prywatności.'
+    legalBodyWeb:'Sposób przetwarzania twoich danych opisuje polityka prywatności.',
+    expTitle:'Wyprawa', expSend:'Wyślij',
+    expLocked:s=>'Dotrzyj do: '+s+', aby wysłać wyprawę',
+    expIdle:d=>'Przynosi kryształy za '+d, expOut:t=>'Powrót za '+t, expBackN:n=>'Wróciło drużyn: '+n,
+    expCardTitle:'Wyprawa wróciła',
+    expCardBody:(n,v)=>'Drużyny ('+n+') przyniosły kryształy: '+v+'. Po odebraniu wyruszają ponownie.',
+    expSent:d=>'Wyprawa wyruszyła. Powrót za '+d+'.',
+    rpGain:n=>'Punkty badań +'+n, giftRp:n=>'Punkty badań: '+n,
+    resTitle:'Badania rdzeni', resHave:'Punkty badań', resKicker:'BADANIA',
+    resBody:'Wydawaj punkty badań, aby poznawać badania. To, czego się nauczysz, zostaje po każdym odrodzeniu.',
+    resHow:'Punkty dostajesz za nową żyłę, każde odrodzenie, co 4 powroty wyprawy, wykonanie dzisiejszych zleceń oraz codzienny prezent w dniu 3 i 7.',
+    res:{moss:['Sadzonki mchu','Każde odrodzenie zaczyna się z 10 sztukami Świecącego mchu'],
+      echo:['Długi rezonans','Kryształowy rezonans trwa 40 sekund zamiast 30'],
+      team:['Więcej wypraw',n=>'Wysyłaj naraz do '+n+' drużyn'],
+      fast:['Skrót','Wyprawy wracają o 15% szybciej'],
+      qual:['Jakość kryształu',n=>'+5% do całego dochodu (teraz +'+n+'%). Można poznawać wielokrotnie']},
+    resLearned:'Poznane', resCost:n=>n+' pkt', resLockedQual:'Otwiera się po poznaniu wszystkich pozostałych',
+    questTitle:'Dzisiejsze zlecenia', questLead:'Wykonaj wszystkie trzy, aby dostać +1 punkt badań. Po zmianie daty pojawiają się nowe zlecenia.',
+    quests:{orb:n=>'Złap świecące kule: '+n, tap:n=>'Stuknij kryształ: '+n+' razy', buy:n=>'Kup łącznie budynków: '+n, send:n=>'Wyślij wyprawy: '+n},
+    questDone:'Gotowe', questAllDone:'Wszystkie dzisiejsze zlecenia wykonane',
+    coreAsk:(a,b)=>'Odrodzenie teraz da ci rdzenie: '+a+'. Po krótkim filmie z premią Dodatkowe rdzenie dostaniesz: '+b+'.',
+    coreAskVideo:'Obejrzyj film, by dostać więcej rdzeni', coreAskPlain:'Po prostu odrodź się',
+    howtoNew:[
+      ['Wysyłaj wyprawy',s=>'Po dotarciu do: '+s+' wyślesz wyprawę z górnej części karty Kop. Po dwóch godzinach wraca z kryształami; po odebraniu wyrusza ponownie.'],
+      ['Silniejszy dzięki badaniom rdzeni','Na karcie Odrodzenie wydawaj punkty badań. Dostajesz je za nowe żyły, odrodzenia, co 4 powroty wyprawy i dzisiejsze zlecenia. To, czego się nauczysz, zostaje po każdym odrodzeniu.'],
+      ['Dzisiejsze zlecenia','Każdego dnia na karcie Premie pojawiają się trzy zlecenia. Wykonaj wszystkie, aby dostać +1 punkt badań.']
+    ]
   },
   ru:{
     crystals:'Кристаллы', perSec:'в секунду', coreMult:'Ядра', resonance:'Резонанс', remain:n=>'ещё '+n+' с',
@@ -2205,8 +2532,8 @@
     rwResetNote:'Счётчик обнуляется при смене даты.',
     rwEmpty:'На сегодня всё', rwResetIn:t=>'Сброс через '+t,
     notifyTitle:'Напоминание в ваше отсутствие',
-    notifyBody:'То, что копится в ваше отсутствие, достигает предела через восемь часов. '
-      +'В этот момент приходит одно беззвучное напоминание. Больше ничего не присылается.',
+    notifyBody:'Вы получите напоминание, когда то, что копится в ваше отсутствие, достигнет восьмичасового предела, и когда вернётся экспедиция. '
+      +'Оба беззвучные, и больше ничего не отправляется.',
     notifyBtn:'Настройки напоминаний',
     dblBtn:'Посмотреть видео и удвоить', takeBtn:'Забрать',
     visitKicker:'Ежедневный подарок', visitTitle:n=>'День '+n,
@@ -2215,7 +2542,7 @@
     visitToday:g=>'Подарок на сегодня: '+g, visitNow:'сегодня', visitDone:'получено', visitNext:'впереди',
     dur:m=>{const p=(n,a,b,c)=>n+' '+(n%10===1&&n%100!==11?a:n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?b:c);return m>=60?p(m/60,'час','часа','часов'):p(m,'минута','минуты','минут')},
     gifts:{cr:d=>'Кристаллы ('+d+' добычи)', orb:'Сфера прямо сейчас', orb2:'Две сферы', boost:d=>'Весь доход ×2 на '+d},
-    askBody:'То, что копится в ваше отсутствие, достигает предела через 8 часов. Прислать вам одно напоминание, когда это произойдёт?',
+    askBody:'Сообщить вам, когда накопленное в ваше отсутствие заполнится через 8 часов и когда вернётся экспедиция?',
     askYes:'Да, напомните мне', askNo:'Не сейчас',
     askNote:b=>'Без звука. Изменить это можно в любой момент в меню, в разделе «'+b+'».',
     privacyBtn:'Настройки конфиденциальности',
@@ -2223,7 +2550,33 @@
     legalBody:'На это приложение распространяется стандартное лицензионное соглашение Apple. '
       +'Как обрабатываются ваши данные, описано в политике конфиденциальности.',
     legalEula:'Лицензионное соглашение (Apple)', legalPrivacy:'Политика конфиденциальности',
-    legalBodyWeb:'Как обрабатываются ваши данные, описано в политике конфиденциальности.'
+    legalBodyWeb:'Как обрабатываются ваши данные, описано в политике конфиденциальности.',
+    expTitle:'Экспедиция', expSend:'Отправить',
+    expLocked:s=>'Доберитесь до слоя «'+s+'», чтобы отправить экспедицию',
+    expIdle:d=>'Принесёт кристаллы через '+d, expOut:t=>'Вернётся через '+t, expBackN:n=>'Вернулось отрядов: '+n,
+    expCardTitle:'Экспедиция вернулась',
+    expCardBody:(n,v)=>'Отряды ('+n+') принесли кристаллы: '+v+'. Если забрать их, отряды снова отправятся в путь.',
+    expSent:d=>'Экспедиция отправилась. Вернётся через '+d+'.',
+    rpGain:n=>'Очки исследований +'+n, giftRp:n=>'Очки исследований: '+n,
+    resTitle:'Исследование ядер', resHave:'Очки исследований', resKicker:'ИССЛЕДОВАНИЕ',
+    resBody:'Тратьте очки исследований, чтобы изучать исследования. Изученное сохраняется после каждого перерождения.',
+    resHow:'Очки дают за новую жилу, каждое перерождение, каждые 4 возвращения экспедиции, выполнение сегодняшних заданий и ежедневный подарок на 3-й и 7-й день.',
+    res:{moss:['Ростки мха','Каждое перерождение начинается с 10 Светящихся мхов'],
+      echo:['Долгий резонанс','Кристальный резонанс длится 40 секунд вместо 30'],
+      team:['Больше экспедиций',n=>'Одновременно можно отправить до '+n+' отрядов'],
+      fast:['Короткий путь','Экспедиции возвращаются на 15% быстрее'],
+      qual:['Качество кристалла',n=>'+5% ко всему доходу (сейчас +'+n+'%). Можно изучать снова и снова']},
+    resLearned:'Изучено', resCost:n=>n+' оч.', resLockedQual:'Откроется, когда будут изучены все остальные',
+    questTitle:'Задания на сегодня', questLead:'Выполните все три и получите +1 очко исследований. Со сменой даты появятся новые задания.',
+    quests:{orb:n=>'Поймать светящиеся сферы: '+n, tap:n=>'Нажать на кристалл: '+n+' раз', buy:n=>'Купить построек всего: '+n, send:n=>'Отправить экспедиции: '+n},
+    questDone:'Готово', questAllDone:'Все задания на сегодня выполнены',
+    coreAsk:(a,b)=>'Если переродиться сейчас, вы получите ядер: '+a+'. После короткого видео «Больше ядер» — '+b+'.',
+    coreAskVideo:'Видео ради большего числа ядер', coreAskPlain:'Просто переродиться',
+    howtoNew:[
+      ['Отправляйте экспедиции',s=>'Добравшись до слоя «'+s+'», отправьте экспедицию из верхней части вкладки «Добыча». Через два часа она вернётся с кристаллами; если забрать их, она снова отправится в путь.'],
+      ['Сила исследований','На вкладке «Ядра» тратьте очки исследований. Их дают за новые жилы, перерождения, каждые 4 возвращения экспедиции и сегодняшние задания. Изученное сохраняется после каждого перерождения.'],
+      ['Задания на сегодня','Каждый день на вкладке «Бонусы» появляются три задания. Выполните все и получите +1 очко исследований.']
+    ]
   },
   tr:{
     crystals:'Kristal', perSec:'saniyede', coreMult:'Çekirdek', resonance:'Rezonans', remain:n=>n+' sn kaldı',
@@ -2317,8 +2670,8 @@
     rwResetNote:'Sayaç tarih değişince sıfırlanır.',
     rwEmpty:'Bugünlük bitti', rwResetIn:t=>t+' sonra sıfırlanır',
     notifyTitle:'Sen yokken gelen hatırlatma',
-    notifyBody:'Sen yokken biriken miktar sekiz saat sonra sınırına ulaşır. '
-      +'O anda yalnızca tek bir sessiz hatırlatma gelir, başka hiçbir şey gönderilmez.',
+    notifyBody:'Sen yokken biriken miktar sekiz saatlik sınıra ulaştığında ve bir sefer döndüğünde hatırlatma gelir. '
+      +'İkisi de sessizdir ve başka hiçbir şey gönderilmez.',
     notifyBtn:'Hatırlatma ayarları',
     dblBtn:'Video izle, ikiye katla', takeBtn:'Al',
     visitKicker:'Günlük hediye', visitTitle:n=>n+'. gün',
@@ -2327,7 +2680,7 @@
     visitToday:g=>'Bugünün hediyesi: '+g, visitNow:'bugün', visitDone:'alındı', visitNext:'henüz gelmedi',
     dur:m=>m>=60?(m/60)+' saat':m+' dakika',
     gifts:{cr:d=>'Kristal ('+d+(/saat$/.test(d)?'lik':'lık')+' kazı)', orb:'Hemen bir küre', orb2:'İki küre', boost:d=>d+' boyunca tüm gelir ×2'},
-    askBody:'Sen yokken biriken miktar 8 saat sonra dolar. Dolduğunda bir kez hatırlatma almak ister misin?',
+    askBody:'Sen yokken biriken miktar 8 saat sonra dolduğunda ve bir sefer döndüğünde haber verelim mi?',
     askYes:'Evet, hatırlat', askNo:'Şimdi değil',
     askNote:b=>'Ses çıkmaz. Bunu istediğin zaman menüdeki “'+b+'” bölümünden değiştirebilirsin.',
     privacyBtn:'Gizlilik ayarları',
@@ -2335,7 +2688,33 @@
     legalBody:'Bu uygulama Apple’ın standart lisans sözleşmesine tabidir. '
       +'Bilgilerinin nasıl işlendiği gizlilik politikasında anlatılır.',
     legalEula:'Lisans sözleşmesi (Apple)', legalPrivacy:'Gizlilik politikası',
-    legalBodyWeb:'Bilgilerinin nasıl işlendiği gizlilik politikasında anlatılır.'
+    legalBodyWeb:'Bilgilerinin nasıl işlendiği gizlilik politikasında anlatılır.',
+    expTitle:'Sefer', expSend:'Gönder',
+    expLocked:s=>s+' katmanına ulaşınca sefer gönderebilirsin',
+    expIdle:d=>d+' içinde kristal getirir', expOut:t=>'Dönüşe '+t, expBackN:n=>n+' ekip döndü',
+    expCardTitle:'Sefer döndü',
+    expCardBody:(n,v)=>n+' ekip '+v+' kristal getirdi. Alınca yeniden yola çıkarlar.',
+    expSent:d=>'Sefer yola çıktı. '+d+' sonra dönecek.',
+    rpGain:n=>'+'+n+' araştırma puanı', giftRp:n=>n+' araştırma puanı',
+    resTitle:'Çekirdek araştırması', resHave:'Araştırma puanı', resKicker:'ARAŞTIRMA',
+    resBody:'Araştırma puanlarını harcayarak araştırma öğren. Öğrendiklerin her yeniden doğuşta kalır.',
+    resHow:'Puanlar yeni bir damar bulunca, yeniden doğunca, seferin her 4 dönüşünde, bugünün görevleri bitince ve 3. ile 7. günün günlük hediyesinde gelir.',
+    res:{moss:['Yosun fideleri','Her yeniden doğuş 10 Parlayan yosunla başlar'],
+      echo:['Uzun rezonans','Kristal rezonansı 30 yerine 40 saniye sürer'],
+      team:['Daha çok sefer',n=>'Aynı anda en fazla '+n+' ekip gönder'],
+      fast:['Kestirme','Seferler %15 daha erken döner'],
+      qual:['Kristal kalitesi',n=>'Tüm gelire +%5 (şu an +%'+n+'). Tekrar tekrar öğrenilebilir']},
+    resLearned:'Öğrenildi', resCost:n=>n+' puan', resLockedQual:'Diğer tüm araştırmalar öğrenilince açılır',
+    questTitle:'Bugünün görevleri', questLead:'Üçünü de bitir, +1 araştırma puanı kazan. Tarih değişince yeni görevler gelir.',
+    quests:{orb:n=>n+' parlayan küre yakala', tap:n=>'Kristale '+n+' kez dokun', buy:n=>'Toplam '+n+' bina al', send:n=>n+' sefer gönder'},
+    questDone:'Tamam', questAllDone:'Bugünün tüm görevleri bitti',
+    coreAsk:(a,b)=>'Şimdi yeniden doğarsan '+a+' çekirdek alırsın. Kısa bir Ek çekirdek videosu izlersen '+b+' alırsın.',
+    coreAskVideo:'Daha çok çekirdek için video izle', coreAskPlain:'Hemen yeniden doğ',
+    howtoNew:[
+      ['Sefer gönder',s=>s+' katmanına ulaşınca Kazı sekmesinin en üstünden sefer gönderebilirsin. İki saat sonra kristallerle döner; alınca yeniden yola çıkar.'],
+      ['Çekirdek araştırmasıyla güçlen','Çekirdek sekmesinde araştırma puanlarını harca. Puanlar yeni damarlardan, yeniden doğuşlardan, seferin her 4 dönüşünden ve bugünün görevlerinden gelir. Öğrendiklerin her yeniden doğuşta kalır.'],
+      ['Bugünün görevleri','Bonus sekmesinde her gün üç görev çıkar. Üçünü de bitir, +1 araştırma puanı kazan.']
+    ]
   },
   vi:{
     crystals:'Tinh thể', perSec:'mỗi giây', coreMult:'Lõi', resonance:'Cộng hưởng', remain:n=>'còn '+n+' giây',
@@ -2429,8 +2808,8 @@
     rwResetNote:'Số lượt được đặt lại khi sang ngày mới.',
     rwEmpty:'Hôm nay đã hết lượt', rwResetIn:t=>'Đặt lại sau '+t,
     notifyTitle:'Nhắc nhở khi bạn vắng mặt',
-    notifyBody:'Phần tích lũy khi bạn vắng mặt sẽ chạm giới hạn sau tám giờ. '
-      +'Lúc đó chỉ có một lời nhắc không âm thanh, ngoài ra không gửi gì khác.',
+    notifyBody:'Bạn sẽ được nhắc khi phần tích lũy lúc vắng mặt chạm giới hạn tám giờ và khi đội thám hiểm trở về. '
+      +'Cả hai đều không có âm thanh, và không có gì khác được gửi.',
     notifyBtn:'Cài đặt nhắc nhở',
     dblBtn:'Xem video để nhận gấp đôi', takeBtn:'Nhận',
     visitKicker:'Quà mỗi ngày', visitTitle:n=>'Ngày '+n,
@@ -2439,7 +2818,7 @@
     visitToday:g=>'Quà hôm nay: '+g, visitNow:'hôm nay', visitDone:'đã nhận', visitNext:'chưa tới',
     dur:m=>m>=60?(m/60)+' giờ':m+' phút',
     gifts:{cr:d=>'Tinh thể (tương đương '+d+' đào)', orb:'Gọi ngay một quả cầu', orb2:'Gọi hai quả cầu', boost:d=>'Mọi thu nhập ×2 trong '+d},
-    askBody:'Phần tích lũy khi bạn vắng mặt sẽ đầy sau 8 giờ. Bạn có muốn nhận một lời nhắc duy nhất khi đã đầy không?',
+    askBody:'Bạn có muốn được báo khi phần tích lũy lúc vắng mặt đầy sau 8 giờ và khi đội thám hiểm trở về không?',
     askYes:'Nhận lời nhắc', askNo:'Để sau',
     askNote:b=>'Không có âm thanh. Bạn có thể đổi bất cứ lúc nào ở mục “'+b+'” trong Menu.',
     privacyBtn:'Cài đặt quyền riêng tư',
@@ -2447,7 +2826,33 @@
     legalBody:'Ứng dụng này áp dụng thỏa thuận cấp phép tiêu chuẩn của Apple. '
       +'Cách xử lý thông tin của bạn được nêu trong chính sách quyền riêng tư.',
     legalEula:'Thỏa thuận cấp phép (Apple)', legalPrivacy:'Chính sách quyền riêng tư',
-    legalBodyWeb:'Cách xử lý thông tin của bạn được nêu trong chính sách quyền riêng tư.'
+    legalBodyWeb:'Cách xử lý thông tin của bạn được nêu trong chính sách quyền riêng tư.',
+    expTitle:'Đội thám hiểm', expSend:'Cử đi',
+    expLocked:s=>'Tới '+s+' để cử đội thám hiểm',
+    expIdle:d=>'Mang tinh thể về sau '+d, expOut:t=>'Về sau '+t, expBackN:n=>n+' đội đã về',
+    expCardTitle:'Đội thám hiểm đã về',
+    expCardBody:(n,v)=>n+' đội đã mang về '+v+' tinh thể. Khi nhận, đội sẽ lên đường lại.',
+    expSent:d=>'Đội thám hiểm đã lên đường. Về sau '+d+'.',
+    rpGain:n=>'+'+n+' điểm nghiên cứu', giftRp:n=>n+' điểm nghiên cứu',
+    resTitle:'Nghiên cứu lõi', resHave:'Điểm nghiên cứu', resKicker:'NGHIÊN CỨU',
+    resBody:'Dùng điểm nghiên cứu để học nghiên cứu. Những gì đã học vẫn giữ nguyên sau mỗi lần tái sinh.',
+    resHow:'Điểm có được khi tìm thấy mạch mới, khi tái sinh, mỗi 4 lần đội thám hiểm trở về, khi hoàn thành nhiệm vụ hôm nay và từ quà mỗi ngày vào ngày 3 và 7.',
+    res:{moss:['Mầm rêu','Mỗi lần tái sinh bắt đầu với 10 Rêu phát sáng'],
+      echo:['Cộng hưởng dài','Cộng hưởng tinh thể kéo dài 40 giây thay vì 30'],
+      team:['Thêm đội thám hiểm',n=>'Cử tối đa '+n+' đội cùng lúc'],
+      fast:['Đường tắt','Đội thám hiểm về sớm hơn 15%'],
+      qual:['Chất lượng tinh thể',n=>'+5% mọi thu nhập (hiện +'+n+'%). Có thể học lại nhiều lần']},
+    resLearned:'Đã học', resCost:n=>n+' điểm', resLockedQual:'Mở khi đã học hết các nghiên cứu khác',
+    questTitle:'Nhiệm vụ hôm nay', questLead:'Hoàn thành cả ba để nhận +1 điểm nghiên cứu. Khi sang ngày mới sẽ có nhiệm vụ mới.',
+    quests:{orb:n=>'Bắt '+n+' quả cầu phát sáng', tap:n=>'Chạm vào tinh thể '+n+' lần', buy:n=>'Mua tổng cộng '+n+' công trình', send:n=>'Cử đội thám hiểm '+n+' lần'},
+    questDone:'Xong', questAllDone:'Đã hoàn thành mọi nhiệm vụ hôm nay',
+    coreAsk:(a,b)=>'Tái sinh bây giờ, bạn nhận '+a+' lõi. Xem một video ngắn Thêm lõi, bạn nhận '+b+' lõi.',
+    coreAskVideo:'Xem video để thêm lõi', coreAskPlain:'Tái sinh luôn',
+    howtoNew:[
+      ['Cử đội thám hiểm',s=>'Khi tới '+s+', hãy cử đội thám hiểm từ đầu thẻ Đào. Sau hai giờ, đội mang tinh thể về; nhận xong, đội lên đường lại.'],
+      ['Mạnh hơn nhờ nghiên cứu lõi','Ở thẻ Tái sinh, dùng điểm nghiên cứu để học. Điểm có từ mạch mới, tái sinh, mỗi 4 lần đội trở về và nhiệm vụ hôm nay. Những gì đã học vẫn giữ sau mỗi lần tái sinh.'],
+      ['Nhiệm vụ hôm nay','Mỗi ngày thẻ Thưởng có ba nhiệm vụ. Hoàn thành cả ba để nhận +1 điểm nghiên cứu.']
+    ]
   },
   th:{
     crystals:'คริสตัล', perSec:'ต่อวินาที', coreMult:'แกน', resonance:'การสั่นพ้อง', remain:n=>'เหลือ '+n+' วินาที',
@@ -2541,8 +2946,8 @@
     rwResetNote:'จำนวนครั้งจะรีเซ็ตเมื่อขึ้นวันใหม่',
     rwEmpty:'วันนี้ใช้ครบแล้ว', rwResetIn:t=>'รีเซ็ตในอีก '+t,
     notifyTitle:'แจ้งเตือนระหว่างที่คุณไม่อยู่',
-    notifyBody:'สิ่งที่สะสมระหว่างคุณไม่อยู่จะเต็มขีดจำกัดเมื่อครบแปดชั่วโมง '
-      +'ตอนนั้นจะมีการแจ้งเตือนแบบไม่มีเสียงเพียงครั้งเดียว และจะไม่ส่งอะไรอื่นอีก',
+    notifyBody:'คุณจะได้รับการเตือนเมื่อสิ่งที่สะสมระหว่างที่คุณไม่อยู่ถึงขีดจำกัดแปดชั่วโมง และเมื่อคณะสำรวจกลับมา '
+      +'ทั้งสองแบบไม่มีเสียง และจะไม่มีการส่งสิ่งอื่นใดอีก',
     notifyBtn:'ตั้งค่าการแจ้งเตือน',
     dblBtn:'ดูวิดีโอเพื่อรับสองเท่า', takeBtn:'รับ',
     visitKicker:'ของขวัญรายวัน', visitTitle:n=>'วันที่ '+n,
@@ -2551,7 +2956,7 @@
     visitToday:g=>'ของขวัญวันนี้: '+g, visitNow:'วันนี้', visitDone:'รับแล้ว', visitNext:'ยังไม่ถึง',
     dur:m=>m>=60?(m/60)+' ชั่วโมง':m+' นาที',
     gifts:{cr:d=>'คริสตัล (เท่ากับขุด '+d+')', orb:'เรียกลูกแสงทันที', orb2:'เรียกลูกแสง 2 ลูก', boost:d=>'รายได้ทั้งหมด ×2 นาน '+d},
-    askBody:'คริสตัลที่สะสมระหว่างคุณไม่อยู่จะเต็มเมื่อครบ 8 ชั่วโมง ต้องการให้แจ้งเตือนเพียงครั้งเดียวตอนที่เต็มหรือไม่',
+    askBody:'ให้เราแจ้งเมื่อสิ่งที่สะสมระหว่างที่คุณไม่อยู่เต็มหลัง 8 ชั่วโมง และเมื่อคณะสำรวจกลับมาไหม?',
     askYes:'รับการแจ้งเตือน', askNo:'ไว้ทีหลัง',
     askNote:b=>'ไม่มีเสียง เปลี่ยนได้ทุกเมื่อที่ “'+b+'” ในเมนู',
     privacyBtn:'ตั้งค่าความเป็นส่วนตัว',
@@ -2559,7 +2964,33 @@
     legalBody:'แอปนี้อยู่ภายใต้ข้อตกลงสิทธิ์การใช้งานมาตรฐานของ Apple '
       +'วิธีจัดการข้อมูลของคุณอธิบายไว้ในนโยบายความเป็นส่วนตัว',
     legalEula:'ข้อตกลงสิทธิ์การใช้งาน (Apple)', legalPrivacy:'นโยบายความเป็นส่วนตัว',
-    legalBodyWeb:'วิธีจัดการข้อมูลของคุณอธิบายไว้ในนโยบายความเป็นส่วนตัว'
+    legalBodyWeb:'วิธีจัดการข้อมูลของคุณอธิบายไว้ในนโยบายความเป็นส่วนตัว',
+    expTitle:'คณะสำรวจ', expSend:'ส่งออกไป',
+    expLocked:s=>'ไปถึง'+s+'เพื่อส่งคณะสำรวจ',
+    expIdle:d=>'นำคริสตัลกลับมาใน '+d, expOut:t=>'กลับใน '+t, expBackN:n=>'กลับมาแล้ว '+n+' ทีม',
+    expCardTitle:'คณะสำรวจกลับมาแล้ว',
+    expCardBody:(n,v)=>n+' ทีมนำคริสตัล '+v+' กลับมา เมื่อรับแล้วจะออกเดินทางอีกครั้ง',
+    expSent:d=>'คณะสำรวจออกเดินทางแล้ว จะกลับมาใน '+d,
+    rpGain:n=>'แต้มวิจัย +'+n, giftRp:n=>'แต้มวิจัย '+n,
+    resTitle:'วิจัยแกน', resHave:'แต้มวิจัย', resKicker:'วิจัย',
+    resBody:'ใช้แต้มวิจัยเพื่อเรียนรู้งานวิจัย สิ่งที่เรียนแล้วจะยังอยู่ทุกครั้งที่เกิดใหม่',
+    resHow:'ได้แต้มเมื่อพบสายแร่ใหม่ เมื่อเกิดใหม่ ทุกครั้งที่คณะสำรวจกลับมาครบ 4 ครั้ง เมื่อทำภารกิจวันนี้ครบ และจากของขวัญรายวันวันที่ 3 และ 7',
+    res:{moss:['ต้นกล้ามอส','ทุกครั้งที่เกิดใหม่จะเริ่มด้วยมอสเรืองแสง 10 ต้น'],
+      echo:['การสั่นพ้องยาว','การสั่นพ้องของคริสตัลนาน 40 วินาทีแทน 30'],
+      team:['เพิ่มคณะสำรวจ',n=>'ส่งได้พร้อมกันสูงสุด '+n+' ทีม'],
+      fast:['ทางลัด','คณะสำรวจกลับเร็วขึ้น 15%'],
+      qual:['คุณภาพคริสตัล',n=>'รายได้ทั้งหมด +5% (ตอนนี้ +'+n+'%) เรียนซ้ำได้เรื่อยๆ']},
+    resLearned:'เรียนแล้ว', resCost:n=>n+' แต้ม', resLockedQual:'เปิดเมื่อเรียนงานวิจัยอื่นครบทั้งหมด',
+    questTitle:'ภารกิจวันนี้', questLead:'ทำครบทั้งสามเพื่อรับแต้มวิจัย +1 เมื่อขึ้นวันใหม่จะมีภารกิจใหม่',
+    quests:{orb:n=>'จับลูกแสง '+n+' ครั้ง', tap:n=>'แตะคริสตัล '+n+' ครั้ง', buy:n=>'ซื้อสิ่งก่อสร้างรวม '+n+' ชิ้น', send:n=>'ส่งคณะสำรวจ '+n+' ครั้ง'},
+    questDone:'สำเร็จ', questAllDone:'ทำภารกิจวันนี้ครบแล้ว',
+    coreAsk:(a,b)=>'ถ้าเกิดใหม่ตอนนี้จะได้แกน '+a+' ดูวิดีโอสั้นเพื่อรับแกนเพิ่ม จะได้ '+b,
+    coreAskVideo:'ดูวิดีโอเพื่อรับแกนเพิ่ม', coreAskPlain:'เกิดใหม่เลย',
+    howtoNew:[
+      ['ส่งคณะสำรวจ',s=>'เมื่อไปถึง'+s+' ส่งคณะสำรวจได้จากด้านบนของแท็บขุด สองชั่วโมงต่อมาจะนำคริสตัลกลับมา เมื่อรับแล้วจะออกเดินทางอีกครั้ง'],
+      ['แข็งแกร่งขึ้นด้วยวิจัยแกน','ในแท็บเกิดใหม่ ใช้แต้มวิจัยเพื่อเรียนรู้ ได้แต้มจากสายแร่ใหม่ การเกิดใหม่ คณะสำรวจกลับมาครบ 4 ครั้ง และภารกิจวันนี้ สิ่งที่เรียนแล้วจะยังอยู่ทุกครั้งที่เกิดใหม่'],
+      ['ภารกิจวันนี้','ทุกวันจะมีภารกิจสามอย่างในแท็บโบนัส ทำครบทั้งหมดเพื่อรับแต้มวิจัย +1']
+    ]
   },
   id:{
     crystals:'Kristal', perSec:'per detik', coreMult:'Inti', resonance:'Resonansi', remain:n=>'sisa '+n+' dtk',
@@ -2653,8 +3084,8 @@
     rwResetNote:'Hitungan diatur ulang saat tanggal berganti.',
     rwEmpty:'Habis untuk hari ini', rwResetIn:t=>'Diatur ulang dalam '+t,
     notifyTitle:'Pengingat saat kamu pergi',
-    notifyBody:'Yang terkumpul saat kamu pergi mencapai batas setelah delapan jam. '
-      +'Saat itu hanya satu pengingat tanpa suara yang dikirim, tidak ada yang lain.',
+    notifyBody:'Kamu mendapat pengingat saat yang terkumpul ketika kamu pergi mencapai batas delapan jam, dan saat ekspedisi kembali. '
+      +'Keduanya tanpa suara, dan tidak ada hal lain yang dikirim.',
     notifyBtn:'Pengaturan pengingat',
     dblBtn:'Gandakan lewat video', takeBtn:'Ambil',
     visitKicker:'Hadiah harian', visitTitle:n=>'Hari ke-'+n,
@@ -2663,7 +3094,7 @@
     visitToday:g=>'Hadiah hari ini: '+g, visitNow:'hari ini', visitDone:'sudah diambil', visitNext:'belum tiba',
     dur:m=>m>=60?(m/60)+' jam':m+' menit',
     gifts:{cr:d=>'Kristal (senilai '+d+' penggalian)', orb:'Satu bola, sekarang juga', orb2:'Dua bola', boost:d=>'Pendapatan ×2 selama '+d},
-    askBody:'Yang terkumpul saat kamu pergi akan penuh setelah 8 jam. Mau diberi tahu sekali saja saat sudah penuh?',
+    askBody:'Mau diberi tahu saat yang terkumpul ketika kamu pergi sudah penuh setelah 8 jam, dan saat ekspedisi kembali?',
     askYes:'Terima pengingat', askNo:'Nanti saja',
     askNote:b=>'Tanpa suara. Bisa diubah kapan saja lewat “'+b+'” di menu.',
     privacyBtn:'Pengaturan privasi',
@@ -2671,7 +3102,33 @@
     legalBody:'Aplikasi ini mengikuti perjanjian lisensi standar Apple. '
       +'Cara informasimu ditangani dijelaskan dalam kebijakan privasi.',
     legalEula:'Perjanjian lisensi (Apple)', legalPrivacy:'Kebijakan privasi',
-    legalBodyWeb:'Cara informasimu ditangani dijelaskan dalam kebijakan privasi.'
+    legalBodyWeb:'Cara informasimu ditangani dijelaskan dalam kebijakan privasi.',
+    expTitle:'Ekspedisi', expSend:'Kirim',
+    expLocked:s=>'Capai '+s+' untuk mengirim ekspedisi',
+    expIdle:d=>'Membawa pulang kristal dalam '+d, expOut:t=>'Kembali dalam '+t, expBackN:n=>n+' tim sudah kembali',
+    expCardTitle:'Ekspedisi sudah kembali',
+    expCardBody:(n,v)=>n+' tim membawa pulang '+v+' kristal. Setelah diambil, mereka berangkat lagi.',
+    expSent:d=>'Ekspedisi berangkat. Kembali dalam '+d+'.',
+    rpGain:n=>'+'+n+' poin riset', giftRp:n=>n+' poin riset',
+    resTitle:'Riset inti', resHave:'Poin riset', resKicker:'RISET',
+    resBody:'Gunakan poin riset untuk mempelajari riset. Yang sudah dipelajari tetap ada setiap kali lahir ulang.',
+    resHow:'Poin didapat saat menemukan urat baru, lahir ulang, setiap 4 kali ekspedisi kembali, menyelesaikan tugas hari ini, dan dari hadiah harian hari ke-3 dan ke-7.',
+    res:{moss:['Bibit lumut','Setiap lahir ulang dimulai dengan 10 Lumut bercahaya'],
+      echo:['Resonansi panjang','Resonansi kristal berlangsung 40 detik, bukan 30'],
+      team:['Tambah ekspedisi',n=>'Kirim hingga '+n+' tim sekaligus'],
+      fast:['Jalan pintas','Ekspedisi kembali 15% lebih cepat'],
+      qual:['Mutu kristal',n=>'+5% semua pendapatan (sekarang +'+n+'%). Bisa dipelajari berulang kali']},
+    resLearned:'Dipelajari', resCost:n=>n+' poin', resLockedQual:'Terbuka setelah semua riset lain dipelajari',
+    questTitle:'Tugas hari ini', questLead:'Selesaikan ketiganya untuk +1 poin riset. Saat tanggal berganti, tugas baru datang.',
+    quests:{orb:n=>'Tangkap '+n+' bola bercahaya', tap:n=>'Ketuk kristal '+n+' kali', buy:n=>'Beli total '+n+' bangunan', send:n=>'Kirim '+n+' ekspedisi'},
+    questDone:'Selesai', questAllDone:'Semua tugas hari ini sudah selesai',
+    coreAsk:(a,b)=>'Lahir ulang sekarang memberi '+a+' inti. Tonton video singkat Inti tambahan untuk mendapat '+b+'.',
+    coreAskVideo:'Tonton video untuk inti tambahan', coreAskPlain:'Langsung lahir ulang',
+    howtoNew:[
+      ['Kirim ekspedisi',s=>'Setelah mencapai '+s+', kirim ekspedisi dari bagian atas tab Gali. Dua jam kemudian ekspedisi kembali membawa kristal; setelah diambil, ia berangkat lagi.'],
+      ['Makin kuat dengan riset inti','Di tab Inti, gunakan poin riset. Poin didapat dari urat baru, lahir ulang, setiap 4 kali ekspedisi kembali, dan tugas hari ini. Yang sudah dipelajari tetap ada setiap kali lahir ulang.'],
+      ['Tugas hari ini','Setiap hari ada tiga tugas di tab Bonus. Selesaikan semuanya untuk +1 poin riset.']
+    ]
   }
   };
 
@@ -2774,7 +3231,19 @@
   const EVENT_COLOR = {lode:'#F2C673', echo:'#C29CF2', visitor:'#7FE6E0'};
 
   const S = {c:0,total:0,grand:0,cores:0,loops:0,taps:{pick:0,glove:0},gens:{},clicks:0,resets:0,events:0,paused:false,coreBonus:0,adcd:{},adDay:'',adUsed:0,
-             dbl:0, visit:{n:0,day:''}, sessions:0, askedNotify:false, t:Date.now()};
+             dbl:0, visit:{n:0,day:''}, sessions:0, askedNotify:false,
+             /* 1.4 — research, expeditions, today's requests.
+                rp       research points held
+                rs       research learned (levels)
+                seamMax  deepest seam already paid a research point for;
+                         -1 until first checked, see checkSeams()
+                exp      one entry per team: 0 = at home, otherwise the
+                         time it comes back
+                expBack  returns counted towards the next point (0–3) */
+             rp:0, rs:{moss:0,echo:0,team:0,fast:0,qual:0}, seamMax:-1,
+             exp:[0], expBack:0, quest:{day:'',ids:[],p:{},done:false},
+             reviewAsked:false, bonusSeen:0,
+             t:Date.now()};
   GENS.forEach(g => S.gens[g.id] = 0);
   const SAVE_KEY = 'crystal-cave-v1';
   /* Two separate timers, so one never cuts the other short.
@@ -2794,6 +3263,19 @@
     const v = (d.visit && typeof d.visit === 'object') ? d.visit : {};
     S.visit = {n: Math.max(0, Math.min(6, Math.floor(+v.n||0))), day: String(v.day||'')};
     S.sessions = +d.sessions||0; S.askedNotify = !!d.askedNotify;
+    const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(+v || 0)));
+    S.rp = int(d.rp, 0, 1e9);
+    const rs = (d.rs && typeof d.rs === 'object') ? d.rs : {};
+    S.rs = {moss:int(rs.moss,0,1), echo:int(rs.echo,0,1), team:int(rs.team,0,2),
+            fast:int(rs.fast,0,1), qual:int(rs.qual,0,10000)};
+    S.seamMax = (d.seamMax === undefined || d.seamMax === null) ? -1 : int(d.seamMax, -1, STAGES.length-1);
+    S.exp = Array.isArray(d.exp) ? d.exp.slice(0,3).map(v => Math.max(0, +v || 0)) : [0];
+    S.expBack = int(d.expBack, 0, 3);
+    const q = (d.quest && typeof d.quest === 'object') ? d.quest : {};
+    S.quest = {day:String(q.day||''), ids:Array.isArray(q.ids) ? q.ids.filter(x => typeof x === 'string').slice(0,3) : [],
+               p:(q.p && typeof q.p === 'object') ? q.p : {}, done:!!q.done};
+    S.reviewAsked = !!d.reviewAsked; S.bonusSeen = +d.bonusSeen || 0;
+    normalizeTeams();
     S.paused = !!d.paused;
     TAPS.forEach(t => S.taps[t.id] = (d.taps ? +d.taps[t.id] : 0) || 0);
     GENS.forEach(g => S.gens[g.id] = (d.gens ? +d.gens[g.id] : 0) || 0);
@@ -2827,10 +3309,12 @@
 
   let buyQty = 1;   // 1, 10 or 'max'
 
-  function baseRate(){ let r=0; for(const g of GENS) r += genOutput(g); return r*coreMult(); }
+  /* 1.4: "Crystal quality" research, +5% per level, on everything */
+  const qualMult = () => 1 + 0.05*((S.rs && S.rs.qual) || 0);
+  function baseRate(){ let r=0; for(const g of GENS) r += genOutput(g); return r*coreMult()*qualMult(); }
   const rate = () => baseRate()*boostMult();
   function tapPower(){
-    let p = (1 + S.taps.pick)*coreMult();
+    let p = (1 + S.taps.pick)*coreMult()*qualMult();
     if(S.taps.glove > 0) p += baseRate()*0.03*S.taps.glove;
     return p*boostMult();
   }
@@ -2971,7 +3455,7 @@
         ORB_LIFE = 15,     // seconds on screen before it fades
         ORB_CROSS = 20,    // seconds it would take to cross — this sets the speed,
                            // kept separate from ORB_LIFE so drift stays gentle
-        ECHO_MS = 30000;   // how long the ×5 resonance lasts
+        ECHO_MS = 30000;   // how long the ×5 resonance lasts (40 s with research)
   const nextOrbGap = () => ORB_GAP;
   /* a daily gift of "two orbs" sends the second one shortly after the first */
   let extraOrbs = 0;
@@ -3150,7 +3634,9 @@
     let sub = t[1];
     S.events++;
     if(id === 'echo'){
-      echoUntil = Date.now()+ECHO_MS;
+      echoUntil = Date.now()+echoMs();
+      /* the line names the length; with research it is longer */
+      sub = sub.replace('30', String(Math.round(echoMs()/1000)));
     }else{
       const gain = Math.max(tapPower()*(id==='lode'?60:120), baseRate()*(id==='lode'?90:190), 100);
       S.c += gain; S.total += gain; S.grand += gain;
@@ -3160,6 +3646,7 @@
     burst(x,y,9e9,color);
     pops.push({x, y:y-10, life:1.3, txt:'!', c:color});
     showBig(L.evKicker, t[0], sub, color);
+    questAdd('orb', 1);
     orb = null; orbTimer = afterOrbGap();
     refresh(); save();
   }
@@ -3200,7 +3687,8 @@
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
     bolt:'<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>',
     spark:'<circle cx="12" cy="12" r="3.4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>',
-    core:'<circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8.5"/>'
+    core:'<circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8.5"/>',
+    flag:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>'
   };
   const icon = (k,c) => '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="'+c+
     '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(G[k]||'')+'</svg>';
@@ -3211,7 +3699,7 @@
 
   const listMine = $('listMine'), listCore = $('listCore'),
         listBonus = $('listBonus'), listHowto = $('listHowto'), listMenu = $('listMenu');
-  let rows = {}, rwRows = {};
+  let rows = {}, rwRows = {}, resRows = {}, expRow = null;
   let currentTab = 'mine';
 
   function makeRow(def, kind, name, desc){
@@ -3250,6 +3738,23 @@
         o.setAttribute('aria-pressed', String(o.dataset.qty === v)));
       refresh();
     }));
+    /* 1.4: the expedition sits above the buildings, as one row of the
+       same kind, so it never pushes the list far down */
+    expRow = null;
+    {
+      const b = document.createElement('button');
+      b.className = 'item';
+      b.style.setProperty('--accent', '#F2C673');
+      b.innerHTML =
+        '<span class="glyph">'+icon('flag','#F2C673')+'</span>'+
+        '<span class="item-mid"><span class="item-name">'+L.expTitle+'<b data-own></b></span>'+
+        '<span class="item-desc" data-desc></span></span>'+
+        '<span class="item-right"><span class="price" data-state></span></span>';
+      b.addEventListener('click', expClick);
+      expRow = {el:b, own:b.querySelector('[data-own]'), desc:b.querySelector('[data-desc]'),
+                state:b.querySelector('[data-state]'), key:''};
+      listMine.appendChild(b);
+    }
     listMine.appendChild(qty);
 
     /* the Bonus tab: the daily gift calendar on top (always, also on the
@@ -3261,6 +3766,10 @@
     vc.className = 'card'; vc.id = 'visitCard';
     listBonus.appendChild(vc);
     visitKey = '';
+    const qc = document.createElement('div');
+    qc.className = 'card'; qc.id = 'questCard';
+    listBonus.appendChild(qc);
+    questKey = '';
     if(Ads.mode !== 'off'){
       const card = document.createElement('div');
       card.className = 'card';
@@ -3296,6 +3805,13 @@
         '<div class="stat-row"><span>'+L.gainCores+'</span><span id="st-gain">0</span></div>'+
         '<button class="big-btn" id="btnReset" disabled></button>'+
       '</div>'+
+      /* 1.4: core research */
+      '<div class="card">'+
+        '<h3>'+L.resTitle+'</h3><p>'+L.resBody+'</p>'+
+        '<div class="stat-row"><span>'+L.resHave+'</span><span id="st-rp">0</span></div>'+
+        '<p class="quiet" style="margin-top:10px">'+L.resHow+'</p>'+
+      '</div>'+
+      '<div class="res-list" id="resList"></div>'+
       '<div class="card">'+
         '<h3>'+L.recordsTitle+'</h3>'+
         '<div class="stat-row"><span>'+L.recRun+'</span><span id="st-total">0</span></div>'+
@@ -3306,15 +3822,33 @@
         '<div class="stat-row"><span>'+L.recLoops+'</span><span id="st-loops">0</span></div>'+
         '<div class="stat-row"><span>'+L.recStage+'</span><span id="st-stage">—</span></div>'+
       '</div>';
-    $('btnReset').addEventListener('click', doReset);
+    $('btnReset').addEventListener('click', tryReset);
+    resRows = {};
+    const rl = $('resList');
+    RESEARCH.forEach(def => {
+      const b = document.createElement('button');
+      b.className = 'item';
+      b.style.setProperty('--accent', '#C29CF2');
+      b.innerHTML =
+        '<span class="glyph">'+icon(def.glyph,'#C29CF2')+'</span>'+
+        '<span class="item-mid"><span class="item-name">'+L.res[def.id][0]+'<b data-own></b></span>'+
+        '<span class="item-desc" data-desc></span></span>'+
+        '<span class="item-right"><span class="price" data-state></span></span>';
+      b.addEventListener('click', () => learn(def));
+      resRows[def.id] = {el:b, def, own:b.querySelector('[data-own]'),
+        desc:b.querySelector('[data-desc]'), state:b.querySelector('[data-state]')};
+      rl.appendChild(b);
+    });
 
     /* One of these lines has to name how many seams there are, and a number
        typed into five translations drifts the moment the game changes — it
        already had, saying seven when the records panel said 7 / 12. A line
        may be a function instead, and is handed the real counts. */
-    const rules = L.howto.map((r,i) =>
-      '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+
-      (typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1])+
+    const howto = L.howto.slice(0,5).map(r => [r[0], typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1]])
+      .concat((L.howtoNew||[]).map(r => [r[0], typeof r[1] === 'function' ? r[1](L.stages[EXP_STAGE]) : r[1]]))
+      .concat(L.howto.slice(5).map(r => [r[0], typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1]]));
+    const rules = howto.map((r,i) =>
+      '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+r[1]+
       '</span></span></li>'
     ).join('');
 
@@ -3431,9 +3965,9 @@
   function applyStaticText(){
     document.documentElement.lang = langDef().html;
     $('lblCrystals').textContent = L.crystals;
-    $('tab-mine').textContent = L.tabMine;
+    $('tabMineLabel').textContent = L.tabMine;
     $('tabCoreLabel').textContent = L.tabCore;
-    $('tab-bonus').textContent = L.tabBonus;
+    $('tabBonusLabel').textContent = L.tabBonus;
     $('tab-howto').textContent = L.tabHowto;
     $('tab-menu').textContent = L.tabMenu;
     $('hint').textContent = L.tapHint;
@@ -3573,13 +4107,16 @@
   }
 
   /* ---- daily gift ---- */
-  const VISIT = [{cr:15},{orb:1},{cr:30},{boost:15},{cr:60},{boost:30},{cr:120, boost:60}];
+  /* 1.4: research points on days 3 and 7. The video doubles crystals and
+     time, never research points */
+  const VISIT = [{cr:15},{orb:1},{cr:30, rp:1},{boost:15},{cr:60},{boost:30},{cr:120, boost:60, rp:2}];
   let visitQueued = false;
   function giftText(g, x){
     const p = [];
     if(g.cr) p.push(L.gifts.cr(L.dur(g.cr*x)));
     if(g.orb) p.push(x > 1 ? L.gifts.orb2 : L.gifts.orb);
     if(g.boost) p.push(L.gifts.boost(L.dur(g.boost*x)));
+    if(g.rp) p.push(L.giftRp(g.rp));
     return p.join(' + ');
   }
   function giveGift(g, x){
@@ -3589,6 +4126,7 @@
       if(x > 1) extraOrbs++;
     }
     if(g.boost) addDouble(g.boost*x);
+    if(g.rp) S.rp += g.rp;
   }
   function checkVisit(){
     if(visitQueued || S.paused || baseRate() <= 0) return;
@@ -3658,6 +4196,12 @@
         visitQueued = false;
         save(); refresh();
         showBig(L.visitKicker, L.visitTitle(n+1), giftText(g, x), 'var(--gold)');
+        /* 1.4: someone who has come back on three days likes the game; ask
+           them, once, for a rating. Apple decides whether the sheet shows */
+        if(n === 2 && Native.on && !S.reviewAsked){
+          S.reviewAsked = true; save();
+          setTimeout(() => Native.review(), 3800);
+        }
       }});
   }
 
@@ -3688,6 +4232,228 @@
       done(how){ if(how === 'main') Native.notifyAsk(); }});
   }
 
+  /* ================================================================
+     1.4 — research, expeditions, today's requests
+     ----------------------------------------------------------------
+     research   points buy upgrades that stay through rebirth. Points
+                come from new seams, rebirths, every 4 expedition
+                returns, today's requests and the daily gift (days 3, 7).
+                The five base steps cost 32 points in all, about a week
+                of play; after that "Crystal quality" can be learned
+                again and again, so points never lose their use.
+     expedition opens at Fluorite. A team is out for two hours and comes
+                back with 20 minutes of income; a video can double it.
+                Collecting sends the team out again.
+     requests   three small goals a day; all three give a point.
+     ================================================================ */
+  const EXP_STAGE = 2;          // Fluorite
+  const EXP_MIN = 120;          // minutes out
+  const EXP_FAST = 0.85;        // "Shortcut": back 15% sooner
+  const EXP_PAY_MIN = 20;       // minutes of income brought back per team
+  const EXP_PER_RP = 4;         // returns per research point
+  const RESEARCH = [
+    {id:'moss', glyph:'moss',  cost:[3]},
+    {id:'echo', glyph:'spark', cost:[3]},
+    {id:'team', glyph:'flag',  cost:[6,12]},
+    {id:'fast', glyph:'clock', cost:[8]},
+    {id:'qual', glyph:'core',  cost:null}      // 3, 4, 5 … points
+  ];
+  const echoMs = () => (S.rs && S.rs.echo) ? 40000 : ECHO_MS;
+
+  /* ---- research ---- */
+  const resLevel = id => (S.rs && S.rs[id]) || 0;
+  const baseDone = () => resLevel('moss') >= 1 && resLevel('echo') >= 1 && resLevel('team') >= 2 && resLevel('fast') >= 1;
+  function resCost(def){
+    const lv = resLevel(def.id);
+    if(!def.cost) return 3 + lv;
+    return lv < def.cost.length ? def.cost[lv] : 0;
+  }
+  const resMaxed = def => !!def.cost && resLevel(def.id) >= def.cost.length;
+  const resOpen = def => def.cost ? !resMaxed(def) : baseDone();
+  const canLearn = def => !S.paused && resOpen(def) && S.rp >= resCost(def);
+  function resDesc(def){
+    const d = L.res[def.id][1];
+    if(typeof d !== 'function') return d;
+    if(def.id === 'team') return d(Math.min(3, resLevel('team') + (resMaxed(def) ? 1 : 2)));
+    return d(resLevel(def.id) * 5);
+  }
+  function learn(def){
+    if(!canLearn(def)) return;
+    S.rp -= resCost(def);
+    S.rs[def.id] = resLevel(def.id) + 1;
+    if(def.id === 'team') normalizeTeams();
+    Native.haptic('buy');
+    save(); refresh();
+    const d = L.res[def.id][1];
+    showBig(L.resKicker, L.res[def.id][0],
+      typeof d !== 'function' ? d : def.id === 'team' ? d(maxTeams()) : d(resLevel(def.id)*5), '#C29CF2');
+  }
+  /* a point for every seam reached for the first time. Saves from before
+     1.4 are paid for the seams they had already found, once */
+  let rpFromSeam = 0;
+  function checkSeams(){
+    const si = stageIndex();
+    if(S.seamMax < 0){ S.seamMax = si; S.rp += si; return; }
+    if(si > S.seamMax){ rpFromSeam += si - S.seamMax; S.rp += si - S.seamMax; S.seamMax = si; }
+  }
+
+  /* ---- expeditions ---- */
+  const expOpen = () => S.grand >= STAGES[EXP_STAGE].at;
+  const maxTeams = () => 1 + Math.min(2, resLevel('team'));
+  function normalizeTeams(){
+    if(!Array.isArray(S.exp)) S.exp = [];
+    while(S.exp.length < maxTeams()) S.exp.push(0);
+    if(S.exp.length > maxTeams()) S.exp.length = maxTeams();
+  }
+  const expMs = () => EXP_MIN*60000*(resLevel('fast') ? EXP_FAST : 1);
+  const expBackN = () => S.exp.filter(t => t > 0 && t <= Date.now()).length;
+  const expHomeN = () => S.exp.filter(t => !t).length;
+  function expSecondsLeft(){
+    const now = Date.now();
+    const out = S.exp.filter(t => t > now);
+    return out.length ? Math.ceil((Math.min.apply(null, out) - now)/1000) : 0;
+  }
+  /* "2 hours", or "1 h 42 min" once Shortcut makes it uneven */
+  function durOf(ms){
+    const m = Math.round(ms/60000);
+    return m % 60 === 0 ? L.dur(m) : L.hm(Math.floor(m/60), m%60);
+  }
+  const expPay = n => n * Math.max(baseRate()*EXP_PAY_MIN*60, 100);
+  function sendTeams(quiet){
+    if(S.paused || !expOpen()) return 0;
+    normalizeTeams();
+    const at = Date.now() + expMs();
+    let n = 0;
+    S.exp = S.exp.map(t => { if(!t){ n++; return at; } return t; });
+    if(n){
+      questAdd('send', n);
+      save(); refresh();
+      if(!quiet) toast(L.expSent(durOf(expMs())));
+    }
+    return n;
+  }
+  /* collects the `want` teams that were offered on the card (earliest
+     first), so a team that comes back while the card is open stays for
+     the next card instead of being taken without its pay */
+  function collectTeams(pay, want, doubled){
+    const now = Date.now();
+    const back = S.exp.map((t,i) => [t,i]).filter(x => x[0] > 0 && x[0] <= now)
+                      .sort((a,b) => a[0]-b[0]).slice(0, want).map(x => x[1]);
+    const n = back.length;
+    if(!n) return;
+    back.forEach(i => { S.exp[i] = 0; });
+    pay = pay * n / want;
+    const got = pay * (doubled ? 2 : 1);
+    addCrystals(got);
+    S.expBack += n;
+    const pts = Math.floor(S.expBack / EXP_PER_RP);
+    S.expBack %= EXP_PER_RP;
+    S.rp += pts;
+    showBig(L.expTitle, L.expCardTitle, L.gainLine(fmt(got)) + (pts ? '<br>' + L.rpGain(pts) : ''), '#F2C673');
+    sendTeams(true);
+    save(); refresh();
+  }
+  let expCardOpen = false;
+  function showExpCard(){
+    const n = expBackN();
+    if(!n || expCardOpen || S.paused){ setTimeout(nextCard, 0); return; }
+    expCardOpen = true;
+    const pay = expPay(n);
+    openCard({
+      kicker:L.expTitle, title:L.expCardTitle,
+      body:'<p>'+supWrap(L.expCardBody(n, fmt(pay)))+'</p>',
+      main: videoOK() ? L.dblBtn : L.takeBtn, alt: videoOK() ? L.takeBtn : null, ad: videoOK() ? 'exp' : null,
+      done(how){
+        expCardOpen = false;
+        if(how === 'dismiss') return;
+        collectTeams(pay, n, !!this.doubled);
+      }});
+  }
+  function expClick(){
+    if(S.paused || !expOpen()) return;
+    if(expBackN() > 0){ if(!card && !expCardOpen) queueCard(showExpCard); return; }
+    if(expHomeN() > 0) sendTeams(false);
+  }
+  /* on coming back: offer the returned teams as a card, unless the visit
+     already has two cards waiting */
+  function maybeExpCard(){
+    if(!expBackN() || expCardOpen || S.paused) return;
+    if((card ? 1 : 0) + cardQ.length > 1) return;
+    queueCard(showExpCard);
+  }
+
+  /* ---- today's requests ---- */
+  const QUEST_GOAL = {orb:3, tap:100, buy:30, send:2};
+  function questToday(){
+    const k = todayKey();
+    if(S.quest.day !== k){
+      let h = 0; for(let i = 0; i < k.length; i++) h = (h*31 + k.charCodeAt(i)) % 9973;
+      const ids = expOpen() ? ['orb', 'send', h % 2 ? 'tap' : 'buy'] : ['orb', 'tap', 'buy'];
+      S.quest = {day:k, ids, p:{}, done:false};
+    }
+    return S.quest;
+  }
+  function questAdd(id, n){
+    const q = questToday();
+    if(q.done || q.ids.indexOf(id) < 0) return;
+    q.p[id] = Math.min(QUEST_GOAL[id], (q.p[id] || 0) + n);
+    if(q.ids.every(x => (q.p[x] || 0) >= QUEST_GOAL[x])){
+      q.done = true;
+      S.rp += 1;
+      save();
+      /* after whatever message is on screen now */
+      setTimeout(() => showBig(L.questTitle, L.questAllDone, L.rpGain(1), '#C29CF2'),
+                 bigpop.classList.contains('show') ? 3600 : 0);
+    }
+  }
+  let questKey = '';
+  function refreshQuestCard(){
+    const qc = $('questCard'); if(!qc) return;
+    const q = questToday();
+    const key = [langId, q.day, q.done, q.ids.map(x => q.p[x] || 0).join(',')].join('|');
+    if(key === questKey) return;
+    questKey = key;
+    let h = '<h3>'+L.questTitle+'</h3><p>'+L.questLead+'</p>';
+    q.ids.forEach(id => {
+      const goal = QUEST_GOAL[id], p = q.p[id] || 0, ok = p >= goal;
+      h += '<div class="quest-row'+(ok ? ' done' : '')+'"><span class="qn">'+L.quests[id](goal)+'</span>'+
+           '<span class="qp">'+(ok ? '✓ '+L.questDone : p+' / '+goal)+'</span></div>';
+    });
+    if(q.done) h += '<p class="quiet" style="margin-top:10px">'+L.questAllDone+'</p>';
+    qc.innerHTML = h;
+  }
+
+  /* ---- rebirth, with the "Extra cores" video offered right before ---- */
+  function useReward(id){
+    S.adcd = S.adcd || {};
+    dailyLeft();
+    S.adUsed = (S.adUsed||0) + 1;
+    const def = REWARDS.find(r => r.id === id);
+    S.adcd[id] = Date.now() + def.cd*1000;
+  }
+  function tryReset(){
+    const gain = coresOnReset();
+    if(gain <= 0 || S.paused || card || cardQ.length) return;
+    const def = REWARDS.find(r => r.id === 'core');
+    if(videoOK() && !(S.coreBonus > 0) && rewardReady(def)){
+      const base = Math.max(0, Math.floor(Math.sqrt(S.grand/1e6)*8) - S.cores);
+      const more = Math.floor(base * 1.25);
+      if(more > gain){
+        queueCard(() => openCard({
+          kicker:L.rebirthKicker, title:L.rewards.core[0],
+          body:'<p>'+supWrap(L.coreAsk(fmt(gain), fmt(more)))+'</p>',
+          main:L.coreAskVideo, alt:L.coreAskPlain, ad:'core',
+          done(how){
+            if(how === 'dismiss' || coresOnReset() <= 0) return;
+            if(this.doubled){ useReward('core'); S.coreBonus = 0.25; }
+            doReset();
+          }}));
+        return;
+      }
+    }
+    doReset();
+  }
+
   /* ---- coming back to a page that was only hidden ----
      A phone keeps the app alive in the background for a while. Coming
      back then is not a fresh start, so the away earnings have to be
@@ -3708,6 +4474,7 @@
     if(away >= 300) S.sessions = (S.sessions||0) + 1;
     creditAway(away);
     checkVisit();
+    maybeExpCard();
     if(away >= 300) maybeAsk();
     save(); refresh();
   }
@@ -3724,6 +4491,7 @@
       panels[k].hidden = k !== which;
     }
     if(which === 'menu') refreshShare();
+    if(which === 'bonus'){ S.bonusSeen = Date.now(); }
   }
   for(const k in tabs) tabs[k].addEventListener('click', () => selectTab(k));
   /* ================================================================
@@ -3747,6 +4515,7 @@
     if(S.c < cost) return;
     S.c -= cost;
     if(kind==='tap') S.taps[def.id] += k; else S.gens[def.id] += k;
+    questAdd('buy', k);
     Native.haptic('buy');
     refresh(); save();
   }
@@ -3771,6 +4540,7 @@
     if(!keyboard && !onCrystal(x,y)) return;   // tapping the empty cave does nothing
     const gain = tapPower();
     S.c += gain; S.total += gain; S.grand += gain; S.clicks++;
+    questAdd('tap', 1);
     pulse = 1;
     Native.haptic('tap');
     burst(x,y,gain);
@@ -3787,10 +4557,13 @@
     S.c = 0; S.total = 0;
     TAPS.forEach(t => S.taps[t.id] = 0);
     GENS.forEach(g => S.gens[g.id] = 0);
+    if(resLevel('moss')) S.gens.moss = 10;     // research: Moss seedlings
+    S.rp += 1;                                 // every rebirth earns a point
     echoUntil = 0;
     save();
     let sub = L.rebirthDone(fmt(gain), fmtMult());
     if(opened) sub += '<br>' + L.unlockSub(L.stages[seamsOpen()-1]);
+    sub += '<br>' + L.rpGain(1);
     Native.haptic('rebirth');
     lastStage = stageIndex();         // don't also fire the new-seam popup
     refresh();
@@ -3866,17 +4639,20 @@
   function encode(){
     const v = [Math.round(S.c), Math.round(S.total), Math.round(S.grand), S.cores,
       S.taps.pick, S.taps.glove].concat(GENS.map(g => S.gens[g.id]))
-      .concat([S.clicks, S.resets, S.events, S.paused?1:0, S.loops||0, Math.round(S.t/1000)]);
+      .concat([S.clicks, S.resets, S.events, S.paused?1:0, S.loops||0, Math.round(S.t/1000)])
+      /* 1.4 */
+      .concat([S.rp, S.seamMax+1, resLevel('moss'), resLevel('echo'), resLevel('team'),
+               resLevel('fast'), resLevel('qual'), S.expBack]);
     const body = v.map(B36).join('-');
-    return 'CC2-' + body + '-' + sumOf(body);
+    return 'CC3-' + body + '-' + sumOf(body);
   }
   function decode(str){
     const s = String(str||'').trim().replace(/\s+/g,'');
-    const ver = /^CC([12])-/i.exec(s);
+    const ver = /^CC([123])-/i.exec(s);
     if(ver){
-      const v2 = ver[1] === '2';
+      const v2 = ver[1] !== '1', v3 = ver[1] === '3';
       const p = s.split('-');
-      const values = 6 + GENS.length + (v2 ? 6 : 5);
+      const values = 6 + GENS.length + (v2 ? 6 : 5) + (v3 ? 8 : 0);
       if(p.length !== values + 2) return null;        // prefix + values + checksum
       const body = p.slice(1, -1).join('-');
       if(sumOf(body) !== p[p.length-1].toLowerCase()) return null;
@@ -3890,6 +4666,12 @@
         loops: v2 ? n(tail+4) : 0,
         t: n(tail + (v2 ? 5 : 4)) * 1000};
       GENS.forEach((g,i) => d.gens[g.id] = n(g0+i));
+      if(v3){
+        const x = tail + 6;
+        d.rp = n(x); d.seamMax = n(x+1) - 1;
+        d.rs = {moss:n(x+2), echo:n(x+3), team:n(x+4), fast:n(x+5), qual:n(x+6)};
+        d.expBack = n(x+7);
+      }
       return d;
     }
     // older, longer base64 codes still load
@@ -3925,8 +4707,11 @@
       const d = decode(v);
       if(!d || (typeof d.grand === 'undefined' && typeof d.total === 'undefined')){ toast(L.badCode); return; }
       const keep = {visit:S.visit, sessions:S.sessions, askedNotify:S.askedNotify, dbl:S.dbl,
-                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd};
-      applyData(d); Object.assign(S, keep);
+                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd,
+                    exp:S.exp, quest:S.quest, reviewAsked:S.reviewAsked, bonusSeen:S.bonusSeen};
+      /* codes from before 1.4 carry no research: keep this device's */
+      if(!d.rs) Object.assign(keep, {rs:S.rs, rp:S.rp, seamMax:S.seamMax, expBack:S.expBack});
+      applyData(d); Object.assign(S, keep); normalizeTeams();
       echoUntil = 0;
       $('importCode').value = '';
       save(); setPaused(S.paused); refresh();
@@ -3942,9 +4727,12 @@
         return;
       }
       wipeArmed = false; b.textContent = L.wipe;
+      /* research and its points go too: "start over" means everything */
       const keep = {visit:S.visit, sessions:S.sessions, askedNotify:S.askedNotify,
-                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd};
+                    adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd,
+                    quest:S.quest, reviewAsked:S.reviewAsked, bonusSeen:S.bonusSeen};
       applyData({}); S.cores = 0; Object.assign(S, keep);
+      if(!S.quest.done) S.quest.day = '';
       echoUntil = 0;
       try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
       setPaused(false); refresh(); toast(L.wipeDone);
@@ -4004,11 +4792,7 @@
       S.coreBonus = 0.25;
       sub = L.rwGot.core;
     }
-    S.adcd = S.adcd || {};
-    dailyLeft();                       // rolls the day over if needed
-    S.adUsed = (S.adUsed||0) + 1;
-    const def = REWARDS.find(r => r.id === id);
-    S.adcd[id] = Date.now() + def.cd*1000;
+    useReward(id);
     save(); refresh();
     showBig(L.rwKicker, t[0], sub, '#7FE6E0');
   }
@@ -4046,6 +4830,8 @@
       'depth ' + depthNow() + 'm, seam ' + (stageIndex()+1) + '/' + STAGES.length +
         ', all time ' + Math.round(S.grand) + ', cores ' + S.cores +
         ', taps ' + S.clicks + ', rebirths ' + S.resets,
+      'research ' + S.rp + ' pts, ' + ['moss','echo','team','fast','qual'].map(k => k+resLevel(k)).join(' ') +
+        ', teams ' + S.exp.length,
       'ua ' + navigator.userAgent
     ];
   }
@@ -4138,10 +4924,15 @@
       : L.nextIs(L.stages[si+1], fmt(STAGES[si+1].at));
     $('depth').textContent = L.depth(num(depthNow()));
 
+    checkSeams();
+    /* a point earned without a seam message (after a rebirth or a load)
+       is still paid, just not announced later by surprise */
+    if(si === lastStage) rpFromSeam = 0;
     if(si !== lastStage){
       if(lastStage >= 0){
         Native.haptic('seam');
-        showBig(L.newVeinKicker, L.stages[si], L.newVeinSub(num(depthNow())),
+        const pts = rpFromSeam; rpFromSeam = 0;
+        showBig(L.newVeinKicker, L.stages[si], L.newVeinSub(num(depthNow())) + (pts ? '<br>' + L.rpGain(pts) : ''),
           'hsl('+Math.round(col.h)+','+col.s+'%,'+(skin.dark?Math.min(74,col.l):Math.max(30,col.l-30))+'%)');
       }
       lastStage = si;
@@ -4167,7 +4958,7 @@
         const into = owned % MS_STEP;
         row.bar.style.width = (owned === 0 ? 0 : (into/MS_STEP)*100)+'%';
         row.ms.textContent = L.msNext(MS_STEP - into);
-        row.yld.innerHTML = supWrap('+'+fmtRate((owned ? genOutput(d) : d.rate)*coreMult()*b)+L.perSecShort);
+        row.yld.innerHTML = supWrap('+'+fmtRate((owned ? genOutput(d) : d.rate)*coreMult()*qualMult()*b)+L.perSecShort);
       }else{
         row.yld.innerHTML = supWrap(d.id === 'pick'
           ? L.mine+' '+fmtRate(tapPower()) : L.pctOf(S.taps.glove+1));
@@ -4175,6 +4966,17 @@
     }
 
     refreshVisitCard();
+    refreshQuestCard();
+    refreshExpRow();
+    for(const k in resRows){
+      const r = resRows[k], d = r.def, lv = resLevel(k);
+      const can = canLearn(d);
+      r.el.disabled = !can;
+      r.el.classList.toggle('afford', can);
+      r.own.textContent = d.cost ? (d.cost.length > 1 ? lv+' / '+d.cost.length : '') : (lv ? '×'+lv : '');
+      r.desc.textContent = resDesc(d);
+      r.state.textContent = resMaxed(d) ? L.resLearned : !resOpen(d) ? L.resLockedQual : L.resCost(resCost(d));
+    }
     for(const k in rwRows){
       const r = rwRows[k], left = cdLeft(k);
       const can = rewardReady(r.def);
@@ -4200,13 +5002,40 @@
     set('st-events', S.events);
     set('st-resets', S.resets);
     set('st-loops', seamsOpen()+' / '+STAGES.length);
+    set('st-rp', num(S.rp));
     set('st-stage', L.stages[si]);
     const rb = $('btnReset');
     if(rb){
       rb.disabled = gain <= 0;
       rb.innerHTML = supWrap(gain > 0 ? L.doRebirth(fmt(gain)) : L.rebirthLocked);
     }
-    tabs.core.classList.toggle('ready', gain > 0);
+    /* the marks on the tabs (1.4): something there can be used now */
+    tabs.core.classList.toggle('ready', gain > 0 || RESEARCH.some(canLearn));
+    tabs.mine.classList.toggle('ready', currentTab !== 'mine' && expOpen() && !S.paused && (expBackN() > 0 || expHomeN() > 0));
+    tabs.bonus.classList.toggle('ready', currentTab !== 'bonus' && !S.paused && (
+      (visitOpen() && baseRate() > 0) ||
+      (Ads.mode !== 'off' && Date.now() - (S.bonusSeen||0) > 30*60000 && REWARDS.some(rewardReady))));
+  }
+
+  /* the expedition row in the Mine tab; text is rewritten only on change */
+  function refreshExpRow(){
+    const r = expRow; if(!r) return;
+    normalizeTeams();
+    const open = expOpen(), back = expBackN(), home = expHomeN(), left = expSecondsLeft();
+    let desc, state, can;
+    if(!open){ desc = L.expLocked(L.stages[EXP_STAGE]); state = '—'; can = false; }
+    else if(back){ desc = L.expBackN(back); state = L.takeBtn; can = !S.paused; }
+    else if(home){ desc = L.expIdle(durOf(expMs())); state = L.expSend; can = !S.paused; }
+    else { desc = L.expOut(hms(left*1000)); state = ''; can = false; }
+    const own = open ? (S.exp.length - home)+' / '+S.exp.length : '';
+    const key = [desc, state, can, own].join('|');
+    if(key === r.key) return;
+    r.key = key;
+    r.desc.textContent = desc;
+    r.state.textContent = state;
+    r.own.textContent = own;
+    r.el.disabled = !can;
+    r.el.classList.toggle('afford', can);
   }
 
   /* ================================================================
@@ -4284,6 +5113,7 @@
       if(savedAt) creditAway((Date.now()-savedAt)/1000);
     }
 
+    normalizeTeams();
     applyStaticText();
     buildAll();
     applyFs(fi);
@@ -4297,6 +5127,7 @@
     try{ seen = !!localStorage.getItem('cc-seen'); }catch(e){}
     if(!seen && S.grand === 0) showWelcome();
     checkVisit();
+    maybeExpCard();
     maybeAsk();
     save();
     if(Native.on) Native.privacy(false);
