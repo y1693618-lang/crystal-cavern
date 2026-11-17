@@ -8,7 +8,12 @@
    The app is recognised by the message handlers it installs before the
    page loads. */
 (function(){
-  try{ if(window.webkit && window.webkit.messageHandlers) return; }catch(e){}
+  try{ if(window.webkit && window.webkit.messageHandlers){
+    /* 1.4.1: inside the app, fast tapping must never zoom the screen */
+    var vp = document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+    return;
+  } }catch(e){}
   var h = document.head;
   function add(rel, href, cors){
     var l = document.createElement('link');
@@ -135,6 +140,9 @@
   }
   #cv{display:block;width:100%;height:100%;touch-action:manipulation}
   .stage{-webkit-user-select:none;user-select:none}
+  /* 1.4.1: a quick second tap anywhere is a tap, never a zoom
+     (two-finger zoom still works in a browser) */
+  html,body{touch-action:manipulation}
   .tap-btn,.qty,.tab,.item,.mini,.opt{touch-action:manipulation}
   .tap-btn{position:absolute;inset:0;width:100%;height:100%;background:none;border:0;padding:0;cursor:default;-webkit-tap-highlight-color:transparent}
   .tap-btn.over{cursor:pointer}
@@ -572,7 +580,7 @@
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
   const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-  const VERSION = '1.4';
+  const VERSION = '1.4.1';
 
   /* ================================================================
      Rewarded ads — one seam, four back ends
@@ -3252,10 +3260,27 @@
                 through a rebirth. Echo wins while both run. */
   let echoUntil = 0;
 
-  function save(){ try{ S.t = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+  /* 1.4.1: crystals stop at 10^300. Past about 1.8 × 10^308 a number
+     becomes "infinity", which a save cannot hold: it was written as
+     nothing and the next launch started from zero. */
+  const MAXN = 1e300;
+  const capN = () => {
+    for(const k of ['c','total','grand']){
+      const v = S[k];
+      if(!(v <= MAXN)) S[k] = MAXN;     // too large, infinity, or not a number
+      else if(v < 0) S[k] = 0;
+    }
+  };
+  function save(){ try{ capN(); S.t = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
   function applyData(d){
     if(!d || typeof d !== 'object') return false;
-    S.c=+d.c||0; S.total=+d.total||0; S.grand=+d.grand||+d.total||0;
+    /* an empty value here can only come from a number that had reached
+       infinity (1.4 and before): give it back at the ceiling, not zero */
+    const big = v => v === null ? MAXN : (+v || 0);
+    S.c = big(d.c); S.total = big(d.total);
+    S.grand = (d.grand === undefined) ? S.total : big(d.grand);
+    if(!S.grand && S.total) S.grand = S.total;
+    capN();
     S.cores=+d.cores||0; S.loops=+d.loops||0; S.clicks=+d.clicks||0; S.resets=+d.resets||0; S.events=+d.events||0;
     S.coreBonus=+d.coreBonus||0; S.adcd = (d.adcd && typeof d.adcd === 'object') ? d.adcd : {};
     S.adDay = d.adDay || ''; S.adUsed = +d.adUsed||0;
@@ -3311,12 +3336,12 @@
 
   /* 1.4: "Crystal quality" research, +5% per level, on everything */
   const qualMult = () => 1 + 0.05*((S.rs && S.rs.qual) || 0);
-  function baseRate(){ let r=0; for(const g of GENS) r += genOutput(g); return r*coreMult()*qualMult(); }
-  const rate = () => baseRate()*boostMult();
+  function baseRate(){ let r=0; for(const g of GENS) r += genOutput(g); return Math.min(MAXN, r*coreMult()*qualMult()); }
+  const rate = () => Math.min(MAXN, baseRate()*boostMult());   // 1.4.1: never infinite
   function tapPower(){
     let p = (1 + S.taps.pick)*coreMult()*qualMult();
     if(S.taps.glove > 0) p += baseRate()*0.03*S.taps.glove;
-    return p*boostMult();
+    return Math.min(MAXN, p*boostMult());
   }
   const seamsOpen = () => Math.min(STAGES.length, BASE_SEAMS + (S.loops||0));
   function stageIndex(){
@@ -3378,7 +3403,7 @@
     if(m >= BIG) return sci(m);
     return m.toLocaleString(loc(), m < 1000 ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0});
   };
-  const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : fmt(n);
+  const fmtRate = n => n === 0 ? '0' : n < 10 ? n.toFixed(1) : fmt(Math.min(n, MAXN));   // 1.4.1: never shows ∞ per second
 
   /* ================================================================
      canvas
@@ -4076,7 +4101,7 @@
   $('gift').addEventListener('click', e => { if(e.target === $('gift') && card && !card.busy) closeCard('dismiss'); });
   const videoOK = () => Ads.mode !== 'off';
 
-  function addCrystals(v){ S.c += v; S.total += v; S.grand += v; }
+  function addCrystals(v){ S.c += v; S.total += v; S.grand += v; capN(); }
   function addDouble(min){ S.dbl = Math.max(S.dbl, Date.now()) + min*60*1000; }
 
   /* ---- welcome back ---- */
@@ -5049,6 +5074,7 @@
     if(!S.paused){
       const r = rate();
       if(r > 0){ const g = r*dt; S.c += g; S.total += g; S.grand += g; }
+      capN();
       if(!orb){ orbTimer -= dt; if(orbTimer <= 0 && W > 80) spawnOrb(); }
     }
     draw(dt);
