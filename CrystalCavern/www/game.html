@@ -340,6 +340,8 @@
   /* 1.4: today's requests — a tick that reads without colour */
   .quest-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:var(--t-13)}
   .quest-row:last-of-type{border-bottom:0}
+  /* 1.5: the seasonal event card carries the season's colour on its edge */
+  .card.sea-on{box-shadow:inset 4px 0 0 var(--sea)}
   .quest-row .qn{min-width:0;overflow-wrap:anywhere}
   .quest-row .qp{font-family:var(--font-num);font-weight:600;color:var(--ink);white-space:nowrap}
   .quest-row.done .qn{color:var(--ink-faint)}
@@ -580,7 +582,7 @@
      the developer supplies one of their own, and Apple expects it to be
      reachable from inside the app — hence the card at the foot of the menu. */
   const EULA_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-  const VERSION = '1.4.1';
+  const VERSION = '1.5';
 
   /* ================================================================
      Rewarded ads — one seam, four back ends
@@ -3140,6 +3142,343 @@
   }
   };
 
+  /* ================================================================
+     1.5 — seasonal events, in every language.
+     sea.<season> = [event name, the season's crystal, colour theme,
+                     keepsake]; skinsAdd are the theme names in the menu
+     ================================================================ */
+  const T15 = {
+  ja:{
+    sea:{winter:['冬のイベント','雪の結晶','冬の画面の色','冬の記念の飾り'],
+         spring:['春のイベント','桜水晶','春の画面の色','春の記念の飾り'],
+         summer:['夏のイベント','海の結晶','夏の画面の色','夏の記念の飾り'],
+         autumn:['秋のイベント','紅葉石','秋の画面の色','秋の記念の飾り']},
+    skinsAdd:{winter:'雪',spring:'桜',summer:'花火',autumn:'紅葉'},
+    seaKicker:'季節のイベント',
+    seaLead:(i,d,m)=>d+'。光る球・採掘隊・今日の依頼で「'+i+'」が集まります。1日に'+m+'個まで。',
+    seaHave:'集めた数', seaToday:'今日集めた数',
+    seaNote:'画面の色は「メニュー」で選べます。飾りは洞窟に飾られます。取れなかったものは、来年また集められます。',
+    seaNext:(t,d)=>'次は「'+t+'」（'+d+'）です。',
+    seaOwned:l=>'これまでに手に入れたもの：'+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'「'+i+'」も '+n+' 個持ち帰りました。',
+    seaFull:'今日の分は集め終わりました。また明日集められます。',
+    seaReward:w=>'ごほうび：'+w, seaAlready:w=>w+'（もう持っています）',
+    seaRange:(a,b)=>a+'〜'+b, listSep:'・',
+    howtoSea:['季節のイベント','冬・春・夏・秋に、期間限定のイベントがあります。光る球・採掘隊・今日の依頼で季節の結晶が集まり、集めた数に応じて画面の色・研究点・記念の飾りがもらえます。毎年くり返します。']
+  },
+  en:{
+    sea:{winter:['Winter event','Snow crystals','Winter colour theme','Winter keepsake'],
+         spring:['Spring event','Sakura quartz','Spring colour theme','Spring keepsake'],
+         summer:['Summer event','Sea crystals','Summer colour theme','Summer keepsake'],
+         autumn:['Autumn event','Maple stones','Autumn colour theme','Autumn keepsake']},
+    skinsAdd:{winter:'Snow',spring:'Cherry blossom',summer:'Fireworks',autumn:'Autumn leaves'},
+    seaKicker:'SEASONAL EVENT',
+    seaLead:(i,d,m)=>d+'. Collect '+i.toLowerCase()+' from glowing orbs, expeditions and today’s requests. Up to '+m+' a day.',
+    seaHave:'Collected', seaToday:'Collected today',
+    seaNote:'Choose colour themes in the Menu tab. Keepsakes are shown in the cave. Anything you miss can be collected again next year.',
+    seaNext:(t,d)=>'Next: '+t+' ('+d+').',
+    seaOwned:l=>'Collected so far: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Also brought back: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'That’s all for today. You can collect more tomorrow.',
+    seaReward:w=>'Reward: '+w, seaAlready:w=>w+' (already yours)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Seasonal events','Every winter, spring, summer and autumn there is a limited-time event. Collect seasonal crystals from glowing orbs, expeditions and today’s requests to earn a colour theme, research points and a keepsake. The events come back every year.']
+  },
+  zh:{
+    sea:{winter:['冬季活动','雪之结晶','冬季配色','冬季纪念装饰'],
+         spring:['春季活动','樱水晶','春季配色','春季纪念装饰'],
+         summer:['夏季活动','海之结晶','夏季配色','夏季纪念装饰'],
+         autumn:['秋季活动','红叶石','秋季配色','秋季纪念装饰']},
+    skinsAdd:{winter:'雪',spring:'樱花',summer:'烟花',autumn:'红叶'},
+    seaKicker:'季节活动',
+    seaLead:(i,d,m)=>d+'。拾取光球、采掘队归来、完成今日委托都能获得「'+i+'」。每天最多'+m+'个。',
+    seaHave:'已收集', seaToday:'今日已收集',
+    seaNote:'配色可在「菜单」中选择，装饰会摆放在洞窟里。没能拿到的，明年还可以再收集。',
+    seaNext:(t,d)=>'下一次是「'+t+'」（'+d+'）。',
+    seaOwned:l=>'已获得：'+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'还带回了「'+i+'」'+n+'个。',
+    seaFull:'今天的份已经收集完了，明天还能继续收集。',
+    seaReward:w=>'奖励：'+w, seaAlready:w=>w+'（已拥有）',
+    seaRange:(a,b)=>a+'～'+b, listSep:'、',
+    howtoSea:['季节活动','冬、春、夏、秋各有限时活动。通过光球、采掘队和今日委托收集季节结晶，按收集数量获得配色、研究点和纪念装饰。每年都会再次举行。']
+  },
+  zht:{
+    sea:{winter:['冬季活動','雪之結晶','冬季配色','冬季紀念裝飾'],
+         spring:['春季活動','櫻水晶','春季配色','春季紀念裝飾'],
+         summer:['夏季活動','海之結晶','夏季配色','夏季紀念裝飾'],
+         autumn:['秋季活動','紅葉石','秋季配色','秋季紀念裝飾']},
+    skinsAdd:{winter:'雪',spring:'櫻花',summer:'煙火',autumn:'紅葉'},
+    seaKicker:'季節活動',
+    seaLead:(i,d,m)=>d+'。撿起光球、採掘隊歸來、完成今日委託都能獲得「'+i+'」。每天最多'+m+'個。',
+    seaHave:'已收集', seaToday:'今日已收集',
+    seaNote:'配色可在「選單」中選擇，裝飾會擺放在洞窟裡。沒能拿到的，明年還可以再收集。',
+    seaNext:(t,d)=>'下一次是「'+t+'」（'+d+'）。',
+    seaOwned:l=>'已獲得：'+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'還帶回了「'+i+'」'+n+'個。',
+    seaFull:'今天的份已經收集完了，明天還能繼續收集。',
+    seaReward:w=>'獎勵：'+w, seaAlready:w=>w+'（已擁有）',
+    seaRange:(a,b)=>a+'～'+b, listSep:'、',
+    howtoSea:['季節活動','冬、春、夏、秋各有限時活動。透過光球、採掘隊和今日委託收集季節結晶，依收集數量獲得配色、研究點和紀念裝飾。每年都會再次舉行。']
+  },
+  ko:{
+    sea:{winter:['겨울 이벤트','눈의 결정','겨울 배색','겨울 기념 장식'],
+         spring:['봄 이벤트','벚꽃 수정','봄 배색','봄 기념 장식'],
+         summer:['여름 이벤트','바다의 결정','여름 배색','여름 기념 장식'],
+         autumn:['가을 이벤트','단풍석','가을 배색','가을 기념 장식']},
+    skinsAdd:{winter:'눈',spring:'벚꽃',summer:'불꽃놀이',autumn:'단풍'},
+    seaKicker:'계절 이벤트',
+    seaLead:(i,d,m)=>d+'. 빛의 구슬, 채굴대, 오늘의 의뢰로 「'+i+'」을 모을 수 있습니다. 하루 최대 '+m+'개.',
+    seaHave:'모은 수', seaToday:'오늘 모은 수',
+    seaNote:'배색은 「메뉴」에서 고를 수 있습니다. 장식은 동굴에 놓입니다. 받지 못한 것은 내년에 다시 모을 수 있습니다.',
+    seaNext:(t,d)=>'다음은 「'+t+'」('+d+')입니다.',
+    seaOwned:l=>'지금까지 받은 것: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'「'+i+'」도 '+n+'개 가져왔습니다.',
+    seaFull:'오늘 모을 수 있는 만큼 다 모았습니다. 내일 또 모을 수 있습니다.',
+    seaReward:w=>'보상: '+w, seaAlready:w=>w+'(이미 가지고 있음)',
+    seaRange:(a,b)=>a+' ~ '+b, listSep:', ',
+    howtoSea:['계절 이벤트','겨울·봄·여름·가을마다 기간 한정 이벤트가 있습니다. 빛의 구슬, 채굴대, 오늘의 의뢰로 계절의 결정을 모으면, 모은 수에 따라 배색·연구 포인트·기념 장식을 받을 수 있습니다. 매년 다시 열립니다.']
+  },
+  es:{
+    sea:{winter:['Evento de invierno','Cristales de nieve','Tema de colores de invierno','Recuerdo de invierno'],
+         spring:['Evento de primavera','Cuarzo sakura','Tema de colores de primavera','Recuerdo de primavera'],
+         summer:['Evento de verano','Cristales marinos','Tema de colores de verano','Recuerdo de verano'],
+         autumn:['Evento de otoño','Piedras de arce','Tema de colores de otoño','Recuerdo de otoño']},
+    skinsAdd:{winter:'Nieve',spring:'Cerezo en flor',summer:'Fuegos artificiales',autumn:'Hojas de otoño'},
+    seaKicker:'EVENTO DE TEMPORADA',
+    seaLead:(i,d,m)=>d+'. Consigue '+i.toLowerCase()+' con los orbes, las expediciones y los encargos de hoy. Hasta '+m+' al día.',
+    seaHave:'Conseguidos', seaToday:'Conseguidos hoy',
+    seaNote:'Elige los temas de colores en la pestaña Menú. Los recuerdos se muestran en la cueva. Lo que no consigas podrás conseguirlo de nuevo el año que viene.',
+    seaNext:(t,d)=>'Próximo: '+t+' ('+d+').',
+    seaOwned:l=>'Conseguido hasta ahora: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'También han traído: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Eso es todo por hoy. Mañana podrás conseguir más.',
+    seaReward:w=>'Recompensa: '+w, seaAlready:w=>w+' (ya lo tienes)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Eventos de temporada','Cada invierno, primavera, verano y otoño hay un evento por tiempo limitado. Consigue cristales de temporada con los orbes, las expediciones y los encargos de hoy para ganar un tema de colores, puntos de investigación y un recuerdo. Los eventos vuelven cada año.']
+  },
+  fr:{
+    sea:{winter:['Événement d’hiver','Cristaux de neige','Thème de couleurs d’hiver','Souvenir d’hiver'],
+         spring:['Événement de printemps','Quartz sakura','Thème de couleurs de printemps','Souvenir de printemps'],
+         summer:['Événement d’été','Cristaux marins','Thème de couleurs d’été','Souvenir d’été'],
+         autumn:['Événement d’automne','Pierres d’érable','Thème de couleurs d’automne','Souvenir d’automne']},
+    skinsAdd:{winter:'Neige',spring:'Cerisiers en fleurs',summer:'Feux d’artifice',autumn:'Feuilles d’automne'},
+    seaKicker:'ÉVÉNEMENT DE SAISON',
+    seaLead:(i,d,m)=>d+'. Récoltez des '+i.toLowerCase()+' grâce aux orbes, aux expéditions et aux demandes du jour. Jusqu’à '+m+' par jour.',
+    seaHave:'Récoltés', seaToday:'Récoltés aujourd’hui',
+    seaNote:'Choisissez les thèmes de couleurs dans l’onglet Menu. Les souvenirs sont exposés dans la grotte. Ce que vous manquez pourra être récolté à nouveau l’année prochaine.',
+    seaNext:(t,d)=>'Prochain : '+t+' ('+d+').',
+    seaOwned:l=>'Obtenu jusqu’ici : '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Également rapporté : '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'C’est tout pour aujourd’hui. Vous pourrez en récolter d’autres demain.',
+    seaReward:w=>'Récompense : '+w, seaAlready:w=>w+' (déjà obtenu)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Événements de saison','Chaque hiver, printemps, été et automne, un événement à durée limitée a lieu. Récoltez des cristaux de saison grâce aux orbes, aux expéditions et aux demandes du jour pour obtenir un thème de couleurs, des points de recherche et un souvenir. Les événements reviennent chaque année.']
+  },
+  de:{
+    sea:{winter:['Winter-Event','Schneekristalle','Winter-Farbthema','Winter-Andenken'],
+         spring:['Frühlings-Event','Sakura-Quarz','Frühlings-Farbthema','Frühlings-Andenken'],
+         summer:['Sommer-Event','Meereskristalle','Sommer-Farbthema','Sommer-Andenken'],
+         autumn:['Herbst-Event','Ahornsteine','Herbst-Farbthema','Herbst-Andenken']},
+    skinsAdd:{winter:'Schnee',spring:'Kirschblüte',summer:'Feuerwerk',autumn:'Herbstlaub'},
+    seaKicker:'SAISON-EVENT',
+    seaLead:(i,d,m)=>d+'. Sammle '+i+' mit leuchtenden Kugeln, Expeditionen und den Aufträgen des Tages. Bis zu '+m+' pro Tag.',
+    seaHave:'Gesammelt', seaToday:'Heute gesammelt',
+    seaNote:'Farbthemen wählst du im Tab „Menü“. Andenken stehen in der Höhle. Was du verpasst, kannst du im nächsten Jahr wieder sammeln.',
+    seaNext:(t,d)=>'Als Nächstes: '+t+' ('+d+').',
+    seaOwned:l=>'Bisher erhalten: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Außerdem mitgebracht: '+i+' ×'+n+'.',
+    seaFull:'Für heute ist alles gesammelt. Morgen kannst du weitersammeln.',
+    seaReward:w=>'Belohnung: '+w, seaAlready:w=>w+' (hast du schon)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Saison-Events','Jeden Winter, Frühling, Sommer und Herbst gibt es ein zeitlich begrenztes Event. Sammle Saisonkristalle mit leuchtenden Kugeln, Expeditionen und den Aufträgen des Tages und erhalte dafür ein Farbthema, Forschungspunkte und ein Andenken. Die Events kommen jedes Jahr wieder.']
+  },
+  it:{
+    sea:{winter:['Evento d’inverno','Cristalli di neve','Tema di colori invernale','Ricordo d’inverno'],
+         spring:['Evento di primavera','Quarzo sakura','Tema di colori primaverile','Ricordo di primavera'],
+         summer:['Evento d’estate','Cristalli marini','Tema di colori estivo','Ricordo d’estate'],
+         autumn:['Evento d’autunno','Pietre d’acero','Tema di colori autunnale','Ricordo d’autunno']},
+    skinsAdd:{winter:'Neve',spring:'Fiori di ciliegio',summer:'Fuochi d’artificio',autumn:'Foglie d’autunno'},
+    seaKicker:'EVENTO STAGIONALE',
+    seaLead:(i,d,m)=>d+'. Raccogli '+i.toLowerCase()+' con le sfere luminose, le spedizioni e le richieste di oggi. Fino a '+m+' al giorno.',
+    seaHave:'Raccolti', seaToday:'Raccolti oggi',
+    seaNote:'Scegli i temi di colori nella scheda Menu. I ricordi sono esposti nella grotta. Quello che perdi potrai raccoglierlo di nuovo l’anno prossimo.',
+    seaNext:(t,d)=>'Prossimo: '+t+' ('+d+').',
+    seaOwned:l=>'Ottenuti finora: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Riportato anche: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Per oggi è tutto. Domani potrai raccoglierne altri.',
+    seaReward:w=>'Ricompensa: '+w, seaAlready:w=>w+' (già tuo)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Eventi stagionali','Ogni inverno, primavera, estate e autunno c’è un evento a tempo limitato. Raccogli cristalli stagionali con le sfere luminose, le spedizioni e le richieste di oggi per ottenere un tema di colori, punti ricerca e un ricordo. Gli eventi tornano ogni anno.']
+  },
+  pt:{
+    sea:{winter:['Evento de inverno','Cristais de neve','Tema de cores de inverno','Lembrança de inverno'],
+         spring:['Evento de primavera','Quartzo sakura','Tema de cores de primavera','Lembrança de primavera'],
+         summer:['Evento de verão','Cristais do mar','Tema de cores de verão','Lembrança de verão'],
+         autumn:['Evento de outono','Pedras de bordo','Tema de cores de outono','Lembrança de outono']},
+    skinsAdd:{winter:'Neve',spring:'Cerejeira em flor',summer:'Fogos de artifício',autumn:'Folhas de outono'},
+    seaKicker:'EVENTO DA ESTAÇÃO',
+    seaLead:(i,d,m)=>d+'. Junte '+i.toLowerCase()+' com os orbes brilhantes, as expedições e os pedidos de hoje. Até '+m+' por dia.',
+    seaHave:'Juntados', seaToday:'Juntados hoje',
+    seaNote:'Escolha os temas de cores na aba Menu. As lembranças ficam expostas na caverna. O que você perder poderá ser juntado de novo no ano que vem.',
+    seaNext:(t,d)=>'Próximo: '+t+' ('+d+').',
+    seaOwned:l=>'Conseguido até agora: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Também trouxeram: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Por hoje é só. Amanhã você pode juntar mais.',
+    seaReward:w=>'Recompensa: '+w, seaAlready:w=>w+' (você já tem)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Eventos da estação','Todo inverno, primavera, verão e outono há um evento por tempo limitado. Junte cristais da estação com os orbes brilhantes, as expedições e os pedidos de hoje para ganhar um tema de cores, pontos de pesquisa e uma lembrança. Os eventos voltam todo ano.']
+  },
+  nl:{
+    sea:{winter:['Winterevent','Sneeuwkristallen','Winterkleurenthema','Wintersouvenir'],
+         spring:['Lente-event','Sakurakwarts','Lentekleurenthema','Lentesouvenir'],
+         summer:['Zomerevent','Zeekristallen','Zomerkleurenthema','Zomersouvenir'],
+         autumn:['Herfstevent','Esdoornstenen','Herfstkleurenthema','Herfstsouvenir']},
+    skinsAdd:{winter:'Sneeuw',spring:'Kersenbloesem',summer:'Vuurwerk',autumn:'Herfstbladeren'},
+    seaKicker:'SEIZOENSEVENT',
+    seaLead:(i,d,m)=>d+'. Verzamel '+i.toLowerCase()+' met gloeiende bollen, expedities en de opdrachten van vandaag. Tot '+m+' per dag.',
+    seaHave:'Verzameld', seaToday:'Vandaag verzameld',
+    seaNote:'Kies kleurenthema’s in het tabblad Menu. Souvenirs staan in de grot. Wat je mist, kun je volgend jaar opnieuw verzamelen.',
+    seaNext:(t,d)=>'Volgende: '+t+' ('+d+').',
+    seaOwned:l=>'Tot nu toe gekregen: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Ook meegebracht: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Dat was het voor vandaag. Morgen kun je meer verzamelen.',
+    seaReward:w=>'Beloning: '+w, seaAlready:w=>w+' (heb je al)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Seizoensevents','Elke winter, lente, zomer en herfst is er een tijdelijk event. Verzamel seizoenskristallen met gloeiende bollen, expedities en de opdrachten van vandaag en krijg een kleurenthema, onderzoekspunten en een souvenir. De events komen elk jaar terug.']
+  },
+  pl:{
+    sea:{winter:['Wydarzenie zimowe','Kryształy śniegu','Zimowy motyw kolorów','Zimowa pamiątka'],
+         spring:['Wydarzenie wiosenne','Kwarc sakura','Wiosenny motyw kolorów','Wiosenna pamiątka'],
+         summer:['Wydarzenie letnie','Kryształy morza','Letni motyw kolorów','Letnia pamiątka'],
+         autumn:['Wydarzenie jesienne','Klonowe kamienie','Jesienny motyw kolorów','Jesienna pamiątka']},
+    skinsAdd:{winter:'Śnieg',spring:'Kwiat wiśni',summer:'Fajerwerki',autumn:'Jesienne liście'},
+    seaKicker:'WYDARZENIE SEZONOWE',
+    seaLead:(i,d,m)=>d+'. Zbieraj '+i.toLowerCase()+' ze świecących kul, z wypraw i dzisiejszych zleceń. Do '+m+' dziennie.',
+    seaHave:'Zebrano', seaToday:'Zebrano dziś',
+    seaNote:'Motywy kolorów wybierzesz w zakładce Menu. Pamiątki stoją w jaskini. To, czego nie zdobędziesz, możesz zebrać ponownie w przyszłym roku.',
+    seaNext:(t,d)=>'Następne: '+t+' ('+d+').',
+    seaOwned:l=>'Zdobyte do tej pory: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Przyniesiono też: '+i+' ×'+n+'.',
+    seaFull:'To wszystko na dziś. Jutro możesz zebrać więcej.',
+    seaReward:w=>'Nagroda: '+w, seaAlready:w=>w+' (już masz)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Wydarzenia sezonowe','Każdej zimy, wiosny, lata i jesieni trwa wydarzenie ograniczone czasowo. Zbieraj sezonowe kryształy ze świecących kul, wypraw i dzisiejszych zleceń, aby zdobyć motyw kolorów, punkty badań i pamiątkę. Wydarzenia wracają co roku.']
+  },
+  ru:{
+    sea:{winter:['Зимнее событие','Снежные кристаллы','Зимняя цветовая тема','Зимний сувенир'],
+         spring:['Весеннее событие','Кварц сакуры','Весенняя цветовая тема','Весенний сувенир'],
+         summer:['Летнее событие','Морские кристаллы','Летняя цветовая тема','Летний сувенир'],
+         autumn:['Осеннее событие','Кленовые камни','Осенняя цветовая тема','Осенний сувенир']},
+    skinsAdd:{winter:'Снег',spring:'Цветущая сакура',summer:'Фейерверк',autumn:'Осенние листья'},
+    seaKicker:'СЕЗОННОЕ СОБЫТИЕ',
+    seaLead:(i,d,m)=>d+'. Собирайте '+i.toLowerCase()+' из светящихся сфер, экспедиций и заданий на сегодня. До '+m+' в день.',
+    seaHave:'Собрано', seaToday:'Собрано сегодня',
+    seaNote:'Цветовые темы выбираются во вкладке «Меню». Сувениры стоят в пещере. То, что вы пропустите, можно будет собрать снова в следующем году.',
+    seaNext:(t,d)=>'Следующее: '+t+' ('+d+').',
+    seaOwned:l=>'Уже получено: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Также принесено: '+i+' ×'+n+'.',
+    seaFull:'На сегодня всё. Завтра можно собрать ещё.',
+    seaReward:w=>'Награда: '+w, seaAlready:w=>w+' (уже есть)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Сезонные события','Каждую зиму, весну, лето и осень проходит событие ограниченного времени. Собирайте сезонные кристаллы из светящихся сфер, экспедиций и заданий на сегодня и получайте цветовую тему, очки исследований и сувенир. События повторяются каждый год.']
+  },
+  tr:{
+    sea:{winter:['Kış etkinliği','Kar kristalleri','Kış renk teması','Kış hatırası'],
+         spring:['Bahar etkinliği','Sakura kuvarsı','Bahar renk teması','Bahar hatırası'],
+         summer:['Yaz etkinliği','Deniz kristalleri','Yaz renk teması','Yaz hatırası'],
+         autumn:['Sonbahar etkinliği','Akçaağaç taşları','Sonbahar renk teması','Sonbahar hatırası']},
+    skinsAdd:{winter:'Kar',spring:'Kiraz çiçeği',summer:'Havai fişek',autumn:'Sonbahar yaprakları'},
+    seaKicker:'MEVSİM ETKİNLİĞİ',
+    seaLead:(i,d,m)=>d+'. Parlayan kürelerden, seferlerden ve bugünün görevlerinden '+i.toLocaleLowerCase('tr')+' topla. Günde en fazla '+m+'.',
+    seaHave:'Toplanan', seaToday:'Bugün toplanan',
+    seaNote:'Renk temalarını Menü sekmesinden seçebilirsin. Hatıralar mağarada sergilenir. Kaçırdıklarını gelecek yıl yeniden toplayabilirsin.',
+    seaNext:(t,d)=>'Sıradaki: '+t+' ('+d+').',
+    seaOwned:l=>'Şimdiye kadar alınanlar: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Ayrıca getirilen: '+i.toLocaleLowerCase('tr')+' ×'+n+'.',
+    seaFull:'Bugünlük bu kadar. Yarın yine toplayabilirsin.',
+    seaReward:w=>'Ödül: '+w, seaAlready:w=>w+' (zaten sende)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Mevsim etkinlikleri','Her kış, bahar, yaz ve sonbaharda süreli bir etkinlik olur. Parlayan kürelerden, seferlerden ve bugünün görevlerinden mevsim kristalleri topla; renk teması, araştırma puanı ve bir hatıra kazan. Etkinlikler her yıl yeniden gelir.']
+  },
+  vi:{
+    sea:{winter:['Sự kiện mùa đông','Tinh thể tuyết','Màu giao diện mùa đông','Kỷ vật mùa đông'],
+         spring:['Sự kiện mùa xuân','Thạch anh hoa anh đào','Màu giao diện mùa xuân','Kỷ vật mùa xuân'],
+         summer:['Sự kiện mùa hè','Tinh thể biển','Màu giao diện mùa hè','Kỷ vật mùa hè'],
+         autumn:['Sự kiện mùa thu','Đá lá phong','Màu giao diện mùa thu','Kỷ vật mùa thu']},
+    skinsAdd:{winter:'Tuyết',spring:'Hoa anh đào',summer:'Pháo hoa',autumn:'Lá thu'},
+    seaKicker:'SỰ KIỆN THEO MÙA',
+    seaLead:(i,d,m)=>d+'. Thu thập '+i.toLowerCase()+' từ quả cầu phát sáng, đội thám hiểm và nhiệm vụ hôm nay. Tối đa '+m+' mỗi ngày.',
+    seaHave:'Đã thu thập', seaToday:'Hôm nay đã thu thập',
+    seaNote:'Chọn màu giao diện trong thẻ Menu. Kỷ vật được bày trong hang. Những gì bạn bỏ lỡ có thể thu thập lại vào năm sau.',
+    seaNext:(t,d)=>'Tiếp theo: '+t+' ('+d+').',
+    seaOwned:l=>'Đã nhận được: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Còn mang về: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Hôm nay đã đủ rồi. Ngày mai bạn có thể thu thập tiếp.',
+    seaReward:w=>'Phần thưởng: '+w, seaAlready:w=>w+' (đã có)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Sự kiện theo mùa','Mỗi mùa đông, xuân, hè và thu đều có một sự kiện có thời hạn. Thu thập tinh thể theo mùa từ quả cầu phát sáng, đội thám hiểm và nhiệm vụ hôm nay để nhận màu giao diện, điểm nghiên cứu và một kỷ vật. Sự kiện lặp lại mỗi năm.']
+  },
+  th:{
+    sea:{winter:['อีเวนต์ฤดูหนาว','ผลึกหิมะ','ธีมสีฤดูหนาว','ของที่ระลึกฤดูหนาว'],
+         spring:['อีเวนต์ฤดูใบไม้ผลิ','ควอตซ์ซากุระ','ธีมสีฤดูใบไม้ผลิ','ของที่ระลึกฤดูใบไม้ผลิ'],
+         summer:['อีเวนต์ฤดูร้อน','ผลึกทะเล','ธีมสีฤดูร้อน','ของที่ระลึกฤดูร้อน'],
+         autumn:['อีเวนต์ฤดูใบไม้ร่วง','หินใบเมเปิล','ธีมสีฤดูใบไม้ร่วง','ของที่ระลึกฤดูใบไม้ร่วง']},
+    skinsAdd:{winter:'หิมะ',spring:'ซากุระ',summer:'ดอกไม้ไฟ',autumn:'ใบไม้ร่วง'},
+    seaKicker:'อีเวนต์ตามฤดูกาล',
+    seaLead:(i,d,m)=>d+' เก็บ'+i+'ได้จากลูกแสง คณะสำรวจ และภารกิจวันนี้ ได้สูงสุดวันละ '+m+' ชิ้น',
+    seaHave:'เก็บได้แล้ว', seaToday:'เก็บได้วันนี้',
+    seaNote:'เลือกธีมสีได้ในแท็บเมนู ของที่ระลึกจะถูกวางไว้ในถ้ำ สิ่งที่พลาดไปสามารถเก็บใหม่ได้ในปีหน้า',
+    seaNext:(t,d)=>'ครั้งต่อไป: '+t+' ('+d+')',
+    seaOwned:l=>'ได้รับแล้ว: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'คณะสำรวจนำ'+i+'กลับมาด้วย '+n+' ชิ้น',
+    seaFull:'วันนี้เก็บครบแล้ว พรุ่งนี้เก็บต่อได้',
+    seaReward:w=>'รางวัล: '+w, seaAlready:w=>w+' (มีแล้ว)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['อีเวนต์ตามฤดูกาล','ทุกฤดูหนาว ใบไม้ผลิ ร้อน และใบไม้ร่วง จะมีอีเวนต์จำกัดเวลา เก็บผลึกประจำฤดูจากลูกแสง คณะสำรวจ และภารกิจวันนี้ เพื่อรับธีมสี แต้มวิจัย และของที่ระลึก อีเวนต์จะกลับมาทุกปี']
+  },
+  id:{
+    sea:{winter:['Acara musim dingin','Kristal salju','Tema warna musim dingin','Kenang-kenangan musim dingin'],
+         spring:['Acara musim semi','Kuarsa sakura','Tema warna musim semi','Kenang-kenangan musim semi'],
+         summer:['Acara musim panas','Kristal laut','Tema warna musim panas','Kenang-kenangan musim panas'],
+         autumn:['Acara musim gugur','Batu maple','Tema warna musim gugur','Kenang-kenangan musim gugur']},
+    skinsAdd:{winter:'Salju',spring:'Bunga sakura',summer:'Kembang api',autumn:'Daun gugur'},
+    seaKicker:'ACARA MUSIMAN',
+    seaLead:(i,d,m)=>d+'. Kumpulkan '+i.toLowerCase()+' dari bola bercahaya, ekspedisi, dan tugas hari ini. Paling banyak '+m+' per hari.',
+    seaHave:'Terkumpul', seaToday:'Terkumpul hari ini',
+    seaNote:'Pilih tema warna di tab Menu. Kenang-kenangan dipajang di gua. Yang terlewat bisa dikumpulkan lagi tahun depan.',
+    seaNext:(t,d)=>'Berikutnya: '+t+' ('+d+').',
+    seaOwned:l=>'Sudah didapat: '+l,
+    seaGain:(i,n)=>i+' +'+n,
+    seaCard:(i,n)=>'Juga dibawa pulang: '+i.toLowerCase()+' ×'+n+'.',
+    seaFull:'Cukup untuk hari ini. Besok bisa mengumpulkan lagi.',
+    seaReward:w=>'Hadiah: '+w, seaAlready:w=>w+' (sudah dimiliki)',
+    seaRange:(a,b)=>a+' – '+b, listSep:', ',
+    howtoSea:['Acara musiman','Setiap musim dingin, semi, panas, dan gugur ada acara terbatas waktu. Kumpulkan kristal musiman dari bola bercahaya, ekspedisi, dan tugas hari ini untuk mendapatkan tema warna, poin riset, dan kenang-kenangan. Acara kembali setiap tahun.']
+  }
+  };
+  for(const k in T15){
+    const x = T15[k];
+    if(T[k].skins) Object.assign(T[k].skins, x.skinsAdd);
+    delete x.skinsAdd;
+    Object.assign(T[k], x);
+  }
+
   /* any line a language does not have yet is shown in English */
   for(const k in T) for(const key in T.en) if(!(key in T[k])) T[k][key] = T.en[key];
   let langId = 'ja';
@@ -3167,6 +3506,27 @@
          '--line':'#5E4064','--line-soft':'#432C48','--ink':'#FAEDF8','--ink-dim':'#DABFD8','--ink-faint':'#B493B1',
          '--cyan':'#8FE9E4','--gold':'#F8CB7E','--amethyst':'#DFAEFF','--alert':'#FFA2B6',
          '--stage-top':'#241429','--stage-bot':'#140A17'}, rock:'#110814'},
+    /* 1.5: earned in the seasonal events */
+    {id:'snow', season:'winter', dark:true,
+      v:{'--bg':'#0E1824','--bg-deep':'#080F17','--bg-top':'#1E3246','--panel':'#132131','--panel-2':'#1B2C40',
+         '--line':'#3F5A78','--line-soft':'#2A3F55','--ink':'#F0F7FF','--ink-dim':'#C3D6EA','--ink-faint':'#9AB1CA',
+         '--cyan':'#8FE3F2','--gold':'#FFD98A','--amethyst':'#C9B6FA','--alert':'#FF9FB0',
+         '--stage-top':'#122030','--stage-bot':'#09121B'}, rock:'#08101A'},
+    {id:'sakura', season:'spring', dark:true,
+      v:{'--bg':'#1E1218','--bg-deep':'#140A10','--bg-top':'#3D2230','--panel':'#2A1822','--panel-2':'#36202C',
+         '--line':'#6E4559','--line-soft':'#4D3040','--ink':'#FFF0F5','--ink-dim':'#EDC9D7','--ink-faint':'#CDA4B6',
+         '--cyan':'#8FE6DC','--gold':'#FFD58A','--amethyst':'#E3B3FF','--alert':'#FF9DB0',
+         '--stage-top':'#26151E','--stage-bot':'#150B10'}, rock:'#12090E'},
+    {id:'fireworks', season:'summer', dark:true,
+      v:{'--bg':'#0D1030','--bg-deep':'#070920','--bg-top':'#1E2560','--panel':'#141842','--panel-2':'#1C2152',
+         '--line':'#3F478F','--line-soft':'#2A3066','--ink':'#F2F3FF','--ink-dim':'#C8CBF0','--ink-faint':'#A2A7DA',
+         '--cyan':'#7FEAF0','--gold':'#FFD36E','--amethyst':'#D4B0FF','--alert':'#FF9AB8',
+         '--stage-top':'#11153A','--stage-bot':'#080A22'}, rock:'#06081A'},
+    {id:'momiji', season:'autumn', dark:true,
+      v:{'--bg':'#1F120B','--bg-deep':'#140A05','--bg-top':'#40220F','--panel':'#2B180D','--panel-2':'#382012',
+         '--line':'#70462A','--line-soft':'#4E301C','--ink':'#FFF2E6','--ink-dim':'#EDCDB4','--ink-faint':'#CCA98B',
+         '--cyan':'#86E6D8','--gold':'#FFCF73','--amethyst':'#D9AEF5','--alert':'#FF9E98',
+         '--stage-top':'#26160C','--stage-bot':'#140B06'}, rock:'#110905'},
     {id:'hcd', dark:true,
       v:{'--bg':'#000000','--bg-deep':'#000000','--bg-top':'#161616','--panel':'#0C0C0C','--panel-2':'#1A1A1A',
          '--line':'#7A7A7A','--line-soft':'#4D4D4D','--ink':'#FFFFFF','--ink-dim':'#EDEDED','--ink-faint':'#C9C9C9',
@@ -3180,15 +3540,18 @@
   ];
   let skin = SKINS[0];
 
-  function applySkin(id){
-    const s = SKINS.find(x => x.id === id) || SKINS[0];
+  /* keep = false: show it without remembering it (used while starting,
+     before the save says which event themes are yours) */
+  function applySkin(id, keep){
+    let s = SKINS.find(x => x.id === id) || SKINS[0];
+    if(!skinOwned(s)) s = SKINS[0];
     skin = s;
     const root = document.documentElement;
     for(const k in s.v) root.style.setProperty(k, s.v[k]);
     root.style.colorScheme = s.dark ? 'dark' : 'light';
     document.querySelectorAll('[data-skin]').forEach(b =>
       b.setAttribute('aria-pressed', String(b.dataset.skin === s.id)));
-    try{ localStorage.setItem('cc-skin', s.id); }catch(e){}
+    if(keep !== false) try{ localStorage.setItem('cc-skin', s.id); }catch(e){}
   }
 
   const FS = [0.92, 1, 1.14, 1.32];
@@ -3251,6 +3614,10 @@
              rp:0, rs:{moss:0,echo:0,team:0,fast:0,qual:0}, seamMax:-1,
              exp:[0], expBack:0, quest:{day:'',ids:[],p:{},done:false},
              reviewAsked:false, bonusSeen:0,
+             /* 1.5 — seasonal events. sea is the running event (key like
+                "winter-2026"; n collected, today collected on day, tier
+                rewards given); seaOwn is kept for good */
+             sea:{key:'', n:0, day:'', today:0, tier:0}, seaOwn:{skins:[], deco:[]},
              t:Date.now()};
   GENS.forEach(g => S.gens[g.id] = 0);
   const SAVE_KEY = 'crystal-cave-v1';
@@ -3300,6 +3667,12 @@
     S.quest = {day:String(q.day||''), ids:Array.isArray(q.ids) ? q.ids.filter(x => typeof x === 'string').slice(0,3) : [],
                p:(q.p && typeof q.p === 'object') ? q.p : {}, done:!!q.done};
     S.reviewAsked = !!d.reviewAsked; S.bonusSeen = +d.bonusSeen || 0;
+    const se = (d.sea && typeof d.sea === 'object') ? d.sea : {};
+    S.sea = {key:String(se.key||''), n:int(se.n, 0, 1e6), day:String(se.day||''),
+             today:int(se.today, 0, SEA_DAY_MAX), tier:int(se.tier, 0, SEA_TIERS.length)};
+    const so = (d.seaOwn && typeof d.seaOwn === 'object') ? d.seaOwn : {};
+    const ids = a => Array.isArray(a) ? SEASONS.map(x => x.id).filter(x => a.indexOf(x) >= 0) : [];
+    S.seaOwn = {skins:ids(so.skins), deco:ids(so.deco)};
     normalizeTeams();
     S.paused = !!d.paused;
     TAPS.forEach(t => S.taps[t.id] = (d.taps ? +d.taps[t.id] : 0) || 0);
@@ -3508,6 +3881,7 @@
     ctx.fillStyle = fg; ctx.fillRect(0,0,W,H);
 
     if(!reduce) drawDust(dt, col);
+    drawSeaFx(dt);
 
     ctx.beginPath();
     ctx.ellipse(cx, baseY+6, unit*0.62, unit*0.14, 0, 0, Math.PI*2);
@@ -3530,6 +3904,7 @@
     }
     ctx.globalAlpha = 1;
     drawVignette();
+    drawDecos(cx, baseY, unit);
     if(orb) drawOrb(dt);
 
     for(let i=particles.length-1;i>=0;i--){
@@ -3670,6 +4045,7 @@
     Native.haptic('orb');
     burst(x,y,9e9,color);
     pops.push({x, y:y-10, life:1.3, txt:'!', c:color});
+    sub += seaLine(seaAdd('orb'));
     showBig(L.evKicker, t[0], sub, color);
     questAdd('orb', 1);
     orb = null; orbTimer = afterOrbGap();
@@ -3795,6 +4171,10 @@
     qc.className = 'card'; qc.id = 'questCard';
     listBonus.appendChild(qc);
     questKey = '';
+    const ec = document.createElement('div');
+    ec.className = 'card'; ec.id = 'seaCard';
+    listBonus.appendChild(ec);
+    seaKey = '';
     if(Ads.mode !== 'off'){
       const card = document.createElement('div');
       card.className = 'card';
@@ -3871,6 +4251,7 @@
        may be a function instead, and is handed the real counts. */
     const howto = L.howto.slice(0,5).map(r => [r[0], typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1]])
       .concat((L.howtoNew||[]).map(r => [r[0], typeof r[1] === 'function' ? r[1](L.stages[EXP_STAGE]) : r[1]]))
+      .concat([L.howtoSea])
       .concat(L.howto.slice(5).map(r => [r[0], typeof r[1] === 'function' ? r[1](BASE_SEAMS, STAGES.length) : r[1]]));
     const rules = howto.map((r,i) =>
       '<li><span class="rn">'+(i+1)+'</span><span><span class="rt">'+r[0]+'</span><span class="rb">'+r[1]+
@@ -3881,9 +4262,6 @@
       '<button class="opt" data-fs="'+i+'" aria-pressed="'+(i===fsIndex)+'">'+
       '<span class="tickbox"></span>'+s+'</button>').join('');
 
-    const skinOpts = SKINS.map(s =>
-      '<button class="opt" data-skin="'+s.id+'" aria-pressed="'+(s.id===skin.id)+'">'+
-      '<span class="sw" style="background:'+s.v['--bg']+'"></span>'+L.skins[s.id]+'</button>').join('');
 
     /* The rules used to sit third in the menu, which pushed everything a
        player might actually need — reporting a problem, most of all — below
@@ -3902,7 +4280,7 @@
       '</div>'+
       '<div class="card">'+
         '<h3>'+L.skinTitle+'</h3><p>'+L.skinBody+'</p>'+
-        '<div class="opt-grid">'+skinOpts+'</div>'+
+        '<div class="opt-grid" id="skinGrid"></div>'+
       '</div>'+
       /* Third, where it can be reached without a scroll. Someone with a
          problem to report should not have to hunt for the way to report it. */
@@ -3972,8 +4350,7 @@
 
     listMenu.querySelectorAll('[data-fs]').forEach(b =>
       b.addEventListener('click', () => applyFs(+b.dataset.fs)));
-    listMenu.querySelectorAll('[data-skin]').forEach(b =>
-      b.addEventListener('click', () => applySkin(b.dataset.skin)));
+    fillSkins();
     $('btnPause2').addEventListener('click', () => setPaused(!S.paused));
     $('btnGuide').addEventListener('click', showWelcome);
     listMenu.querySelectorAll('[data-ads]').forEach(b =>
@@ -4374,7 +4751,8 @@
     const pts = Math.floor(S.expBack / EXP_PER_RP);
     S.expBack %= EXP_PER_RP;
     S.rp += pts;
-    showBig(L.expTitle, L.expCardTitle, L.gainLine(fmt(got)) + (pts ? '<br>' + L.rpGain(pts) : ''), '#F2C673');
+    const sg = seaAdd('exp', n*(doubled ? 2 : 1));
+    showBig(L.expTitle, L.expCardTitle, L.gainLine(fmt(got)) + (pts ? '<br>' + L.rpGain(pts) : '') + seaLine(sg), '#F2C673');
     sendTeams(true);
     save(); refresh();
   }
@@ -4386,7 +4764,7 @@
     const pay = expPay(n);
     openCard({
       kicker:L.expTitle, title:L.expCardTitle,
-      body:'<p>'+supWrap(L.expCardBody(n, fmt(pay)))+'</p>',
+      body:'<p>'+supWrap(L.expCardBody(n, fmt(pay)))+'</p>'+seaCardLine(n),
       main: videoOK() ? L.dblBtn : L.takeBtn, alt: videoOK() ? L.takeBtn : null, ad: videoOK() ? 'exp' : null,
       done(how){
         expCardOpen = false;
@@ -4425,9 +4803,10 @@
     if(q.ids.every(x => (q.p[x] || 0) >= QUEST_GOAL[x])){
       q.done = true;
       S.rp += 1;
+      const sg = seaAdd('quest');
       save();
       /* after whatever message is on screen now */
-      setTimeout(() => showBig(L.questTitle, L.questAllDone, L.rpGain(1), '#C29CF2'),
+      setTimeout(() => showBig(L.questTitle, L.questAllDone, L.rpGain(1) + seaLine(sg), '#C29CF2'),
                  bigpop.classList.contains('show') ? 3600 : 0);
     }
   }
@@ -4446,6 +4825,257 @@
     });
     if(q.done) h += '<p class="quiet" style="margin-top:10px">'+L.questAllDone+'</p>';
     qc.innerHTML = h;
+  }
+
+
+  /* ================================================================
+     1.5 — seasonal events
+     ----------------------------------------------------------------
+     Four events a year, on the player's own calendar (there is no
+     server): winter 1 Dec – 15 Jan, spring 15 Mar – 30 Apr, summer
+     15 Jul – 31 Aug, autumn 1 Oct – 15 Nov. During one, the season's
+     crystal comes from orbs (1), each returning expedition team (3, or
+     6 with the video) and finishing today's requests (5), at most 30 a
+     day — so even a player who plays all day needs 30 days for the
+     last reward. Rewards at 60 / 200 / 500 / 900: the season's colour
+     theme, 1 research point, 2 research points, a keepsake drawn in the
+     cave. The theme and keepsake are kept for good; a missed one comes
+     back the next year.
+     ================================================================ */
+  const SEASONS = [
+    {id:'winter', from:[12,1], to:[1,15]},
+    {id:'spring', from:[3,15], to:[4,30]},
+    {id:'summer', from:[7,15], to:[8,31]},
+    {id:'autumn', from:[10,1], to:[11,15]}
+  ];
+  /* c on dark themes, cl on the light high-contrast theme */
+  const SEA_LOOK = {winter:{c:'#CFE9FF', cl:'#2F5F8A'}, spring:{c:'#FFC4D8', cl:'#A63A63'},
+                    summer:{c:'#FFD36E', cl:'#7A4E00'}, autumn:{c:'#FF9A5C', cl:'#9B3A0A'}};
+  const SEA_DAY_MAX = 30;
+  const SEA_GAIN = {orb:1, exp:3, quest:5};
+  const SEA_TIERS = [{n:60, skin:1}, {n:200, rp:1}, {n:500, rp:2}, {n:900, deco:1}];
+
+  /* the season a date falls in, or null. A winter that began last
+     December keeps last year's key, so 1–15 January continue it */
+  function seasonAt(d){
+    const v = (d.getMonth()+1)*100 + d.getDate();
+    for(const s of SEASONS){
+      const a = s.from[0]*100 + s.from[1], b = s.to[0]*100 + s.to[1];
+      const inside = a <= b ? (v >= a && v <= b) : (v >= a || v <= b);
+      if(inside) return {def:s, key:s.id+'-'+(d.getFullYear() - (a > b && v <= b ? 1 : 0))};
+    }
+    return null;
+  }
+  const seasonNow = () => seasonAt(new Date());
+  function nextSeason(){
+    const d = new Date(); d.setHours(12,0,0,0);
+    for(let i = 0; i < 370; i++){ d.setDate(d.getDate()+1); const s = seasonAt(d); if(s) return s; }
+    return null;
+  }
+  function seaMD(m, d){
+    try{ return new Date(2001, m-1, d).toLocaleDateString(langDef().locale, {month:'long', day:'numeric'}); }
+    catch(e){ return m+'/'+d; }
+  }
+  const seaDates = def => L.seaRange(seaMD(def.from[0], def.from[1]), seaMD(def.to[0], def.to[1]));
+
+  /* the running season, with its counters moved on to this season and
+     this day; null outside the four events */
+  function seaCur(){
+    const s = seasonNow(); if(!s) return null;
+    if(S.sea.key !== s.key) S.sea = {key:s.key, n:0, day:'', today:0, tier:0};
+    const k = todayKey();
+    if(S.sea.day !== k){ S.sea.day = k; S.sea.today = 0; }
+    return s;
+  }
+  const seaLeft = () => Math.max(0, SEA_DAY_MAX - S.sea.today);
+  /* adds the season's crystals for one source and returns how many were
+     really added (0 outside an event, while paused, or once today is full) */
+  function seaAdd(src, mult){
+    if(S.paused) return 0;
+    const s = seaCur(); if(!s) return 0;
+    const g = Math.min(SEA_GAIN[src]*(mult || 1), seaLeft());
+    if(g <= 0) return 0;
+    S.sea.today += g; S.sea.n += g;
+    seaTiers(s);
+    return g;
+  }
+  /* one more line for a message that has just given season crystals */
+  const seaLine = g => {
+    const s = g ? seasonNow() : null;
+    return s ? '<br>' + L.seaGain(L.sea[s.def.id][1], g) : '';
+  };
+  const seaMsgs = [];
+  function seaTiers(s){
+    const id = s.def.id, t = L.sea[id];
+    while(S.sea.tier < SEA_TIERS.length && S.sea.n >= SEA_TIERS[S.sea.tier].n){
+      const r = SEA_TIERS[S.sea.tier];
+      S.sea.tier++;
+      let w;
+      if(r.skin){
+        w = t[2];
+        if(S.seaOwn.skins.indexOf(id) < 0){ S.seaOwn.skins.push(id); fillSkins(); }
+        else w = L.seaAlready(w);
+      }else if(r.deco){
+        w = t[3];
+        if(S.seaOwn.deco.indexOf(id) < 0) S.seaOwn.deco.push(id);
+        else w = L.seaAlready(w);
+      }else{
+        S.rp += r.rp; w = L.giftRp(r.rp);
+      }
+      seaMsgs.push([t[0], L.seaReward(w), id]);
+    }
+    seaFlush();
+  }
+  /* rewards are announced after whatever message is on screen now */
+  let seaTimer = 0;
+  function seaFlush(){
+    if(seaTimer || !seaMsgs.length) return;
+    seaTimer = setTimeout(function go(){
+      if(bigpop.classList.contains('show') || card){ seaTimer = setTimeout(go, 700); return; }
+      seaTimer = 0;
+      const m = seaMsgs.shift();
+      if(m){ Native.haptic('orb'); showBig(L.seaKicker, m[0], m[1], SEA_LOOK[m[2]].c); }
+      if(seaMsgs.length) seaFlush();
+    }, 3600);
+  }
+
+  /* the card in the Bonus tab: on top during an event, otherwise below
+     the requests with the date of the next one */
+  let seaKey = '';
+  function refreshSeaCard(){
+    const el = $('seaCard'); if(!el) return;
+    const s = seaCur();
+    const key = [langId, skin.id, s ? s.key : '-', S.sea.n, S.sea.today, S.seaOwn.skins.join(), S.seaOwn.deco.join(), todayKey()].join('|');
+    if(key === seaKey) return;
+    seaKey = key;
+    const lb = $('listBonus');
+    if(s){ if(lb.firstChild !== el) lb.insertBefore(el, lb.firstChild); }
+    else{ const q = $('questCard'); if(q && q.nextSibling !== el) lb.insertBefore(el, q.nextSibling); }
+    el.classList.toggle('sea-on', !!s);
+    if(s) el.style.setProperty('--sea', skin.dark ? SEA_LOOK[s.def.id].c : SEA_LOOK[s.def.id].cl);
+    let h;
+    if(s){
+      const t = L.sea[s.def.id];
+      h = '<h3>'+t[0]+'</h3><p>'+L.seaLead(t[1], seaDates(s.def), SEA_DAY_MAX)+'</p>'+
+          '<div class="stat-row"><span>'+L.seaHave+'</span><span>'+num(S.sea.n)+'</span></div>'+
+          '<div class="stat-row"><span>'+L.seaToday+'</span><span>'+S.sea.today+' / '+SEA_DAY_MAX+'</span></div>';
+      SEA_TIERS.forEach(r => {
+        const ok = S.sea.n >= r.n;
+        const w = r.skin ? t[2] : r.deco ? t[3] : L.giftRp(r.rp);
+        h += '<div class="quest-row'+(ok ? ' done' : '')+'"><span class="qn">'+w+'</span>'+
+             '<span class="qp">'+(ok ? '✓ '+L.questDone : num(S.sea.n)+' / '+num(r.n))+'</span></div>';
+      });
+      if(!seaLeft()) h += '<p class="quiet" style="margin-top:10px">'+L.seaFull+'</p>';
+      h += '<p class="quiet" style="margin-top:10px">'+L.seaNote+'</p>';
+    }else{
+      const nx = nextSeason();
+      h = '<h3>'+L.howtoSea[0]+'</h3>';
+      if(nx) h += '<p>'+L.seaNext(L.sea[nx.def.id][0], seaDates(nx.def))+'</p>';
+      const got = [];
+      SEASONS.forEach(x => {
+        if(S.seaOwn.skins.indexOf(x.id) >= 0) got.push(L.sea[x.id][2]);
+        if(S.seaOwn.deco.indexOf(x.id) >= 0) got.push(L.sea[x.id][3]);
+      });
+      if(got.length) h += '<p class="quiet" style="margin-top:10px">'+L.seaOwned(got.join(L.listSep))+'</p>';
+    }
+    el.innerHTML = h;
+  }
+
+  /* ---- in the cave: the season in the air, and the keepsakes ---- */
+  const SEA_FX = (() => {
+    const r = rng(1201), a = [];
+    for(let i = 0; i < 18; i++) a.push({x:r(), y:r(), s:0.7+r()*0.8, ph:r()*6.283, v:0.018+r()*0.022});
+    return a;
+  })();
+  let seaFxId = null, seaFxAt = -99;
+  function drawSeaFx(dt){
+    if(tick - seaFxAt > 5){ seaFxAt = tick; const s = seasonNow(); seaFxId = s ? s.def.id : null; }
+    if(!seaFxId || reduce) return;
+    const id = seaFxId, up = id === 'summer';
+    ctx.fillStyle = skin.dark ? SEA_LOOK[id].c : SEA_LOOK[id].cl;
+    for(const p of SEA_FX){
+      if(!S.paused){
+        p.y += (up ? -1 : 1)*p.v*dt;
+        if(p.y > 1.05){ p.y = -0.05; p.x = Math.random(); }
+        else if(p.y < -0.05){ p.y = 1.05; p.x = Math.random(); }
+      }
+      const x = (p.x + Math.sin(tick*0.5 + p.ph)*0.025)*W, y = p.y*H;
+      ctx.globalAlpha = (skin.dark ? 0.42 : 0.5) * (up ? 0.55 + 0.45*Math.sin(tick*2 + p.ph) : 1);
+      ctx.beginPath();
+      if(id === 'winter' || id === 'summer') ctx.arc(x, y, (up ? 1.3 : 1.9)*p.s, 0, Math.PI*2);
+      else ctx.ellipse(x, y, 3.4*p.s, 1.7*p.s, tick*0.8 + p.ph, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* the keepsakes sit on either side of the rock */
+  const DECO_AT = {winter:-0.98, spring:-0.76, summer:0.76, autumn:0.98};
+  function drawDecos(cx, baseY, unit){
+    const own = S.seaOwn && S.seaOwn.deco;
+    if(!own || !own.length) return;
+    const r = unit*0.075;
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.globalAlpha = S.paused ? 0.4 : 0.9;
+    for(const id of own){
+      const x = cx + DECO_AT[id]*unit, y = baseY - r*0.4, c = skin.dark ? SEA_LOOK[id].c : SEA_LOOK[id].cl;
+      ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = Math.max(1.2, r*0.16);
+      ctx.beginPath();
+      if(id === 'winter'){
+        for(let k = 0; k < 6; k++){
+          const a = k*Math.PI/3, ex = Math.cos(a), ey = Math.sin(a);
+          ctx.moveTo(x, y); ctx.lineTo(x + ex*r, y + ey*r);
+          const bx = x + ex*r*0.55, by = y + ey*r*0.55;
+          for(const sgn of [-1, 1]){
+            const b = a + sgn*0.7;
+            ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(b)*r*0.32, by + Math.sin(b)*r*0.32);
+          }
+        }
+        ctx.stroke();
+      }else if(id === 'spring'){
+        for(let k = 0; k < 5; k++){
+          const a = -Math.PI/2 + k*2*Math.PI/5;
+          ctx.moveTo(x, y);
+          ctx.ellipse(x + Math.cos(a)*r*0.52, y + Math.sin(a)*r*0.52, r*0.48, r*0.3, a, 0, Math.PI*2);
+        }
+        ctx.fill();
+        ctx.beginPath(); ctx.fillStyle = skin.rock; ctx.arc(x, y, r*0.16, 0, Math.PI*2); ctx.fill();
+      }else if(id === 'summer'){
+        for(let k = 0; k < 12; k++){
+          const a = k*Math.PI/6, ex = Math.cos(a), ey = Math.sin(a);
+          ctx.moveTo(x + ex*r*0.3, y + ey*r*0.3); ctx.lineTo(x + ex*r*0.82, y + ey*r*0.82);
+        }
+        ctx.stroke();
+        for(let k = 0; k < 12; k++){
+          const a = k*Math.PI/6;
+          ctx.beginPath(); ctx.arc(x + Math.cos(a)*r, y + Math.sin(a)*r, r*0.1, 0, Math.PI*2); ctx.fill();
+        }
+      }else{
+        /* a maple leaf: seven points, the middle one longest */
+        const pts = [[0,-1],[0.28,-0.5],[0.62,-0.72],[0.5,-0.22],[0.95,-0.1],[0.42,0.22],[0.5,0.55],
+                     [0,0.32],[-0.5,0.55],[-0.42,0.22],[-0.95,-0.1],[-0.5,-0.22],[-0.62,-0.72],[-0.28,-0.5]];
+        pts.forEach((p,i) => { const px = x + p[0]*r, py = y + p[1]*r; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x, y + r*0.3); ctx.lineTo(x, y + r*0.95); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* colour themes from the events show in the menu once they are yours */
+  const skinOwned = s => !s.season || !!(S.seaOwn && S.seaOwn.skins.indexOf(s.season) >= 0);
+  function fillSkins(){
+    const g = $('skinGrid'); if(!g) return;
+    g.innerHTML = SKINS.filter(skinOwned).map(s =>
+      '<button class="opt" data-skin="'+s.id+'" aria-pressed="'+(s.id===skin.id)+'">'+
+      '<span class="sw" style="background:'+s.v['--bg']+'"></span>'+L.skins[s.season || s.id]+'</button>').join('');
+    g.querySelectorAll('[data-skin]').forEach(b => b.addEventListener('click', () => applySkin(b.dataset.skin)));
+  }
+  /* the line on the expedition card: what the season adds, before a video doubles it */
+  function seaCardLine(n){
+    const s = seaCur(); if(!s || S.paused) return '';
+    const g = Math.min(SEA_GAIN.exp*n, seaLeft());
+    return g > 0 ? '<p>'+L.seaCard(L.sea[s.def.id][1], g)+'</p>' : '';
   }
 
   /* ---- rebirth, with the "Extra cores" video offered right before ---- */
@@ -4667,17 +5297,25 @@
       .concat([S.clicks, S.resets, S.events, S.paused?1:0, S.loops||0, Math.round(S.t/1000)])
       /* 1.4 */
       .concat([S.rp, S.seamMax+1, resLevel('moss'), resLevel('echo'), resLevel('team'),
-               resLevel('fast'), resLevel('qual'), S.expBack]);
+               resLevel('fast'), resLevel('qual'), S.expBack])
+      /* 1.5: themes and keepsakes as bits, and the running event */
+      .concat([seaBits(), seaKeyNum(S.sea.key), S.sea.n, S.sea.tier]);
     const body = v.map(B36).join('-');
-    return 'CC3-' + body + '-' + sumOf(body);
+    return 'CC4-' + body + '-' + sumOf(body);
   }
+  const seaBits = () => SEASONS.reduce((b, z, i) =>
+    b | (S.seaOwn.skins.indexOf(z.id) >= 0 ? 1 << i : 0) | (S.seaOwn.deco.indexOf(z.id) >= 0 ? 1 << (i+4) : 0), 0);
+  /* "winter-2026" <-> 2026*10 + 1 */
+  const seaKeyNum = k => { const m = /^(\w+)-(\d+)$/.exec(k || ''); const i = m ? SEASONS.findIndex(z => z.id === m[1]) : -1;
+                           return i < 0 ? 0 : (+m[2])*10 + i + 1; };
+  const seaKeyStr = v => { const i = v % 10 - 1; return v > 0 && SEASONS[i] ? SEASONS[i].id+'-'+Math.floor(v/10) : ''; };
   function decode(str){
     const s = String(str||'').trim().replace(/\s+/g,'');
-    const ver = /^CC([123])-/i.exec(s);
+    const ver = /^CC([1234])-/i.exec(s);
     if(ver){
-      const v2 = ver[1] !== '1', v3 = ver[1] === '3';
+      const v2 = ver[1] !== '1', v3 = ver[1] >= '3', v4 = ver[1] === '4';
       const p = s.split('-');
-      const values = 6 + GENS.length + (v2 ? 6 : 5) + (v3 ? 8 : 0);
+      const values = 6 + GENS.length + (v2 ? 6 : 5) + (v3 ? 8 : 0) + (v4 ? 4 : 0);
       if(p.length !== values + 2) return null;        // prefix + values + checksum
       const body = p.slice(1, -1).join('-');
       if(sumOf(body) !== p[p.length-1].toLowerCase()) return null;
@@ -4696,6 +5334,12 @@
         d.rp = n(x); d.seamMax = n(x+1) - 1;
         d.rs = {moss:n(x+2), echo:n(x+3), team:n(x+4), fast:n(x+5), qual:n(x+6)};
         d.expBack = n(x+7);
+      }
+      if(v4){
+        const x = tail + 14, bits = n(x);
+        d.seaOwn = {skins:SEASONS.filter((z,i) => bits & (1 << i)).map(z => z.id),
+                    deco:SEASONS.filter((z,i) => bits & (1 << (i+4))).map(z => z.id)};
+        d.sea = {key:seaKeyStr(n(x+1)), n:n(x+2), tier:n(x+3), day:'', today:0};
       }
       return d;
     }
@@ -4736,7 +5380,15 @@
                     exp:S.exp, quest:S.quest, reviewAsked:S.reviewAsked, bonusSeen:S.bonusSeen};
       /* codes from before 1.4 carry no research: keep this device's */
       if(!d.rs) Object.assign(keep, {rs:S.rs, rp:S.rp, seamMax:S.seamMax, expBack:S.expBack});
+      const mySea = S.sea, myOwn = S.seaOwn;
       applyData(d); Object.assign(S, keep); normalizeTeams();
+      SEASONS.forEach(z => {
+        if(myOwn.skins.indexOf(z.id) >= 0 && S.seaOwn.skins.indexOf(z.id) < 0) S.seaOwn.skins.push(z.id);
+        if(myOwn.deco.indexOf(z.id) >= 0 && S.seaOwn.deco.indexOf(z.id) < 0) S.seaOwn.deco.push(z.id);
+      });
+      if(!(S.sea.key === mySea.key && S.sea.n > mySea.n)) S.sea = mySea;
+      else Object.assign(S.sea, {day:mySea.day, today:mySea.today});
+      fillSkins();
       echoUntil = 0;
       $('importCode').value = '';
       save(); setPaused(S.paused); refresh();
@@ -4755,7 +5407,8 @@
       /* research and its points go too: "start over" means everything */
       const keep = {visit:S.visit, sessions:S.sessions, askedNotify:S.askedNotify,
                     adDay:S.adDay, adUsed:S.adUsed, adcd:S.adcd,
-                    quest:S.quest, reviewAsked:S.reviewAsked, bonusSeen:S.bonusSeen};
+                    quest:S.quest, reviewAsked:S.reviewAsked, bonusSeen:S.bonusSeen,
+                    sea:S.sea, seaOwn:S.seaOwn};
       applyData({}); S.cores = 0; Object.assign(S, keep);
       if(!S.quest.done) S.quest.day = '';
       echoUntil = 0;
@@ -4992,6 +5645,7 @@
 
     refreshVisitCard();
     refreshQuestCard();
+    refreshSeaCard();
     refreshExpRow();
     for(const k in resRows){
       const r = resRows[k], d = r.def, lv = resLevel(k);
@@ -5126,7 +5780,9 @@
 
   function start(hot){
     langId = detectLang(); L = T[langId];
-    try{ applySkin(localStorage.getItem('cc-skin') || 'cave'); }catch(e){ applySkin('cave'); }
+    let wantSkin = 'cave';
+    try{ wantSkin = localStorage.getItem('cc-skin') || 'cave'; }catch(e){}
+    applySkin(wantSkin, false);
     let fi = 1;
     try{ const v = localStorage.getItem('cc-fs'); if(v !== null) fi = +v; }catch(e){}
 
@@ -5140,6 +5796,7 @@
     }
 
     normalizeTeams();
+    applySkin(wantSkin, false);
     applyStaticText();
     buildAll();
     applyFs(fi);
